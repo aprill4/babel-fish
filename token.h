@@ -18,7 +18,7 @@ enum TokenType{
     TOKEN_NOT,
     TOKEN_AND,
     TOKEN_OR,
-    // Keyword:if else while int float void const return continue break
+    // Keyword: if else while int float void const return continue break 
     TOKEN_IF,
     TOKEN_ELSE,
     TOKEN_WHILE,
@@ -29,10 +29,21 @@ enum TokenType{
     TOKEN_RETURN,
     TOKEN_CONTINUE,
     TOKEN_BREAK,
+    // Keyword: ; , ( ) [ ] { }
+    TOKEN_SEMICOLON,
+    TOKEN_COMMA,
+    TOKEN_LEFT_PARENTHESES,
+    TOKEN_RIGHT_PARENTHESES,
+    TOKEN_LEFT_BRACKETS,
+    TOKEN_RIGHT_BRACKETS,
+    TOKEN_LEFT_BRACES,
+    TOKEN_RIGHT_BRACES,
     // End of line 
     TOKEN_EOF = 0,
     // Blank
     TOKEN_BLANK,
+    // Comment
+    TOKEN_COMMENT,
     // Other
     TOKEN_OTHER,
     // Val
