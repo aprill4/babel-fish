@@ -1,5 +1,5 @@
 #pragma token_h
-enum TokenType{
+typedef enum {
     // Arithmetic operation: + - * / %
     TOKEN_ADD,
     TOKEN_SUB,
@@ -50,7 +50,7 @@ enum TokenType{
     TOKEN_IDENTIFIER = 128,
     TOKEN_INTEGER,
     TOKEN_FLOATPOINT,
-};
+} TokenType;
 
 typedef struct {
     TokenType type;
