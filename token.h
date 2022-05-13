@@ -1,36 +1,44 @@
 #pragma token_h
 enum TokenType{
-
-    // imagine here is an ASCII table
-    TOKEN_EOF = 0,
-    // end of ASCII table
-
-    TOKEN_IDENTIFIER = 128,
-    TOKEN_INTEGER,
-    TOKEN_FLOAT_POINT_NUMBER,
-
-    TOKEN_NE,
-    TOKEN_ET,
-    TOKEN_LTE,
-    TOKEN_GTE,
+    // Arithmetic operation: + - * / %
+    TOKEN_ADD,
+    TOKEN_SUB,
+    TOKEN_MUL,
+    TOKEN_DIV,
+    TOKEN_MOD,
+    // Relational operation: == != < > <= >= =
+    TOKEN_EQ,
+    TOKEN_NEQ,
     TOKEN_LT,
     TOKEN_GT,
-
-    TOKEN_KEYWORD_IF,
-    TOKEN_KEYWORD_ELSE,
-
-    TOKEN_KEYWORD_WHILE,
-
-    TOKEN_KEYWORD_INT,
-    TOKEN_KEYWORD_FLOAT,
-    TOKEN_KEYWORD_RETURN,
-    TOKEN_KEYWORD_CONTINUE,
-    TOKEN_KEYWORD_BREAK,
-    TOKEN_KEYWORD_VOID,
-    TOKEN_KEYWORD_CONST,
-
-    TOKEN_LOGICAL_AND,
-    TOKEN_LOGICAL_OR
+    TOKEN_LTE,
+    TOKEN_GTE,
+    TOKEN_ASSIGN,
+    // Logical operation: ! && ||
+    TOKEN_NOT,
+    TOKEN_AND,
+    TOKEN_OR,
+    // Keyword:if else while int float void const return continue break
+    TOKEN_IF,
+    TOKEN_ELSE,
+    TOKEN_WHILE,
+    TOKEN_INT,
+    TOKEN_FLOAT,
+    TOKEN_VOID,
+    TOKEN_CONST,
+    TOKEN_RETURN,
+    TOKEN_CONTINUE,
+    TOKEN_BREAK,
+    // End of line 
+    TOKEN_EOF = 0,
+    // Blank
+    TOKEN_BLANK,
+    // Other
+    TOKEN_OTHER,
+    // Val
+    TOKEN_IDENTIFIER = 128,
+    TOKEN_INTEGER,
+    TOKEN_FLOATPOINT,
 };
 
 typedef struct {
