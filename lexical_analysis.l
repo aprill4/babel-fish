@@ -76,13 +76,30 @@ TOKEN_FLOATPOINT  (((DIGIT*.DIGIT+|DIGIT+.)([eE][+-]?DIGIT+)?)|((DIGIT+)([eE][+-
 LETTER [a-zA-Z]
 TOKEN_IDENTIFIER ({LETTER}|_)({DIGIT}|{LETTER}|_)*
 
-COMMENT ((\/\/)(.)*)|(\/\*)(.)*{NEWLINE}*(\*\/)
+COMMENT ("//")(.)*
+MULTILINE_COMMENT "/*"
 
 %%
+{COMMENT} ;
+
+{MULTILINE_COMMENT} {
+	int c;
+	while ((c = yyinput()) != 0){
+		if (c == '\n'){
+			line++;
+			col = 1;
+		} else if(c == '*') {
+			if ((c = yyinput()) == '/')
+				break;
+			else {
+				unput(c);
+			}
+		}
+	}}
 
 {TOKEN_ADD} {
     token_stream.emplace_back(TOKEN_ADD, line, col);
-	printf("%s\n", yytext);
+
 	col += strlen(yytext);
     return TOKEN_ADD;}
 
@@ -317,7 +334,6 @@ COMMENT ((\/\/)(.)*)|(\/\*)(.)*{NEWLINE}*(\*\/)
 {NEWLINE} { line++; col = 1;}
 {SPACE} {col++;}
 {TAB} {col++;}
-{COMMENT} 
 
 %%
 
