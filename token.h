@@ -1,5 +1,6 @@
 #pragma token_h
 #include <string.h>
+
 typedef enum {
     // Arithmetic operation: + - * / %
     TOKEN_ADD = 258,
@@ -55,29 +56,32 @@ typedef enum {
 
 typedef struct Token{
     Token() = default;
-    Token(TokenType _type,int _line,int _pos_start,int _pos_end):type(_type),line(_line),pos_start(_pos_start),pos_end(_pos_end){
+    Token(TokenType _type, int _line, int _col): type(_type), line(_line), col(_col){
     }
-    Token(const Token& token):Token(token.type,token.line,token.pos_start,token.pos_end){
+    Token(const Token& token): Token(token.type, token.line, token.col){
         this->data = token.data;
     }
-    Token(TokenType _type,int _line,int _pos_start,int _pos_end,int _int_val):Token(_type,_line,_pos_start,_pos_end){
+    Token(TokenType _type, int _line, int _col, int _int_val): Token(_type, _line, _col){
         data.int_val = _int_val;
     }
-    Token(TokenType _type,int _line,int _pos_start,int _pos_end,float _float_val):Token(_type,_line,_pos_start,_pos_end){
+    Token(TokenType _type, int _line, int _col, float _float_val): Token(_type, _line, _col){
         data.float_val = _float_val;
     }    
-    Token(TokenType _type,int _line,int _pos_start,int _pos_end,const char* _identifier):Token(_type,_line,_pos_start,_pos_end){
+    Token(TokenType _type, int _line, int _col, const char* _identifier): Token(_type, _line, _col){
         data.identifier = new char[strlen(_identifier)];
         strcpy(data.identifier, _identifier);
     }
+
     ~Token() = default;
     TokenType type;
     int line;
-    int pos_start;
-    int pos_end;
+    int col;
+    //int pos_end;
+
     union {
         int int_val;
         float float_val;
         char *identifier;
     } data;
+
 } Token;
