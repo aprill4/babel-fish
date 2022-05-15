@@ -7,7 +7,6 @@
 #include<string.h>
 using namespace std;
 
-extern "C" int yylex();
 vector<Token> token_stream;
 
 int line = 1;
