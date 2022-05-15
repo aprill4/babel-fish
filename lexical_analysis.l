@@ -74,85 +74,119 @@ HEX_CONST {HEX_PREFIX}{HEX_DIGIT}*
 TOKEN_FLOATPOINT  (((DIGIT*.DIGIT+|DIGIT+.)([eE][+-]?DIGIT+)?)|((DIGIT+)([eE][+-]?DIGIT+)))|(HEX_PREFIX(((HEX_DIGIT*.HEX_DIGIT+)|(HEX_DIGIT+.))|(HEX_DIGIT+)))
 
 LETTER [a-zA-Z]
-TOKEN_IDENTIFIER ({LETTER}|_){DIGIT}|({LETTER}|_)*
+TOKEN_IDENTIFIER ({LETTER}|_)({DIGIT}|{LETTER}|_)*
 
 %%
 {TOKEN_DIV} {
     token_stream.emplace_back(TOKEN_DIV, line, col, yytext);
+
+	col += strlen(yytext);
     return TOKEN_DIV;}
 
 {TOKEN_MOD} {
     token_stream.emplace_back(TOKEN_MOD, line, col, yytext);
+
+	col += strlen(yytext);
     return TOKEN_MOD;}
 
 {TOKEN_LTE} {
     token_stream.emplace_back(TOKEN_LTE, line, col, yytext);
+
+	col += strlen(yytext);
     return TOKEN_LTE;}
 
 {TOKEN_GTE} {
     token_stream.emplace_back(TOKEN_GTE, line, col, yytext);
+
+	col += strlen(yytext);
     return TOKEN_GTE;}
 
 {TOKEN_ASSIGN} {
     token_stream.emplace_back(TOKEN_ASSIGN, line, col, yytext);
+
+	col += strlen(yytext);
     return TOKEN_ASSIGN;}
 
 {TOKEN_OR} {
     Token token(TOKEN_DIV, line, col, yytext);
     token_stream.emplace_back(token);
+
+	col += strlen(yytext);
     return TOKEN_OR;}
 
 {TOKEN_VOID} {
     Token token(TOKEN_DIV, line, col, yytext);
     token_stream.emplace_back(token);
+
+	col += strlen(yytext);
     return TOKEN_VOID;}
 
 {TOKEN_CONST} {
     Token token(TOKEN_DIV, line, col, yytext);
     token_stream.emplace_back(token);
+
+	col += strlen(yytext);
     return TOKEN_CONST;}
 
 {TOKEN_RETURN} {
     Token token(TOKEN_DIV, line, col, yytext);
     token_stream.emplace_back(token);
+	
+	col += strlen(yytext);
     return TOKEN_RETURN;}
 
 {TOKEN_CONTINUE} {
     Token token(TOKEN_DIV, line, col, yytext);
     token_stream.emplace_back(token);
+
+	col += strlen(yytext);
     return TOKEN_CONTINUE;}
 
 {TOKEN_BREAK} {
     Token token(TOKEN_DIV, line, col, yytext);
     token_stream.emplace_back(token);
+
+	col += strlen(yytext);
     return TOKEN_BREAK;}
+
+{TOKEN_IDENTIFIER} {
+    Token token(TOKEN_IDENTIFIER, line, col, yytext);
+    token_stream.emplace_back(token);
+
+	col += strlen(yytext);
+    return TOKEN_IDENTIFIER;}
 
 {TOKEN_FLOATPOINT} {
     Token token(TOKEN_DIV, line, col, yytext);
     token_stream.emplace_back(token);
+
+	col += strlen(yytext);
     return TOKEN_FLOATPOINT;}
 
 {HEX_CONST} {
     Token token(TOKEN_INTEGER, line, col, (int)(strtol(yytext, NULL, 16)));
     token_stream.emplace_back(token);
+
+	col += strlen(yytext);
     return TOKEN_INTEGER;}
 
 {OCT_CONST} {
     Token token(TOKEN_INTEGER, line, col, (int)(strtol(yytext, NULL, 8)));
     token_stream.emplace_back(token);
+
+	col += strlen(yytext);
     return TOKEN_INTEGER;}
 
 {DEC_CONST} {
     Token token(TOKEN_INTEGER, line, col, (int)(strtol(yytext, NULL, 10)));
     token_stream.emplace_back(token);
+
+	col += strlen(yytext);
     return TOKEN_INTEGER;}
 
-{TOKEN_IDENTIFIER} {
-    Token token(TOKEN_IDENTIFIER, line, col, yytext);
-    token_stream.emplace_back(token);
-    return TOKEN_IDENTIFIER;}
-
-{NEWLINE} { line++;}
+{NEWLINE} { line++; col = 1;}
+{SPACE} {col++;}
+{TAB} {col++;}
 
 %%
 
@@ -164,18 +198,19 @@ vector<Token>& lexical_analysis(const char *input_file){
 
     while(yylex());
     for (auto & t : token_stream){
+		cout << "line " << t.line << ", col " << t.col;
 		switch (t.type){
 			case TOKEN_INTEGER: 
-				cout << "Type: " << t.type << " data: " << t.data.int_val << endl;
+				cout << " Type: " << t.type << " data: " << t.data.int_val << endl;
 				break;
 			case TOKEN_FLOATPOINT:
-				cout << "Type: " << t.type << " data: " << t.data.float_val << endl;
+				cout << " Type: " << t.type << " data: " << t.data.float_val << endl;
 				break;
 			case TOKEN_IDENTIFIER:
-				cout << "Type: " << t.type << " data: " << t.data.identifier << endl;
+				cout << " Type: " << t.type << " data: " << t.data.identifier << endl;
 				break;
 			default:
-				cout << "Type: " << t.type << endl;
+				cout << " Type: " << t.type << endl;
 		}
     }
 
