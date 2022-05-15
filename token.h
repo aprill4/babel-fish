@@ -43,7 +43,8 @@ typedef enum {
     // End of line 
     TOKEN_EOF,
     // Blank
-    TOKEN_BLANK,
+    TOKEN_NEWLINE,
+	TOKEN_WHITESPACE,
     // Comment
     TOKEN_COMMENT,
     // Other

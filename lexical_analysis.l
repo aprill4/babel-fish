@@ -6,6 +6,7 @@
 #include<string.h>
 using namespace std;
 
+extern "C" int yylex();
 vector<Token> token_stream;
 
 int line = 1;
@@ -51,9 +52,9 @@ TOKEN_RIGHT_BRACKETS ]
 TOKEN_LEFT_BRACES {
 TOKEN_RIGHT_BRACES }
 
-TOKEN_TAB [\t]
-TOKEN_SPACE [ ]
-TOKEN_NEWLINE [\n]
+TAB [\t]
+SPACE [ ]
+NEWLINE [\n]
 
 NONZERO_DIGIT [1-9]
 DIGIT [0-9]
@@ -64,16 +65,16 @@ HEX_DIGIT [0-9a-fA-Z]
 OCT_PREFIX 0
 OCT_DIGIT [0-7]
 
-DEC_CONST (NONZERO_DIGIT)DIGIT*
-OCT_CONST (OCT_PREFIX)OCT_DIGIT*
-HEX_CONST (HEX_PREFIX)HEX_DIGIT*
+DEC_CONST {NONZERO_DIGIT}DIGIT*
+OCT_CONST {OCT_PREFIX}OCT_DIGIT*
+HEX_CONST {HEX_PREFIX}HEX_DIGIT*
 
 TOKEN_INTEGER DEC_CONST|OCT_CONST|HEX_CONST
 
 TOKEN_FLOATPOINT  (((DIGIT*.DIGIT+|DIGIT+.)([eE][+-]?DIGIT+)?)|((DIGIT+)([eE][+-]?DIGIT+)))|(HEX_PREFIX(((HEX_DIGIT*.HEX_DIGIT+)|(HEX_DIGIT+.))|(HEX_DIGIT+)))
 
 LETTER [a-zA-Z]
-TOKEN_IDENTIFIER (LETTER|_)(DIGIT|LETTER|_)*
+TOKEN_IDENTIFIER {LETTER|_}{DIGIT|LETTER|_}*
 
 %%
 {TOKEN_DIV} {
@@ -131,7 +132,12 @@ TOKEN_IDENTIFIER (LETTER|_)(DIGIT|LETTER|_)*
     token_stream.emplace_back(token);
     return TOKEN_FLOATPOINT;}
 
-{TOKEN_NEWLINE} {line++;}
+{TOKEN_INTEGER} {
+    Token token(TOKEN_INTEGER, line, col, yytext);
+    token_stream.emplace_back(token);
+    return TOKEN_INTEGER;}
+
+{NEWLINE} { line++;}
 
 %%
 
@@ -145,12 +151,11 @@ vector<Token>& lexical_analysis(const char *input_file){
     for (auto & t : token_stream){
 		cout << t.type << endl;
         cout << t.data.identifier << endl;
+		cout << t.data.int_val << endl;
     }
 
     return token_stream;
 }
-
-int yywrap(){return 0;}
 
 int main(int argc, char *argv[]){
 
