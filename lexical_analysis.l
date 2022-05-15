@@ -1,6 +1,7 @@
 %option noyywrap
 %{
 #include "token.h"
+#include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
 #include <vector>
@@ -68,7 +69,7 @@ OCT_DIGIT [0-7]
 
 DEC_CONST {NONZERO_DIGIT}{DIGIT}*
 OCT_CONST {OCT_PREFIX}{OCT_DIGIT}*
-HEX_CONST {HEX_PREFIX}{HEX_DIGIT}
+HEX_CONST {HEX_PREFIX}{HEX_DIGIT}*
 
 TOKEN_INTEGER {DEC_CONST}|{OCT_CONST}|{HEX_CONST}
 
