@@ -1,59 +1,55 @@
 #pragma token_h
 #include <string.h>
 
-typedef enum {
-    // Arithmetic operation: + - * / %
-    TOKEN_ADD = 258,
-    TOKEN_SUB,
-    TOKEN_MUL,
-    TOKEN_DIV,
-    TOKEN_MOD,
-    // Relational operation: == != < > <= >= =
-    TOKEN_EQ,
-    TOKEN_NEQ,
-    TOKEN_LT,
-    TOKEN_GT,
-    TOKEN_LTE,
-    TOKEN_GTE,
-    TOKEN_ASSIGN,
-    // Logical operation: ! && ||
-    TOKEN_NOT,
-    TOKEN_AND,
-    TOKEN_OR,
-    // Keyword: if else while int float void const return continue break 
-    TOKEN_IF,
-    TOKEN_ELSE,
-    TOKEN_WHILE,
-    TOKEN_INT,
-    TOKEN_FLOAT,
-    TOKEN_VOID,
-    TOKEN_CONST,
-    TOKEN_RETURN,
-    TOKEN_CONTINUE,
-    TOKEN_BREAK,
-    // Keyword: ; , ( ) [ ] { }
-    TOKEN_SEMICOLON,
-    TOKEN_COMMA,
-    TOKEN_LEFT_PARENTHESES,
-    TOKEN_RIGHT_PARENTHESES,
-    TOKEN_LEFT_BRACKETS,
-    TOKEN_RIGHT_BRACKETS,
-    TOKEN_LEFT_BRACES,
-    TOKEN_RIGHT_BRACES,
-    // End of line 
-    TOKEN_EOF,
-    // Blank
-    TOKEN_NEWLINE,
-	TOKEN_WHITESPACE,
-    // Comment
-    TOKEN_COMMENT,
-    // Other
-    TOKEN_OTHER,
-    // Val
-    TOKEN_IDENTIFIER,
-    TOKEN_INTEGER,
-    TOKEN_FLOATPOINT,
-} TokenType;
+#define TOKEN_ITEMS(F) \
+    F(TOKEN_ADD) \
+    F(TOKEN_SUB) \
+    F(TOKEN_MUL) \
+    F(TOKEN_DIV) \
+    F(TOKEN_MOD) \
+    F(TOKEN_EQ) \
+    F(TOKEN_NEQ) \
+    F(TOKEN_LT) \
+    F(TOKEN_GT) \
+    F(TOKEN_LTE) \
+    F(TOKEN_GTE) \
+    F(TOKEN_ASSIGN) \
+    F(TOKEN_NOT) \
+    F(TOKEN_AND) \
+    F(TOKEN_OR) \
+    F(TOKEN_IF) \
+    F(TOKEN_ELSE) \
+    F(TOKEN_WHILE) \
+    F(TOKEN_INT) \
+    F(TOKEN_FLOAT) \
+    F(TOKEN_VOID) \
+    F(TOKEN_CONST) \
+    F(TOKEN_RETURN) \
+    F(TOKEN_CONTINUE) \
+    F(TOKEN_BREAK) \
+    F(TOKEN_SEMICOLON) \
+    F(TOKEN_COMMA) \
+    F(TOKEN_LEFT_PARENTHESES) \
+    F(TOKEN_RIGHT_PARENTHESES) \
+    F(TOKEN_LEFT_BRACKETS) \
+    F(TOKEN_RIGHT_BRACKETS) \
+    F(TOKEN_LEFT_BRACES) \
+    F(TOKEN_RIGHT_BRACES) \
+    F(TOKEN_EOF) \
+    F(TOKEN_OTHER) \
+    F(TOKEN_IDENTIFIER) \
+    F(TOKEN_INTEGER) \
+    F(TOKEN_FLOATPOINT)
+	
+enum TokenType {
+#define F(i) i,
+	TOKEN_ITEMS(F)
+#undef F
+};
+
+#define F(i) #i,
+const char *lookup[] = {TOKEN_ITEMS(F)};
+#undef F
 
 typedef struct Token{
     Token() = default;

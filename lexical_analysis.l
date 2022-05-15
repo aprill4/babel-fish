@@ -16,9 +16,9 @@ int col = 1;
 //int pos_end;
 %}
 
-TOKEN_ADD +
+TOKEN_ADD \+
 TOKEN_SUB -
-TOKEN_MUL *
+TOKEN_MUL \*
 TOKEN_DIV \/
 TOKEN_MOD %
 
@@ -31,7 +31,7 @@ TOKEN_GTE >=
 TOKEN_ASSIGN =
 
 TOKEN_NOT !
-TOKEN_AND && //escape?
+TOKEN_AND \&\&
 TOKEN_OR \|\|
 
 TOKEN_IF if
@@ -47,12 +47,12 @@ TOKEN_BREAK break
 
 TOKEN_SEMICOLON ;
 TOKEN_COMMA ,
-TOKEN_LEFT_PARENTHESES (
-TOKEN_RIGHT_PARENTHESES )
-TOKEN_LEFT_BRACKETS [
-TOKEN_RIGHT_BRACKETS ]
-TOKEN_LEFT_BRACES {
-TOKEN_RIGHT_BRACES }
+TOKEN_LEFT_PARENTHESES \(
+TOKEN_RIGHT_PARENTHESES \)
+TOKEN_LEFT_BRACKETS \[
+TOKEN_RIGHT_BRACKETS \]
+TOKEN_LEFT_BRACES \{
+TOKEN_RIGHT_BRACES \}
 
 TAB [\t]
 SPACE [ ]
@@ -76,78 +76,208 @@ TOKEN_FLOATPOINT  (((DIGIT*.DIGIT+|DIGIT+.)([eE][+-]?DIGIT+)?)|((DIGIT+)([eE][+-
 LETTER [a-zA-Z]
 TOKEN_IDENTIFIER ({LETTER}|_)({DIGIT}|{LETTER}|_)*
 
+COMMENT ((\/\/)(.)*)|(\/\*)(.)*{NEWLINE}*(\*\/)
+
 %%
+
+{TOKEN_ADD} {
+    token_stream.emplace_back(TOKEN_ADD, line, col);
+	printf("%s\n", yytext);
+	col += strlen(yytext);
+    return TOKEN_ADD;}
+
+{TOKEN_SUB} {
+    token_stream.emplace_back(TOKEN_SUB, line, col);
+
+	col += strlen(yytext);
+    return TOKEN_SUB;}
+
+{TOKEN_MUL} {
+    token_stream.emplace_back(TOKEN_MUL, line, col);
+
+	col += strlen(yytext);
+    return TOKEN_MUL;}
+
 {TOKEN_DIV} {
-    token_stream.emplace_back(TOKEN_DIV, line, col, yytext);
+    token_stream.emplace_back(TOKEN_DIV, line, col);
 
 	col += strlen(yytext);
     return TOKEN_DIV;}
 
 {TOKEN_MOD} {
-    token_stream.emplace_back(TOKEN_MOD, line, col, yytext);
+    token_stream.emplace_back(TOKEN_MOD, line, col);
 
 	col += strlen(yytext);
     return TOKEN_MOD;}
 
+{TOKEN_EQ} {
+    token_stream.emplace_back(TOKEN_EQ, line, col);
+
+	col += strlen(yytext);
+    return TOKEN_EQ;}
+
+{TOKEN_NEQ} {
+    token_stream.emplace_back(TOKEN_NEQ, line, col);
+
+	col += strlen(yytext);
+    return TOKEN_NEQ;}
+
+{TOKEN_LT} {
+    token_stream.emplace_back(TOKEN_LT, line, col);
+
+	col += strlen(yytext);
+    return TOKEN_LT;}
+
+{TOKEN_GT} {
+    token_stream.emplace_back(TOKEN_GT, line, col);
+
+	col += strlen(yytext);
+    return TOKEN_GT;}
+
 {TOKEN_LTE} {
-    token_stream.emplace_back(TOKEN_LTE, line, col, yytext);
+    token_stream.emplace_back(TOKEN_LTE, line, col);
 
 	col += strlen(yytext);
     return TOKEN_LTE;}
 
 {TOKEN_GTE} {
-    token_stream.emplace_back(TOKEN_GTE, line, col, yytext);
+    token_stream.emplace_back(TOKEN_GTE, line, col);
 
 	col += strlen(yytext);
     return TOKEN_GTE;}
 
 {TOKEN_ASSIGN} {
-    token_stream.emplace_back(TOKEN_ASSIGN, line, col, yytext);
+    token_stream.emplace_back(TOKEN_ASSIGN, line, col);
 
 	col += strlen(yytext);
     return TOKEN_ASSIGN;}
 
+{TOKEN_NOT} {
+    token_stream.emplace_back(TOKEN_NOT, line, col);
+
+	col += strlen(yytext);
+    return TOKEN_NOT;}
+
+{TOKEN_AND} {
+    token_stream.emplace_back(TOKEN_AND, line, col);
+
+	col += strlen(yytext);
+    return TOKEN_AND;}
+
 {TOKEN_OR} {
-    Token token(TOKEN_DIV, line, col, yytext);
-    token_stream.emplace_back(token);
+    token_stream.emplace_back(TOKEN_OR, line, col);
 
 	col += strlen(yytext);
     return TOKEN_OR;}
 
+
+{TOKEN_IF} {
+    token_stream.emplace_back(TOKEN_IF, line, col);
+
+	col += strlen(yytext);
+    return TOKEN_IF;}
+
+{TOKEN_ELSE} {
+    token_stream.emplace_back(TOKEN_ELSE, line, col);
+
+	col += strlen(yytext);
+    return TOKEN_ELSE;}
+
+{TOKEN_WHILE} {
+    token_stream.emplace_back(TOKEN_WHILE, line, col);
+
+	col += strlen(yytext);
+    return TOKEN_WHILE;}
+
+{TOKEN_INT} {
+    token_stream.emplace_back(TOKEN_INT, line, col);
+
+	col += strlen(yytext);
+    return TOKEN_INT;}
+
+{TOKEN_FLOAT} {
+    token_stream.emplace_back(TOKEN_FLOAT, line, col);
+
+	col += strlen(yytext);
+    return TOKEN_FLOAT;}
+
 {TOKEN_VOID} {
-    Token token(TOKEN_DIV, line, col, yytext);
-    token_stream.emplace_back(token);
+    token_stream.emplace_back(TOKEN_VOID, line, col);
 
 	col += strlen(yytext);
     return TOKEN_VOID;}
 
 {TOKEN_CONST} {
-    Token token(TOKEN_DIV, line, col, yytext);
-    token_stream.emplace_back(token);
+    token_stream.emplace_back(TOKEN_CONST, line, col);
 
 	col += strlen(yytext);
     return TOKEN_CONST;}
 
 {TOKEN_RETURN} {
-    Token token(TOKEN_DIV, line, col, yytext);
-    token_stream.emplace_back(token);
-	
+    token_stream.emplace_back(TOKEN_RETURN, line, col);
+
 	col += strlen(yytext);
     return TOKEN_RETURN;}
 
 {TOKEN_CONTINUE} {
-    Token token(TOKEN_DIV, line, col, yytext);
-    token_stream.emplace_back(token);
+    token_stream.emplace_back(TOKEN_CONTINUE, line, col);
 
 	col += strlen(yytext);
     return TOKEN_CONTINUE;}
 
 {TOKEN_BREAK} {
-    Token token(TOKEN_DIV, line, col, yytext);
-    token_stream.emplace_back(token);
+    token_stream.emplace_back(TOKEN_BREAK, line, col);
 
 	col += strlen(yytext);
     return TOKEN_BREAK;}
+
+{TOKEN_SEMICOLON} {
+    token_stream.emplace_back(TOKEN_SEMICOLON, line, col);
+
+	col += strlen(yytext);
+    return TOKEN_SEMICOLON;}
+
+{TOKEN_COMMA} {
+    token_stream.emplace_back(TOKEN_COMMA, line, col);
+
+	col += strlen(yytext);
+    return TOKEN_COMMA;}
+
+{TOKEN_LEFT_PARENTHESES} {
+    token_stream.emplace_back(TOKEN_LEFT_PARENTHESES, line, col);
+
+	col += strlen(yytext);
+    return TOKEN_LEFT_PARENTHESES;}
+
+{TOKEN_RIGHT_PARENTHESES} {
+    token_stream.emplace_back(TOKEN_RIGHT_PARENTHESES, line, col);
+
+	col += strlen(yytext);
+    return TOKEN_RIGHT_PARENTHESES;}
+
+{TOKEN_LEFT_BRACES} {
+    token_stream.emplace_back(TOKEN_LEFT_BRACES, line, col);
+
+	col += strlen(yytext);
+    return TOKEN_LEFT_BRACES;}
+
+{TOKEN_RIGHT_BRACES} {
+    token_stream.emplace_back(TOKEN_RIGHT_BRACES, line, col);
+
+	col += strlen(yytext);
+    return TOKEN_RIGHT_BRACES;}
+
+{TOKEN_LEFT_BRACKETS} {
+    token_stream.emplace_back(TOKEN_LEFT_BRACKETS, line, col);
+
+	col += strlen(yytext);
+    return TOKEN_LEFT_BRACKETS;}
+
+{TOKEN_RIGHT_BRACKETS} {
+    token_stream.emplace_back(TOKEN_RIGHT_BRACKETS, line, col);
+
+	col += strlen(yytext);
+    return TOKEN_RIGHT_BRACKETS;}
 
 {TOKEN_IDENTIFIER} {
     Token token(TOKEN_IDENTIFIER, line, col, yytext);
@@ -187,6 +317,7 @@ TOKEN_IDENTIFIER ({LETTER}|_)({DIGIT}|{LETTER}|_)*
 {NEWLINE} { line++; col = 1;}
 {SPACE} {col++;}
 {TAB} {col++;}
+{COMMENT} 
 
 %%
 
@@ -199,18 +330,19 @@ vector<Token>& lexical_analysis(const char *input_file){
     while(yylex());
     for (auto & t : token_stream){
 		cout << "line " << t.line << ", col " << t.col;
+		cout << ", "<< lookup[t.type];
 		switch (t.type){
 			case TOKEN_INTEGER: 
-				cout << " Type: " << t.type << " data: " << t.data.int_val << endl;
+				cout << ", " << t.data.int_val << endl;
 				break;
 			case TOKEN_FLOATPOINT:
-				cout << " Type: " << t.type << " data: " << t.data.float_val << endl;
+				cout << ", " << t.data.float_val << endl;
 				break;
 			case TOKEN_IDENTIFIER:
-				cout << " Type: " << t.type << " data: " << t.data.identifier << endl;
+				cout << ", " << t.data.identifier << endl;
 				break;
 			default:
-				cout << " Type: " << t.type << endl;
+				cout << endl;
 		}
     }
 
