@@ -1,6 +1,7 @@
 %option noyywrap
 %{
 #include "token.h"
+#include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
 #include <vector>
@@ -65,11 +66,11 @@ HEX_DIGIT [0-9a-fA-Z]
 OCT_PREFIX 0
 OCT_DIGIT [0-7]
 
-DEC_CONST {NONZERO_DIGIT}DIGIT*
-OCT_CONST {OCT_PREFIX}OCT_DIGIT*
-HEX_CONST {HEX_PREFIX}HEX_DIGIT*
+DEC_CONST {NONZERO_DIGIT}{DIGIT}*
+OCT_CONST {OCT_PREFIX}{OCT_DIGIT}*
+HEX_CONST {HEX_PREFIX}{HEX_DIGIT}*
 
-TOKEN_INTEGER DEC_CONST|OCT_CONST|HEX_CONST
+TOKEN_INTEGER {DEC_CONST}|{OCT_CONST}|{HEX_CONST}
 
 TOKEN_FLOATPOINT  (((DIGIT*.DIGIT+|DIGIT+.)([eE][+-]?DIGIT+)?)|((DIGIT+)([eE][+-]?DIGIT+)))|(HEX_PREFIX(((HEX_DIGIT*.HEX_DIGIT+)|(HEX_DIGIT+.))|(HEX_DIGIT+)))
 
@@ -133,7 +134,7 @@ TOKEN_IDENTIFIER {LETTER|_}{DIGIT|LETTER|_}*
     return TOKEN_FLOATPOINT;}
 
 {TOKEN_INTEGER} {
-    Token token(TOKEN_INTEGER, line, col, yytext);
+    Token token(TOKEN_INTEGER, line, col, atoi(yytext));
     token_stream.emplace_back(token);
     return TOKEN_INTEGER;}
 
