@@ -71,8 +71,6 @@ DEC_CONST {NONZERO_DIGIT}{DIGIT}*
 OCT_CONST {OCT_PREFIX}{OCT_DIGIT}*
 HEX_CONST {HEX_PREFIX}{HEX_DIGIT}*
 
-TOKEN_INTEGER {DEC_CONST}|{OCT_CONST}|{HEX_CONST}
-
 TOKEN_FLOATPOINT  (((DIGIT*.DIGIT+|DIGIT+.)([eE][+-]?DIGIT+)?)|((DIGIT+)([eE][+-]?DIGIT+)))|(HEX_PREFIX(((HEX_DIGIT*.HEX_DIGIT+)|(HEX_DIGIT+.))|(HEX_DIGIT+)))
 
 LETTER [a-zA-Z]
@@ -134,10 +132,25 @@ TOKEN_IDENTIFIER ({LETTER}|_){DIGIT}|({LETTER}|_)*
     token_stream.emplace_back(token);
     return TOKEN_FLOATPOINT;}
 
-{TOKEN_INTEGER} {
-    Token token(TOKEN_INTEGER, line, col, atoi(yytext));
+{HEX_CONST} {
+    Token token(TOKEN_INTEGER, line, col, (int)(strtol(yytext, NULL, 16)));
     token_stream.emplace_back(token);
     return TOKEN_INTEGER;}
+
+{OCT_CONST} {
+    Token token(TOKEN_INTEGER, line, col, (int)(strtol(yytext, NULL, 8)));
+    token_stream.emplace_back(token);
+    return TOKEN_INTEGER;}
+
+{DEC_CONST} {
+    Token token(TOKEN_INTEGER, line, col, (int)(strtol(yytext, NULL, 10)));
+    token_stream.emplace_back(token);
+    return TOKEN_INTEGER;}
+
+{TOKEN_IDENTIFIER} {
+    Token token(TOKEN_IDENTIFIER, line, col, yytext);
+    token_stream.emplace_back(token);
+    return TOKEN_IDENTIFIER;}
 
 {NEWLINE} { line++;}
 
