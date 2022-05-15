@@ -150,7 +150,6 @@ vector<Token>& lexical_analysis(const char *input_file){
 
     while(yylex());
     for (auto & t : token_stream){
-		cout << t.type << endl;
 		switch (t.type){
 			case TOKEN_INTEGER: 
 				cout << "Type: " << t.type << " data: " << t.data.int_val << endl;
