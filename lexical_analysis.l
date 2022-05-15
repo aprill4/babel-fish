@@ -1,3 +1,4 @@
+%option noyywrap
 %{
 #include "token.h"
 #include <stdio.h>
@@ -143,14 +144,12 @@ vector<Token>& lexical_analysis(const char *input_file){
 
     while(yylex());
     for (auto & t : token_stream){
-		cout << t.type << endl;
-        cout << t.data.identifier << endl;
+        cout << "Type: " << t.type << " data: " << t.data.identifier << endl;
     }
 
     return token_stream;
 }
 
-int yywrap(){return 0;}
 
 int main(int argc, char *argv[]){
 
@@ -160,7 +159,7 @@ int main(int argc, char *argv[]){
     if (argc == 2) {
         strcpy(input_file, argv[1]);
     }
-
+    cout << "input_file: " << input_file << endl;
     // yylex()是flex提供的词法分析例程,默认读取stdin
     lexical_analysis(input_file);
     return 0;
