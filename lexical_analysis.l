@@ -13,7 +13,22 @@ vector<Token> token_stream;
 
 int line = 1;
 int col = 1;
-//int pos_end;
+
+#define YY_USER_ACTION for (auto i: string(yytext_ptr)) { \
+					       if (i == '\n') { \
+						       line++;     \
+							   col = 1;    \
+						   } else {        \
+								col++;     \
+						   }               \
+					   }                   
+
+#define COL(yytext) col - strlen(yytext)
+
+#define TOKEN(type, yytext) Token(type, line, COL(yytext))
+
+#define SAVE_TOKEN(token) token_stream.emplace_back(token)
+
 %}
 
 TOKEN_ADD \+
@@ -99,241 +114,202 @@ MULTILINE_COMMENT "/*"
 	}}
 
 {TOKEN_ADD} {
-    token_stream.emplace_back(TOKEN_ADD, line, col);
+	SAVE_TOKEN(TOKEN(TOKEN_ADD, yytext));
 
-	col += strlen(yytext);
     return TOKEN_ADD;}
 
 {TOKEN_SUB} {
-    token_stream.emplace_back(TOKEN_SUB, line, col);
-
-	col += strlen(yytext);
+	SAVE_TOKEN(TOKEN(TOKEN_SUB, yytext));
     return TOKEN_SUB;}
 
 {TOKEN_MUL} {
-    token_stream.emplace_back(TOKEN_MUL, line, col);
+	SAVE_TOKEN(TOKEN(TOKEN_MUL, yytext));
 
-	col += strlen(yytext);
     return TOKEN_MUL;}
 
 {TOKEN_DIV} {
-    token_stream.emplace_back(TOKEN_DIV, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_DIV, yytext));
 
-	col += strlen(yytext);
     return TOKEN_DIV;}
 
 {TOKEN_MOD} {
-    token_stream.emplace_back(TOKEN_MOD, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_MOD, yytext));
 
-	col += strlen(yytext);
     return TOKEN_MOD;}
 
 {TOKEN_EQ} {
-    token_stream.emplace_back(TOKEN_EQ, line, col);
+    token_stream.emplace_back(TOKEN_EQ, line, COL(yytext));
 
-	col += strlen(yytext);
     return TOKEN_EQ;}
 
 {TOKEN_NEQ} {
-    token_stream.emplace_back(TOKEN_NEQ, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_NEQ, yytext));
 
-	col += strlen(yytext);
     return TOKEN_NEQ;}
 
 {TOKEN_LT} {
-    token_stream.emplace_back(TOKEN_LT, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_LT, yytext));
 
-	col += strlen(yytext);
     return TOKEN_LT;}
 
 {TOKEN_GT} {
-    token_stream.emplace_back(TOKEN_GT, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_GT, yytext));
 
-	col += strlen(yytext);
     return TOKEN_GT;}
 
 {TOKEN_LTE} {
-    token_stream.emplace_back(TOKEN_LTE, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_LTE, yytext));
 
-	col += strlen(yytext);
     return TOKEN_LTE;}
 
 {TOKEN_GTE} {
-    token_stream.emplace_back(TOKEN_GTE, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_GTE, yytext));
 
-	col += strlen(yytext);
     return TOKEN_GTE;}
 
 {TOKEN_ASSIGN} {
-    token_stream.emplace_back(TOKEN_ASSIGN, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_ASSIGN, yytext));
 
-	col += strlen(yytext);
     return TOKEN_ASSIGN;}
 
 {TOKEN_NOT} {
-    token_stream.emplace_back(TOKEN_NOT, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_NOT, yytext));
 
-	col += strlen(yytext);
     return TOKEN_NOT;}
 
 {TOKEN_AND} {
-    token_stream.emplace_back(TOKEN_AND, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_AND, yytext));
 
-	col += strlen(yytext);
     return TOKEN_AND;}
 
 {TOKEN_OR} {
-    token_stream.emplace_back(TOKEN_OR, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_OR, yytext));
 
-	col += strlen(yytext);
     return TOKEN_OR;}
 
 
 {TOKEN_IF} {
-    token_stream.emplace_back(TOKEN_IF, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_IF, yytext));
 
-	col += strlen(yytext);
     return TOKEN_IF;}
 
 {TOKEN_ELSE} {
-    token_stream.emplace_back(TOKEN_ELSE, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_ELSE, yytext));
 
-	col += strlen(yytext);
     return TOKEN_ELSE;}
 
 {TOKEN_WHILE} {
-    token_stream.emplace_back(TOKEN_WHILE, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_WHILE, yytext));
 
-	col += strlen(yytext);
     return TOKEN_WHILE;}
 
 {TOKEN_INT} {
-    token_stream.emplace_back(TOKEN_INT, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_INT, yytext));
 
-	col += strlen(yytext);
     return TOKEN_INT;}
 
 {TOKEN_FLOAT} {
-    token_stream.emplace_back(TOKEN_FLOAT, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_FLOAT, yytext));
 
-	col += strlen(yytext);
     return TOKEN_FLOAT;}
 
 {TOKEN_VOID} {
-    token_stream.emplace_back(TOKEN_VOID, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_VOID, yytext));
 
-	col += strlen(yytext);
     return TOKEN_VOID;}
 
 {TOKEN_CONST} {
-    token_stream.emplace_back(TOKEN_CONST, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_CONST, yytext));
 
-	col += strlen(yytext);
     return TOKEN_CONST;}
 
 {TOKEN_RETURN} {
-    token_stream.emplace_back(TOKEN_RETURN, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_RETURN, yytext));
 
-	col += strlen(yytext);
     return TOKEN_RETURN;}
 
 {TOKEN_CONTINUE} {
-    token_stream.emplace_back(TOKEN_CONTINUE, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_CONTINUE, yytext));
 
-	col += strlen(yytext);
     return TOKEN_CONTINUE;}
 
 {TOKEN_BREAK} {
-    token_stream.emplace_back(TOKEN_BREAK, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_BREAK, yytext));
 
-	col += strlen(yytext);
     return TOKEN_BREAK;}
 
 {TOKEN_SEMICOLON} {
-    token_stream.emplace_back(TOKEN_SEMICOLON, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_SEMICOLON, yytext));
 
-	col += strlen(yytext);
     return TOKEN_SEMICOLON;}
 
 {TOKEN_COMMA} {
-    token_stream.emplace_back(TOKEN_COMMA, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_COMMA, yytext));
 
-	col += strlen(yytext);
     return TOKEN_COMMA;}
 
 {TOKEN_LEFT_PARENTHESES} {
-    token_stream.emplace_back(TOKEN_LEFT_PARENTHESES, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_LEFT_PARENTHESES, yytext));
 
-	col += strlen(yytext);
     return TOKEN_LEFT_PARENTHESES;}
 
 {TOKEN_RIGHT_PARENTHESES} {
-    token_stream.emplace_back(TOKEN_RIGHT_PARENTHESES, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_RIGHT_PARENTHESES, yytext));
 
-	col += strlen(yytext);
     return TOKEN_RIGHT_PARENTHESES;}
 
 {TOKEN_LEFT_BRACES} {
-    token_stream.emplace_back(TOKEN_LEFT_BRACES, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_LEFT_BRACES, yytext));
 
-	col += strlen(yytext);
     return TOKEN_LEFT_BRACES;}
 
 {TOKEN_RIGHT_BRACES} {
-    token_stream.emplace_back(TOKEN_RIGHT_BRACES, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_RIGHT_BRACES, yytext));
 
-	col += strlen(yytext);
     return TOKEN_RIGHT_BRACES;}
 
 {TOKEN_LEFT_BRACKETS} {
-    token_stream.emplace_back(TOKEN_LEFT_BRACKETS, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_LEFT_BRACKETS, yytext));
 
-	col += strlen(yytext);
     return TOKEN_LEFT_BRACKETS;}
 
 {TOKEN_RIGHT_BRACKETS} {
-    token_stream.emplace_back(TOKEN_RIGHT_BRACKETS, line, col);
+    SAVE_TOKEN(TOKEN(TOKEN_RIGHT_BRACKETS, yytext));
 
-	col += strlen(yytext);
     return TOKEN_RIGHT_BRACKETS;}
 
 {TOKEN_IDENTIFIER} {
-    Token token(TOKEN_IDENTIFIER, line, col, yytext);
-    token_stream.emplace_back(token);
+    Token token(TOKEN_IDENTIFIER, line, COL(yytext), yytext);
+    SAVE_TOKEN(token);
 
-	col += strlen(yytext);
     return TOKEN_IDENTIFIER;}
 
 {TOKEN_FLOATPOINT} {
-    Token token(TOKEN_FLOATPOINT, line, col,  static_cast<float>(strtod(yytext,NULL)));
-    token_stream.emplace_back(token);
+    Token token(TOKEN_FLOATPOINT, line, COL(yytext),  static_cast<float>(strtod(yytext,NULL)));
+    SAVE_TOKEN(token);
 
-	col += strlen(yytext);
     return TOKEN_FLOATPOINT;}
 
 {HEX_CONST} {
-    Token token(TOKEN_INTEGER, line, col, static_cast<int>(strtol(yytext, NULL, 16)));
-    token_stream.emplace_back(token);
+    Token token(TOKEN_INTEGER, line, COL(yytext), static_cast<int>(strtol(yytext, NULL, 16)));
+    SAVE_TOKEN(token);
 
-	col += strlen(yytext);
     return TOKEN_INTEGER;}
 
 {OCT_CONST} {
-    Token token(TOKEN_INTEGER, line, col, static_cast<int>(strtol(yytext, NULL, 8)));
-    token_stream.emplace_back(token);
+    Token token(TOKEN_INTEGER, line, COL(yytext), static_cast<int>(strtol(yytext, NULL, 8)));
+    SAVE_TOKEN(token);
 
-	col += strlen(yytext);
     return TOKEN_INTEGER;}
 
 {DEC_CONST} {
-    Token token(TOKEN_INTEGER, line, col, static_cast<int>(strtol(yytext, NULL, 10)));
-    token_stream.emplace_back(token);
+    Token token(TOKEN_INTEGER, line, COL(yytext), static_cast<int>(strtol(yytext, NULL, 10)));
+    SAVE_TOKEN(token);
 
-	col += strlen(yytext);
     return TOKEN_INTEGER;}
 
-{NEWLINE} { line++; col = 1;}
-{WHITESPACE} {col++;}
+{NEWLINE} ;
+{WHITESPACE} ;
 
 . {printf("other token: %s\n", yytext);}
 
