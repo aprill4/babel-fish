@@ -1,0 +1,112 @@
+input_file: test_2021/059_short_circuit2.sy
+line 1, col 1, TOKEN_INT
+line 1, col 5, TOKEN_IDENTIFIER, func
+line 1, col 9, TOKEN_LEFT_PARENTHESES
+line 1, col 10, TOKEN_INT
+line 1, col 14, TOKEN_IDENTIFIER, n
+line 1, col 15, TOKEN_RIGHT_PARENTHESES
+line 1, col 17, TOKEN_LEFT_BRACES
+line 2, col 3, TOKEN_IF
+line 2, col 6, TOKEN_LEFT_PARENTHESES
+line 2, col 7, TOKEN_IDENTIFIER, n
+line 2, col 9, TOKEN_LTE
+line 2, col 12, TOKEN_INTEGER, 50
+line 2, col 14, TOKEN_RIGHT_PARENTHESES
+line 2, col 16, TOKEN_LEFT_BRACES
+line 3, col 5, TOKEN_IDENTIFIER, putint
+line 3, col 11, TOKEN_LEFT_PARENTHESES
+line 3, col 12, TOKEN_IDENTIFIER, n
+line 3, col 13, TOKEN_RIGHT_PARENTHESES
+line 3, col 14, TOKEN_SEMICOLON
+line 4, col 5, TOKEN_RETURN
+line 4, col 12, TOKEN_INTEGER, 1
+line 4, col 13, TOKEN_SEMICOLON
+line 5, col 3, TOKEN_RIGHT_BRACES
+line 6, col 3, TOKEN_ELSE
+line 6, col 8, TOKEN_LEFT_BRACES
+line 7, col 5, TOKEN_IDENTIFIER, putint
+line 7, col 11, TOKEN_LEFT_PARENTHESES
+line 7, col 12, TOKEN_IDENTIFIER, n
+line 7, col 13, TOKEN_RIGHT_PARENTHESES
+line 7, col 14, TOKEN_SEMICOLON
+line 8, col 5, TOKEN_RETURN
+line 8, col 12, TOKEN_INTEGER, 0
+line 8, col 13, TOKEN_SEMICOLON
+line 9, col 3, TOKEN_RIGHT_BRACES
+line 10, col 1, TOKEN_RIGHT_BRACES
+line 12, col 1, TOKEN_INT
+line 12, col 5, TOKEN_IDENTIFIER, main
+line 12, col 9, TOKEN_LEFT_PARENTHESES
+line 12, col 10, TOKEN_RIGHT_PARENTHESES
+line 12, col 12, TOKEN_LEFT_BRACES
+line 13, col 3, TOKEN_INT
+line 13, col 7, TOKEN_IDENTIFIER, i
+line 13, col 8, TOKEN_SEMICOLON
+line 15, col 3, TOKEN_IF
+line 15, col 6, TOKEN_LEFT_PARENTHESES
+line 15, col 7, TOKEN_IDENTIFIER, func
+line 15, col 11, TOKEN_LEFT_PARENTHESES
+line 15, col 12, TOKEN_INTEGER, 0
+line 15, col 13, TOKEN_RIGHT_PARENTHESES
+line 15, col 15, TOKEN_EQ
+line 15, col 18, TOKEN_INTEGER, 1
+line 15, col 20, TOKEN_OR
+line 15, col 23, TOKEN_IDENTIFIER, func
+line 15, col 27, TOKEN_LEFT_PARENTHESES
+line 15, col 28, TOKEN_INTEGER, 50
+line 15, col 30, TOKEN_RIGHT_PARENTHESES
+line 15, col 32, TOKEN_EQ
+line 15, col 35, TOKEN_INTEGER, 1
+line 15, col 37, TOKEN_AND
+line 15, col 40, TOKEN_IDENTIFIER, func
+line 15, col 44, TOKEN_LEFT_PARENTHESES
+line 15, col 45, TOKEN_INTEGER, 100
+line 15, col 48, TOKEN_RIGHT_PARENTHESES
+line 15, col 50, TOKEN_EQ
+line 15, col 53, TOKEN_INTEGER, 0
+line 15, col 54, TOKEN_RIGHT_PARENTHESES
+line 16, col 5, TOKEN_IDENTIFIER, i
+line 16, col 7, TOKEN_ASSIGN
+line 16, col 9, TOKEN_INTEGER, 0
+line 16, col 10, TOKEN_SEMICOLON
+line 17, col 3, TOKEN_ELSE
+line 18, col 5, TOKEN_IDENTIFIER, i
+line 18, col 7, TOKEN_ASSIGN
+line 18, col 9, TOKEN_INTEGER, 1
+line 18, col 10, TOKEN_SEMICOLON
+line 20, col 3, TOKEN_IF
+line 20, col 6, TOKEN_LEFT_PARENTHESES
+line 20, col 7, TOKEN_IDENTIFIER, func
+line 20, col 11, TOKEN_LEFT_PARENTHESES
+line 20, col 12, TOKEN_INTEGER, 50
+line 20, col 14, TOKEN_RIGHT_PARENTHESES
+line 20, col 16, TOKEN_EQ
+line 20, col 19, TOKEN_INTEGER, 1
+line 20, col 21, TOKEN_AND
+line 20, col 24, TOKEN_IDENTIFIER, func
+line 20, col 28, TOKEN_LEFT_PARENTHESES
+line 20, col 29, TOKEN_INTEGER, 40
+line 20, col 31, TOKEN_RIGHT_PARENTHESES
+line 20, col 33, TOKEN_EQ
+line 20, col 36, TOKEN_INTEGER, 1
+line 20, col 38, TOKEN_OR
+line 20, col 41, TOKEN_IDENTIFIER, func
+line 20, col 45, TOKEN_LEFT_PARENTHESES
+line 20, col 46, TOKEN_INTEGER, 1
+line 20, col 47, TOKEN_RIGHT_PARENTHESES
+line 20, col 49, TOKEN_EQ
+line 20, col 52, TOKEN_INTEGER, 1
+line 20, col 54, TOKEN_RIGHT_PARENTHESES
+line 21, col 5, TOKEN_IDENTIFIER, i
+line 21, col 7, TOKEN_ASSIGN
+line 21, col 9, TOKEN_INTEGER, 0
+line 21, col 10, TOKEN_SEMICOLON
+line 22, col 3, TOKEN_ELSE
+line 23, col 5, TOKEN_IDENTIFIER, i
+line 23, col 7, TOKEN_ASSIGN
+line 23, col 9, TOKEN_INTEGER, 1
+line 23, col 10, TOKEN_SEMICOLON
+line 25, col 3, TOKEN_RETURN
+line 25, col 10, TOKEN_INTEGER, 0
+line 25, col 11, TOKEN_SEMICOLON
+line 26, col 1, TOKEN_RIGHT_BRACES

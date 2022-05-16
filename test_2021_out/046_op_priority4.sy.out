@@ -1,0 +1,100 @@
+input_file: test_2021/046_op_priority4.sy
+line 1, col 1, TOKEN_INT
+line 1, col 5, TOKEN_IDENTIFIER, a
+line 1, col 6, TOKEN_SEMICOLON
+line 2, col 1, TOKEN_INT
+line 2, col 5, TOKEN_IDENTIFIER, b
+line 2, col 6, TOKEN_SEMICOLON
+line 3, col 1, TOKEN_INT
+line 3, col 5, TOKEN_IDENTIFIER, c
+line 3, col 6, TOKEN_SEMICOLON
+line 4, col 1, TOKEN_INT
+line 4, col 5, TOKEN_IDENTIFIER, d
+line 4, col 6, TOKEN_SEMICOLON
+line 5, col 1, TOKEN_INT
+line 5, col 5, TOKEN_IDENTIFIER, e
+line 5, col 6, TOKEN_SEMICOLON
+line 6, col 1, TOKEN_INT
+line 6, col 5, TOKEN_IDENTIFIER, main
+line 6, col 9, TOKEN_LEFT_PARENTHESES
+line 6, col 10, TOKEN_RIGHT_PARENTHESES
+line 7, col 1, TOKEN_LEFT_BRACES
+line 8, col 2, TOKEN_IDENTIFIER, a
+line 8, col 3, TOKEN_ASSIGN
+line 8, col 4, TOKEN_IDENTIFIER, getint
+line 8, col 10, TOKEN_LEFT_PARENTHESES
+line 8, col 11, TOKEN_RIGHT_PARENTHESES
+line 8, col 12, TOKEN_SEMICOLON
+line 9, col 2, TOKEN_IDENTIFIER, b
+line 9, col 3, TOKEN_ASSIGN
+line 9, col 4, TOKEN_IDENTIFIER, getint
+line 9, col 10, TOKEN_LEFT_PARENTHESES
+line 9, col 11, TOKEN_RIGHT_PARENTHESES
+line 9, col 12, TOKEN_SEMICOLON
+line 10, col 2, TOKEN_IDENTIFIER, c
+line 10, col 3, TOKEN_ASSIGN
+line 10, col 4, TOKEN_IDENTIFIER, getint
+line 10, col 10, TOKEN_LEFT_PARENTHESES
+line 10, col 11, TOKEN_RIGHT_PARENTHESES
+line 10, col 12, TOKEN_SEMICOLON
+line 11, col 2, TOKEN_IDENTIFIER, d
+line 11, col 3, TOKEN_ASSIGN
+line 11, col 4, TOKEN_IDENTIFIER, getint
+line 11, col 10, TOKEN_LEFT_PARENTHESES
+line 11, col 11, TOKEN_RIGHT_PARENTHESES
+line 11, col 12, TOKEN_SEMICOLON
+line 12, col 2, TOKEN_IDENTIFIER, e
+line 12, col 3, TOKEN_ASSIGN
+line 12, col 4, TOKEN_IDENTIFIER, getint
+line 12, col 10, TOKEN_LEFT_PARENTHESES
+line 12, col 11, TOKEN_RIGHT_PARENTHESES
+line 12, col 12, TOKEN_SEMICOLON
+line 13, col 2, TOKEN_INT
+line 13, col 6, TOKEN_IDENTIFIER, flag
+line 13, col 10, TOKEN_ASSIGN
+line 13, col 11, TOKEN_INTEGER, 0
+line 13, col 12, TOKEN_SEMICOLON
+line 14, col 2, TOKEN_IF
+line 14, col 4, TOKEN_LEFT_PARENTHESES
+line 14, col 5, TOKEN_IDENTIFIER, a
+line 14, col 6, TOKEN_SUB
+line 14, col 7, TOKEN_IDENTIFIER, b
+line 14, col 8, TOKEN_MUL
+line 14, col 9, TOKEN_IDENTIFIER, c
+line 14, col 10, TOKEN_NEQ
+line 14, col 12, TOKEN_IDENTIFIER, d
+line 14, col 13, TOKEN_SUB
+line 14, col 14, TOKEN_IDENTIFIER, a
+line 14, col 15, TOKEN_DIV
+line 14, col 16, TOKEN_IDENTIFIER, c
+line 14, col 17, TOKEN_OR
+line 14, col 19, TOKEN_IDENTIFIER, a
+line 14, col 20, TOKEN_MUL
+line 14, col 21, TOKEN_IDENTIFIER, b
+line 14, col 22, TOKEN_DIV
+line 14, col 23, TOKEN_IDENTIFIER, c
+line 14, col 24, TOKEN_EQ
+line 14, col 26, TOKEN_IDENTIFIER, e
+line 14, col 27, TOKEN_ADD
+line 14, col 28, TOKEN_IDENTIFIER, d
+line 14, col 29, TOKEN_OR
+line 14, col 31, TOKEN_IDENTIFIER, a
+line 14, col 32, TOKEN_ADD
+line 14, col 33, TOKEN_IDENTIFIER, b
+line 14, col 34, TOKEN_ADD
+line 14, col 35, TOKEN_IDENTIFIER, c
+line 14, col 36, TOKEN_EQ
+line 14, col 38, TOKEN_IDENTIFIER, d
+line 14, col 39, TOKEN_ADD
+line 14, col 40, TOKEN_IDENTIFIER, e
+line 14, col 41, TOKEN_RIGHT_PARENTHESES
+line 15, col 2, TOKEN_LEFT_BRACES
+line 16, col 3, TOKEN_IDENTIFIER, flag
+line 16, col 7, TOKEN_ASSIGN
+line 16, col 8, TOKEN_INTEGER, 1
+line 16, col 9, TOKEN_SEMICOLON
+line 17, col 2, TOKEN_RIGHT_BRACES
+line 18, col 2, TOKEN_RETURN
+line 18, col 9, TOKEN_IDENTIFIER, flag
+line 18, col 13, TOKEN_SEMICOLON
+line 19, col 1, TOKEN_RIGHT_BRACES

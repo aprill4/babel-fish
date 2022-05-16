@@ -1,0 +1,74 @@
+input_file: test_2021/88_exchange_value.sy
+line 1, col 1, TOKEN_INT
+line 1, col 5, TOKEN_IDENTIFIER, n
+line 1, col 6, TOKEN_SEMICOLON
+line 3, col 1, TOKEN_INT
+line 3, col 5, TOKEN_IDENTIFIER, main
+line 3, col 9, TOKEN_LEFT_PARENTHESES
+line 3, col 10, TOKEN_RIGHT_PARENTHESES
+line 4, col 1, TOKEN_LEFT_BRACES
+line 6, col 5, TOKEN_INT
+line 6, col 9, TOKEN_IDENTIFIER, i
+line 6, col 10, TOKEN_SEMICOLON
+line 7, col 5, TOKEN_INT
+line 7, col 9, TOKEN_IDENTIFIER, j
+line 7, col 10, TOKEN_SEMICOLON
+line 10, col 5, TOKEN_IDENTIFIER, i
+line 10, col 6, TOKEN_ASSIGN
+line 10, col 7, TOKEN_IDENTIFIER, getint
+line 10, col 13, TOKEN_LEFT_PARENTHESES
+line 10, col 14, TOKEN_RIGHT_PARENTHESES
+line 10, col 15, TOKEN_SEMICOLON
+line 11, col 5, TOKEN_IDENTIFIER, j
+line 11, col 6, TOKEN_ASSIGN
+line 11, col 7, TOKEN_IDENTIFIER, getint
+line 11, col 13, TOKEN_LEFT_PARENTHESES
+line 11, col 14, TOKEN_RIGHT_PARENTHESES
+line 11, col 15, TOKEN_SEMICOLON
+line 12, col 5, TOKEN_INT
+line 12, col 9, TOKEN_IDENTIFIER, temp
+line 12, col 13, TOKEN_SEMICOLON
+line 13, col 5, TOKEN_IDENTIFIER, temp
+line 13, col 9, TOKEN_ASSIGN
+line 13, col 10, TOKEN_IDENTIFIER, i
+line 13, col 11, TOKEN_SEMICOLON
+line 14, col 5, TOKEN_IDENTIFIER, i
+line 14, col 6, TOKEN_ASSIGN
+line 14, col 7, TOKEN_IDENTIFIER, j
+line 14, col 8, TOKEN_SEMICOLON
+line 15, col 5, TOKEN_IDENTIFIER, j
+line 15, col 6, TOKEN_ASSIGN
+line 15, col 7, TOKEN_IDENTIFIER, temp
+line 15, col 11, TOKEN_SEMICOLON
+line 17, col 5, TOKEN_IDENTIFIER, putint
+line 17, col 11, TOKEN_LEFT_PARENTHESES
+line 17, col 12, TOKEN_IDENTIFIER, i
+line 17, col 13, TOKEN_RIGHT_PARENTHESES
+line 17, col 14, TOKEN_SEMICOLON
+line 18, col 5, TOKEN_IDENTIFIER, temp
+line 18, col 10, TOKEN_ASSIGN
+line 18, col 12, TOKEN_INTEGER, 10
+line 18, col 14, TOKEN_SEMICOLON
+line 19, col 5, TOKEN_IDENTIFIER, putch
+line 19, col 10, TOKEN_LEFT_PARENTHESES
+line 19, col 11, TOKEN_IDENTIFIER, temp
+line 19, col 15, TOKEN_RIGHT_PARENTHESES
+line 19, col 16, TOKEN_SEMICOLON
+line 20, col 5, TOKEN_IDENTIFIER, putint
+line 20, col 11, TOKEN_LEFT_PARENTHESES
+line 20, col 12, TOKEN_IDENTIFIER, j
+line 20, col 13, TOKEN_RIGHT_PARENTHESES
+line 20, col 14, TOKEN_SEMICOLON
+line 21, col 5, TOKEN_IDENTIFIER, temp
+line 21, col 10, TOKEN_ASSIGN
+line 21, col 12, TOKEN_INTEGER, 10
+line 21, col 14, TOKEN_SEMICOLON
+line 22, col 5, TOKEN_IDENTIFIER, putch
+line 22, col 10, TOKEN_LEFT_PARENTHESES
+line 22, col 11, TOKEN_IDENTIFIER, temp
+line 22, col 15, TOKEN_RIGHT_PARENTHESES
+line 22, col 16, TOKEN_SEMICOLON
+line 24, col 5, TOKEN_RETURN
+line 24, col 12, TOKEN_INTEGER, 0
+line 24, col 13, TOKEN_SEMICOLON
+line 25, col 1, TOKEN_RIGHT_BRACES

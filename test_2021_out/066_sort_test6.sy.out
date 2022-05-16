@@ -1,0 +1,351 @@
+input_file: test_2021/066_sort_test6.sy
+line 1, col 1, TOKEN_INT
+line 1, col 5, TOKEN_IDENTIFIER, n
+line 1, col 6, TOKEN_SEMICOLON
+line 3, col 1, TOKEN_INT
+line 3, col 5, TOKEN_IDENTIFIER, counting_sort
+line 3, col 18, TOKEN_LEFT_PARENTHESES
+line 3, col 19, TOKEN_INT
+line 3, col 23, TOKEN_IDENTIFIER, ini_arr
+line 3, col 30, TOKEN_LEFT_BRACKETS
+line 3, col 31, TOKEN_RIGHT_BRACKETS
+line 3, col 32, TOKEN_COMMA
+line 3, col 34, TOKEN_INT
+line 3, col 38, TOKEN_IDENTIFIER, sorted_arr
+line 3, col 48, TOKEN_LEFT_BRACKETS
+line 3, col 49, TOKEN_RIGHT_BRACKETS
+line 3, col 50, TOKEN_COMMA
+line 3, col 52, TOKEN_INT
+line 3, col 56, TOKEN_IDENTIFIER, n
+line 3, col 57, TOKEN_RIGHT_PARENTHESES
+line 3, col 59, TOKEN_LEFT_BRACES
+line 4, col 2, TOKEN_INT
+line 4, col 6, TOKEN_IDENTIFIER, count_arr
+line 4, col 15, TOKEN_LEFT_BRACKETS
+line 4, col 16, TOKEN_INTEGER, 10
+line 4, col 18, TOKEN_RIGHT_BRACKETS
+line 4, col 19, TOKEN_SEMICOLON
+line 5, col 2, TOKEN_INT
+line 5, col 6, TOKEN_IDENTIFIER, i
+line 5, col 7, TOKEN_SEMICOLON
+line 6, col 5, TOKEN_INT
+line 6, col 9, TOKEN_IDENTIFIER, j
+line 6, col 10, TOKEN_SEMICOLON
+line 7, col 5, TOKEN_INT
+line 7, col 9, TOKEN_IDENTIFIER, k
+line 7, col 10, TOKEN_SEMICOLON
+line 8, col 5, TOKEN_IDENTIFIER, k
+line 8, col 7, TOKEN_ASSIGN
+line 8, col 9, TOKEN_INTEGER, 0
+line 8, col 10, TOKEN_SEMICOLON
+line 9, col 5, TOKEN_IDENTIFIER, i
+line 9, col 7, TOKEN_ASSIGN
+line 9, col 9, TOKEN_INTEGER, 0
+line 9, col 10, TOKEN_SEMICOLON
+line 10, col 5, TOKEN_IDENTIFIER, j
+line 10, col 7, TOKEN_ASSIGN
+line 10, col 9, TOKEN_INTEGER, 0
+line 10, col 10, TOKEN_SEMICOLON
+line 11, col 2, TOKEN_WHILE
+line 11, col 7, TOKEN_LEFT_PARENTHESES
+line 11, col 8, TOKEN_IDENTIFIER, k
+line 11, col 10, TOKEN_LT
+line 11, col 12, TOKEN_INTEGER, 10
+line 11, col 14, TOKEN_RIGHT_PARENTHESES
+line 11, col 15, TOKEN_LEFT_BRACES
+line 12, col 3, TOKEN_IDENTIFIER, count_arr
+line 12, col 12, TOKEN_LEFT_BRACKETS
+line 12, col 13, TOKEN_IDENTIFIER, k
+line 12, col 14, TOKEN_RIGHT_BRACKETS
+line 12, col 16, TOKEN_ASSIGN
+line 12, col 18, TOKEN_INTEGER, 0
+line 12, col 19, TOKEN_SEMICOLON
+line 13, col 9, TOKEN_IDENTIFIER, k
+line 13, col 11, TOKEN_ASSIGN
+line 13, col 13, TOKEN_IDENTIFIER, k
+line 13, col 15, TOKEN_ADD
+line 13, col 17, TOKEN_INTEGER, 1
+line 13, col 18, TOKEN_SEMICOLON
+line 14, col 5, TOKEN_RIGHT_BRACES
+line 15, col 5, TOKEN_WHILE
+line 15, col 10, TOKEN_LEFT_PARENTHESES
+line 15, col 11, TOKEN_IDENTIFIER, i
+line 15, col 13, TOKEN_LT
+line 15, col 15, TOKEN_IDENTIFIER, n
+line 15, col 16, TOKEN_RIGHT_PARENTHESES
+line 16, col 5, TOKEN_LEFT_BRACES
+line 17, col 3, TOKEN_IDENTIFIER, count_arr
+line 17, col 12, TOKEN_LEFT_BRACKETS
+line 17, col 13, TOKEN_IDENTIFIER, ini_arr
+line 17, col 20, TOKEN_LEFT_BRACKETS
+line 17, col 21, TOKEN_IDENTIFIER, i
+line 17, col 22, TOKEN_RIGHT_BRACKETS
+line 17, col 23, TOKEN_RIGHT_BRACKETS
+line 17, col 25, TOKEN_ASSIGN
+line 17, col 27, TOKEN_IDENTIFIER, count_arr
+line 17, col 36, TOKEN_LEFT_BRACKETS
+line 17, col 37, TOKEN_IDENTIFIER, ini_arr
+line 17, col 44, TOKEN_LEFT_BRACKETS
+line 17, col 45, TOKEN_IDENTIFIER, i
+line 17, col 46, TOKEN_RIGHT_BRACKETS
+line 17, col 47, TOKEN_RIGHT_BRACKETS
+line 17, col 49, TOKEN_ADD
+line 17, col 51, TOKEN_INTEGER, 1
+line 17, col 52, TOKEN_SEMICOLON
+line 18, col 9, TOKEN_IDENTIFIER, i
+line 18, col 11, TOKEN_ASSIGN
+line 18, col 13, TOKEN_IDENTIFIER, i
+line 18, col 15, TOKEN_ADD
+line 18, col 17, TOKEN_INTEGER, 1
+line 18, col 18, TOKEN_SEMICOLON
+line 19, col 5, TOKEN_RIGHT_BRACES
+line 20, col 5, TOKEN_IDENTIFIER, k
+line 20, col 7, TOKEN_ASSIGN
+line 20, col 9, TOKEN_INTEGER, 1
+line 20, col 10, TOKEN_SEMICOLON
+line 21, col 2, TOKEN_WHILE
+line 21, col 7, TOKEN_LEFT_PARENTHESES
+line 21, col 8, TOKEN_IDENTIFIER, k
+line 21, col 10, TOKEN_LT
+line 21, col 12, TOKEN_INTEGER, 10
+line 21, col 14, TOKEN_RIGHT_PARENTHESES
+line 21, col 15, TOKEN_LEFT_BRACES
+line 22, col 3, TOKEN_IDENTIFIER, count_arr
+line 22, col 12, TOKEN_LEFT_BRACKETS
+line 22, col 13, TOKEN_IDENTIFIER, k
+line 22, col 14, TOKEN_RIGHT_BRACKETS
+line 22, col 16, TOKEN_ASSIGN
+line 22, col 18, TOKEN_IDENTIFIER, count_arr
+line 22, col 27, TOKEN_LEFT_BRACKETS
+line 22, col 28, TOKEN_IDENTIFIER, k
+line 22, col 29, TOKEN_RIGHT_BRACKETS
+line 22, col 31, TOKEN_ADD
+line 22, col 33, TOKEN_IDENTIFIER, count_arr
+line 22, col 42, TOKEN_LEFT_BRACKETS
+line 22, col 43, TOKEN_IDENTIFIER, k
+line 22, col 45, TOKEN_SUB
+line 22, col 47, TOKEN_INTEGER, 1
+line 22, col 48, TOKEN_RIGHT_BRACKETS
+line 22, col 49, TOKEN_SEMICOLON
+line 23, col 9, TOKEN_IDENTIFIER, k
+line 23, col 11, TOKEN_ASSIGN
+line 23, col 13, TOKEN_IDENTIFIER, k
+line 23, col 15, TOKEN_ADD
+line 23, col 17, TOKEN_INTEGER, 1
+line 23, col 18, TOKEN_SEMICOLON
+line 24, col 5, TOKEN_RIGHT_BRACES
+line 25, col 5, TOKEN_IDENTIFIER, j
+line 25, col 7, TOKEN_ASSIGN
+line 25, col 9, TOKEN_IDENTIFIER, n
+line 25, col 10, TOKEN_SEMICOLON
+line 26, col 2, TOKEN_WHILE
+line 26, col 7, TOKEN_LEFT_PARENTHESES
+line 26, col 9, TOKEN_IDENTIFIER, j
+line 26, col 11, TOKEN_GT
+line 26, col 13, TOKEN_INTEGER, 0
+line 26, col 14, TOKEN_RIGHT_PARENTHESES
+line 26, col 15, TOKEN_LEFT_BRACES
+line 27, col 9, TOKEN_IDENTIFIER, count_arr
+line 27, col 18, TOKEN_LEFT_BRACKETS
+line 27, col 19, TOKEN_IDENTIFIER, ini_arr
+line 27, col 26, TOKEN_LEFT_BRACKETS
+line 27, col 27, TOKEN_IDENTIFIER, j
+line 27, col 29, TOKEN_SUB
+line 27, col 31, TOKEN_INTEGER, 1
+line 27, col 32, TOKEN_RIGHT_BRACKETS
+line 27, col 33, TOKEN_RIGHT_BRACKETS
+line 27, col 35, TOKEN_ASSIGN
+line 27, col 37, TOKEN_IDENTIFIER, count_arr
+line 27, col 46, TOKEN_LEFT_BRACKETS
+line 27, col 47, TOKEN_IDENTIFIER, ini_arr
+line 27, col 54, TOKEN_LEFT_BRACKETS
+line 27, col 55, TOKEN_IDENTIFIER, j
+line 27, col 57, TOKEN_SUB
+line 27, col 59, TOKEN_INTEGER, 1
+line 27, col 60, TOKEN_RIGHT_BRACKETS
+line 27, col 61, TOKEN_RIGHT_BRACKETS
+line 27, col 63, TOKEN_SUB
+line 27, col 65, TOKEN_INTEGER, 1
+line 27, col 66, TOKEN_SEMICOLON
+line 28, col 3, TOKEN_IDENTIFIER, sorted_arr
+line 28, col 13, TOKEN_LEFT_BRACKETS
+line 28, col 14, TOKEN_IDENTIFIER, count_arr
+line 28, col 23, TOKEN_LEFT_BRACKETS
+line 28, col 24, TOKEN_IDENTIFIER, ini_arr
+line 28, col 31, TOKEN_LEFT_BRACKETS
+line 28, col 32, TOKEN_IDENTIFIER, j
+line 28, col 34, TOKEN_SUB
+line 28, col 36, TOKEN_INTEGER, 1
+line 28, col 37, TOKEN_RIGHT_BRACKETS
+line 28, col 38, TOKEN_RIGHT_BRACKETS
+line 28, col 39, TOKEN_RIGHT_BRACKETS
+line 28, col 41, TOKEN_ASSIGN
+line 28, col 43, TOKEN_IDENTIFIER, ini_arr
+line 28, col 50, TOKEN_LEFT_BRACKETS
+line 28, col 51, TOKEN_IDENTIFIER, j
+line 28, col 53, TOKEN_SUB
+line 28, col 55, TOKEN_INTEGER, 1
+line 28, col 56, TOKEN_RIGHT_BRACKETS
+line 28, col 57, TOKEN_SEMICOLON
+line 29, col 9, TOKEN_IDENTIFIER, j
+line 29, col 11, TOKEN_ASSIGN
+line 29, col 13, TOKEN_IDENTIFIER, j
+line 29, col 15, TOKEN_SUB
+line 29, col 17, TOKEN_INTEGER, 1
+line 29, col 18, TOKEN_SEMICOLON
+line 30, col 5, TOKEN_RIGHT_BRACES
+line 31, col 5, TOKEN_RETURN
+line 31, col 12, TOKEN_INTEGER, 0
+line 31, col 13, TOKEN_SEMICOLON
+line 32, col 1, TOKEN_RIGHT_BRACES
+line 35, col 1, TOKEN_INT
+line 35, col 5, TOKEN_IDENTIFIER, main
+line 35, col 9, TOKEN_LEFT_PARENTHESES
+line 35, col 10, TOKEN_RIGHT_PARENTHESES
+line 35, col 11, TOKEN_LEFT_BRACES
+line 36, col 5, TOKEN_IDENTIFIER, n
+line 36, col 7, TOKEN_ASSIGN
+line 36, col 9, TOKEN_INTEGER, 10
+line 36, col 11, TOKEN_SEMICOLON
+line 37, col 5, TOKEN_INT
+line 37, col 9, TOKEN_IDENTIFIER, a
+line 37, col 10, TOKEN_LEFT_BRACKETS
+line 37, col 11, TOKEN_INTEGER, 10
+line 37, col 13, TOKEN_RIGHT_BRACKETS
+line 37, col 14, TOKEN_SEMICOLON
+line 38, col 5, TOKEN_IDENTIFIER, a
+line 38, col 6, TOKEN_LEFT_BRACKETS
+line 38, col 7, TOKEN_INTEGER, 0
+line 38, col 8, TOKEN_RIGHT_BRACKETS
+line 38, col 9, TOKEN_ASSIGN
+line 38, col 10, TOKEN_INTEGER, 4
+line 38, col 11, TOKEN_SEMICOLON
+line 38, col 12, TOKEN_IDENTIFIER, a
+line 38, col 13, TOKEN_LEFT_BRACKETS
+line 38, col 14, TOKEN_INTEGER, 1
+line 38, col 15, TOKEN_RIGHT_BRACKETS
+line 38, col 16, TOKEN_ASSIGN
+line 38, col 17, TOKEN_INTEGER, 3
+line 38, col 18, TOKEN_SEMICOLON
+line 38, col 19, TOKEN_IDENTIFIER, a
+line 38, col 20, TOKEN_LEFT_BRACKETS
+line 38, col 21, TOKEN_INTEGER, 2
+line 38, col 22, TOKEN_RIGHT_BRACKETS
+line 38, col 23, TOKEN_ASSIGN
+line 38, col 24, TOKEN_INTEGER, 9
+line 38, col 25, TOKEN_SEMICOLON
+line 38, col 26, TOKEN_IDENTIFIER, a
+line 38, col 27, TOKEN_LEFT_BRACKETS
+line 38, col 28, TOKEN_INTEGER, 3
+line 38, col 29, TOKEN_RIGHT_BRACKETS
+line 38, col 30, TOKEN_ASSIGN
+line 38, col 31, TOKEN_INTEGER, 2
+line 38, col 32, TOKEN_SEMICOLON
+line 38, col 33, TOKEN_IDENTIFIER, a
+line 38, col 34, TOKEN_LEFT_BRACKETS
+line 38, col 35, TOKEN_INTEGER, 4
+line 38, col 36, TOKEN_RIGHT_BRACKETS
+line 38, col 37, TOKEN_ASSIGN
+line 38, col 38, TOKEN_INTEGER, 0
+line 38, col 39, TOKEN_SEMICOLON
+line 39, col 5, TOKEN_IDENTIFIER, a
+line 39, col 6, TOKEN_LEFT_BRACKETS
+line 39, col 7, TOKEN_INTEGER, 5
+line 39, col 8, TOKEN_RIGHT_BRACKETS
+line 39, col 9, TOKEN_ASSIGN
+line 39, col 10, TOKEN_INTEGER, 1
+line 39, col 11, TOKEN_SEMICOLON
+line 39, col 12, TOKEN_IDENTIFIER, a
+line 39, col 13, TOKEN_LEFT_BRACKETS
+line 39, col 14, TOKEN_INTEGER, 6
+line 39, col 15, TOKEN_RIGHT_BRACKETS
+line 39, col 16, TOKEN_ASSIGN
+line 39, col 17, TOKEN_INTEGER, 6
+line 39, col 18, TOKEN_SEMICOLON
+line 39, col 19, TOKEN_IDENTIFIER, a
+line 39, col 20, TOKEN_LEFT_BRACKETS
+line 39, col 21, TOKEN_INTEGER, 7
+line 39, col 22, TOKEN_RIGHT_BRACKETS
+line 39, col 23, TOKEN_ASSIGN
+line 39, col 24, TOKEN_INTEGER, 5
+line 39, col 25, TOKEN_SEMICOLON
+line 39, col 26, TOKEN_IDENTIFIER, a
+line 39, col 27, TOKEN_LEFT_BRACKETS
+line 39, col 28, TOKEN_INTEGER, 8
+line 39, col 29, TOKEN_RIGHT_BRACKETS
+line 39, col 30, TOKEN_ASSIGN
+line 39, col 31, TOKEN_INTEGER, 7
+line 39, col 32, TOKEN_SEMICOLON
+line 39, col 33, TOKEN_IDENTIFIER, a
+line 39, col 34, TOKEN_LEFT_BRACKETS
+line 39, col 35, TOKEN_INTEGER, 9
+line 39, col 36, TOKEN_RIGHT_BRACKETS
+line 39, col 37, TOKEN_ASSIGN
+line 39, col 38, TOKEN_INTEGER, 8
+line 39, col 39, TOKEN_SEMICOLON
+line 40, col 5, TOKEN_INT
+line 40, col 9, TOKEN_IDENTIFIER, i
+line 40, col 10, TOKEN_SEMICOLON
+line 41, col 5, TOKEN_IDENTIFIER, i
+line 41, col 7, TOKEN_ASSIGN
+line 41, col 9, TOKEN_INTEGER, 0
+line 41, col 10, TOKEN_SEMICOLON
+line 42, col 5, TOKEN_INT
+line 42, col 9, TOKEN_IDENTIFIER, b
+line 42, col 10, TOKEN_LEFT_BRACKETS
+line 42, col 11, TOKEN_INTEGER, 10
+line 42, col 13, TOKEN_RIGHT_BRACKETS
+line 42, col 14, TOKEN_SEMICOLON
+line 43, col 5, TOKEN_IDENTIFIER, i
+line 43, col 7, TOKEN_ASSIGN
+line 43, col 9, TOKEN_IDENTIFIER, counting_sort
+line 43, col 22, TOKEN_LEFT_PARENTHESES
+line 43, col 23, TOKEN_IDENTIFIER, a
+line 43, col 24, TOKEN_COMMA
+line 43, col 26, TOKEN_IDENTIFIER, b
+line 43, col 27, TOKEN_COMMA
+line 43, col 29, TOKEN_IDENTIFIER, n
+line 43, col 30, TOKEN_RIGHT_PARENTHESES
+line 43, col 31, TOKEN_SEMICOLON
+line 44, col 5, TOKEN_WHILE
+line 44, col 11, TOKEN_LEFT_PARENTHESES
+line 44, col 12, TOKEN_IDENTIFIER, i
+line 44, col 14, TOKEN_LT
+line 44, col 16, TOKEN_IDENTIFIER, n
+line 44, col 17, TOKEN_RIGHT_PARENTHESES
+line 44, col 19, TOKEN_LEFT_BRACES
+line 45, col 9, TOKEN_INT
+line 45, col 13, TOKEN_IDENTIFIER, tmp
+line 45, col 16, TOKEN_SEMICOLON
+line 46, col 9, TOKEN_IDENTIFIER, tmp
+line 46, col 13, TOKEN_ASSIGN
+line 46, col 15, TOKEN_IDENTIFIER, b
+line 46, col 16, TOKEN_LEFT_BRACKETS
+line 46, col 17, TOKEN_IDENTIFIER, i
+line 46, col 18, TOKEN_RIGHT_BRACKETS
+line 46, col 19, TOKEN_SEMICOLON
+line 47, col 9, TOKEN_IDENTIFIER, putint
+line 47, col 15, TOKEN_LEFT_PARENTHESES
+line 47, col 16, TOKEN_IDENTIFIER, tmp
+line 47, col 19, TOKEN_RIGHT_PARENTHESES
+line 47, col 20, TOKEN_SEMICOLON
+line 48, col 9, TOKEN_IDENTIFIER, tmp
+line 48, col 13, TOKEN_ASSIGN
+line 48, col 15, TOKEN_INTEGER, 10
+line 48, col 17, TOKEN_SEMICOLON
+line 49, col 9, TOKEN_IDENTIFIER, putch
+line 49, col 14, TOKEN_LEFT_PARENTHESES
+line 49, col 15, TOKEN_IDENTIFIER, tmp
+line 49, col 18, TOKEN_RIGHT_PARENTHESES
+line 49, col 19, TOKEN_SEMICOLON
+line 50, col 9, TOKEN_IDENTIFIER, i
+line 50, col 11, TOKEN_ASSIGN
+line 50, col 13, TOKEN_IDENTIFIER, i
+line 50, col 15, TOKEN_ADD
+line 50, col 17, TOKEN_INTEGER, 1
+line 50, col 18, TOKEN_SEMICOLON
+line 51, col 5, TOKEN_RIGHT_BRACES
+line 52, col 5, TOKEN_RETURN
+line 52, col 12, TOKEN_INTEGER, 0
+line 52, col 13, TOKEN_SEMICOLON
+line 53, col 1, TOKEN_RIGHT_BRACES

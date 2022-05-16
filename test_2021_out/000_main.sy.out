@@ -1,0 +1,10 @@
+input_file: test_2021/000_main.sy
+line 1, col 1, TOKEN_INT
+line 1, col 5, TOKEN_IDENTIFIER, main
+line 1, col 9, TOKEN_LEFT_PARENTHESES
+line 1, col 10, TOKEN_RIGHT_PARENTHESES
+line 1, col 11, TOKEN_LEFT_BRACES
+line 2, col 5, TOKEN_RETURN
+line 2, col 12, TOKEN_INTEGER, 3
+line 2, col 13, TOKEN_SEMICOLON
+line 3, col 1, TOKEN_RIGHT_BRACES

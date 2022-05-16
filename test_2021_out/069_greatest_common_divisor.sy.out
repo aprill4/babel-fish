@@ -1,0 +1,83 @@
+input_file: test_2021/069_greatest_common_divisor.sy
+line 1, col 1, TOKEN_INT
+line 1, col 5, TOKEN_IDENTIFIER, fun
+line 1, col 8, TOKEN_LEFT_PARENTHESES
+line 1, col 9, TOKEN_INT
+line 1, col 13, TOKEN_IDENTIFIER, m
+line 1, col 14, TOKEN_COMMA
+line 1, col 15, TOKEN_INT
+line 1, col 19, TOKEN_IDENTIFIER, n
+line 1, col 20, TOKEN_RIGHT_PARENTHESES
+line 1, col 21, TOKEN_LEFT_BRACES
+line 2, col 2, TOKEN_INT
+line 2, col 6, TOKEN_IDENTIFIER, rem
+line 2, col 9, TOKEN_SEMICOLON
+line 3, col 2, TOKEN_WHILE
+line 3, col 7, TOKEN_LEFT_PARENTHESES
+line 3, col 8, TOKEN_IDENTIFIER, n
+line 3, col 10, TOKEN_GT
+line 3, col 12, TOKEN_INTEGER, 0
+line 3, col 13, TOKEN_RIGHT_PARENTHESES
+line 3, col 14, TOKEN_LEFT_BRACES
+line 4, col 3, TOKEN_IDENTIFIER, rem
+line 4, col 7, TOKEN_ASSIGN
+line 4, col 9, TOKEN_IDENTIFIER, m
+line 4, col 11, TOKEN_MOD
+line 4, col 13, TOKEN_IDENTIFIER, n
+line 4, col 14, TOKEN_SEMICOLON
+line 5, col 3, TOKEN_IDENTIFIER, m
+line 5, col 5, TOKEN_ASSIGN
+line 5, col 7, TOKEN_IDENTIFIER, n
+line 5, col 8, TOKEN_SEMICOLON
+line 6, col 3, TOKEN_IDENTIFIER, n
+line 6, col 5, TOKEN_ASSIGN
+line 6, col 7, TOKEN_IDENTIFIER, rem
+line 6, col 10, TOKEN_SEMICOLON
+line 7, col 2, TOKEN_RIGHT_BRACES
+line 8, col 2, TOKEN_RETURN
+line 8, col 9, TOKEN_IDENTIFIER, m
+line 8, col 10, TOKEN_SEMICOLON
+line 9, col 1, TOKEN_RIGHT_BRACES
+line 10, col 1, TOKEN_INT
+line 10, col 5, TOKEN_IDENTIFIER, main
+line 10, col 9, TOKEN_LEFT_PARENTHESES
+line 10, col 10, TOKEN_RIGHT_PARENTHESES
+line 10, col 11, TOKEN_LEFT_BRACES
+line 11, col 2, TOKEN_INT
+line 11, col 6, TOKEN_IDENTIFIER, n
+line 11, col 7, TOKEN_COMMA
+line 11, col 8, TOKEN_IDENTIFIER, m
+line 11, col 9, TOKEN_SEMICOLON
+line 12, col 2, TOKEN_INT
+line 12, col 6, TOKEN_IDENTIFIER, num
+line 12, col 9, TOKEN_SEMICOLON
+line 13, col 2, TOKEN_IDENTIFIER, m
+line 13, col 3, TOKEN_ASSIGN
+line 13, col 4, TOKEN_IDENTIFIER, getint
+line 13, col 10, TOKEN_LEFT_PARENTHESES
+line 13, col 11, TOKEN_RIGHT_PARENTHESES
+line 13, col 12, TOKEN_SEMICOLON
+line 14, col 2, TOKEN_IDENTIFIER, n
+line 14, col 3, TOKEN_ASSIGN
+line 14, col 4, TOKEN_IDENTIFIER, getint
+line 14, col 10, TOKEN_LEFT_PARENTHESES
+line 14, col 11, TOKEN_RIGHT_PARENTHESES
+line 14, col 12, TOKEN_SEMICOLON
+line 15, col 2, TOKEN_IDENTIFIER, num
+line 15, col 5, TOKEN_ASSIGN
+line 15, col 6, TOKEN_IDENTIFIER, fun
+line 15, col 9, TOKEN_LEFT_PARENTHESES
+line 15, col 10, TOKEN_IDENTIFIER, m
+line 15, col 11, TOKEN_COMMA
+line 15, col 12, TOKEN_IDENTIFIER, n
+line 15, col 13, TOKEN_RIGHT_PARENTHESES
+line 15, col 14, TOKEN_SEMICOLON
+line 16, col 2, TOKEN_IDENTIFIER, putint
+line 16, col 8, TOKEN_LEFT_PARENTHESES
+line 16, col 9, TOKEN_IDENTIFIER, num
+line 16, col 12, TOKEN_RIGHT_PARENTHESES
+line 16, col 13, TOKEN_SEMICOLON
+line 18, col 2, TOKEN_RETURN
+line 18, col 9, TOKEN_INTEGER, 0
+line 18, col 10, TOKEN_SEMICOLON
+line 19, col 1, TOKEN_RIGHT_BRACES

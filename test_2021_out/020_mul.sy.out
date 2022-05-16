@@ -1,0 +1,25 @@
+input_file: test_2021/020_mul.sy
+line 2, col 1, TOKEN_INT
+line 2, col 5, TOKEN_IDENTIFIER, main
+line 2, col 9, TOKEN_LEFT_PARENTHESES
+line 2, col 10, TOKEN_RIGHT_PARENTHESES
+line 2, col 11, TOKEN_LEFT_BRACES
+line 3, col 5, TOKEN_INT
+line 3, col 9, TOKEN_IDENTIFIER, a
+line 3, col 10, TOKEN_COMMA
+line 3, col 12, TOKEN_IDENTIFIER, b
+line 3, col 13, TOKEN_SEMICOLON
+line 4, col 5, TOKEN_IDENTIFIER, a
+line 4, col 7, TOKEN_ASSIGN
+line 4, col 9, TOKEN_INTEGER, 10
+line 4, col 11, TOKEN_SEMICOLON
+line 5, col 5, TOKEN_IDENTIFIER, b
+line 5, col 7, TOKEN_ASSIGN
+line 5, col 9, TOKEN_INTEGER, 5
+line 5, col 10, TOKEN_SEMICOLON
+line 6, col 5, TOKEN_RETURN
+line 6, col 12, TOKEN_IDENTIFIER, a
+line 6, col 14, TOKEN_MUL
+line 6, col 16, TOKEN_IDENTIFIER, b
+line 6, col 17, TOKEN_SEMICOLON
+line 7, col 1, TOKEN_RIGHT_BRACES
