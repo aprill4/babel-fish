@@ -55,15 +55,19 @@ typedef struct Token{
     Token() = default;
     Token(TokenType _type, int _line, int _col): type(_type), line(_line), col(_col){
     }
+
     Token(const Token& token): Token(token.type, token.line, token.col){
         this->data = token.data;
     }
+
     Token(TokenType _type, int _line, int _col, int _int_val): Token(_type, _line, _col){
         data.int_val = _int_val;
     }
+
     Token(TokenType _type, int _line, int _col, float _float_val): Token(_type, _line, _col){
         data.float_val = _float_val;
     }    
+
     Token(TokenType _type, int _line, int _col, const char* _identifier): Token(_type, _line, _col){
         data.identifier = new char[strlen(_identifier)];
         strcpy(data.identifier, _identifier);
@@ -73,7 +77,6 @@ typedef struct Token{
     TokenType type;
     int line;
     int col;
-    //int pos_end;
 
     union {
         int int_val;

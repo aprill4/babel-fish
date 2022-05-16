@@ -123,11 +123,11 @@ MULTILINE_COMMENT "/*"
 
 {TOKEN_IDENTIFIER}	{Token token(TOKEN_IDENTIFIER, line, COL, yytext); SAVE_VAL(token); return TOKEN_IDENTIFIER;}
 
-{TOKEN_FLOATPOINT}	{Token token(TOKEN_FLOATPOINT, line, COL, static_cast<float>(strtod(yytext,NULL))); SAVE_VAL(token); return TOKEN_FLOATPOINT;}
+{TOKEN_FLOATPOINT}	{Token token(TOKEN_FLOATPOINT, line, COL, static_cast<float>(strtod(yytext, NULL))); SAVE_VAL(token); return TOKEN_FLOATPOINT;}
 
-{TOKEN_INTEGER} 		{Token token(TOKEN_INTEGER, line, COL, static_cast<int>(strtol(yytext, NULL, 0))); SAVE_VAL(token); return TOKEN_INTEGER;}
+{TOKEN_INTEGER}  	{Token token(TOKEN_INTEGER, line, COL, static_cast<int>(strtol(yytext, NULL, 0))); SAVE_VAL(token); return TOKEN_INTEGER;}
 
-. 					printf("other token: %s\n", yytext);
+. 					printf("unrecognized token: %s\n", yytext);
 
 %%
 
