@@ -45,6 +45,8 @@ DEC_CONST {NONZERO_DIGIT}{DIGIT}*
 OCT_CONST {OCT_PREFIX}{OCT_DIGIT}*
 HEX_CONST {HEX_PREFIX}{HEX_DIGIT}*
 
+TOKEN_INTEGER {DEC_CONST}|{OCT_CONST}|{HEX_CONST}
+
 DEC_FLOATPOINT ({DIGIT}*[.]{DIGIT}+|{DIGIT}+[.])([eE][+-]?{DIGIT}+)?|{DIGIT}+([eE][+-]?{DIGIT}+)
 HEX_FLOATPOINT {HEX_PREFIX}({HEX_DIGIT}*[.]{HEX_DIGIT}+|{HEX_DIGIT}+[.])([pP][+-]?{DIGIT}+)|{HEX_PREFIX}({HEX_DIGIT}+)([pP][+-]?{DIGIT}+)
 TOKEN_FLOATPOINT  {DEC_FLOATPOINT}|{HEX_FLOATPOINT}
@@ -123,11 +125,7 @@ MULTILINE_COMMENT "/*"
 
 {TOKEN_FLOATPOINT}	{Token token(TOKEN_FLOATPOINT, line, COL, static_cast<float>(strtod(yytext,NULL))); SAVE_VAL(token); return TOKEN_FLOATPOINT;}
 
-{HEX_CONST} 		{Token token(TOKEN_INTEGER, line, COL, static_cast<int>(strtol(yytext, NULL, 16))); SAVE_VAL(token); return TOKEN_INTEGER;}
-
-{OCT_CONST} 		{Token token(TOKEN_INTEGER, line, COL, static_cast<int>(strtol(yytext, NULL, 8))); SAVE_VAL(token); return TOKEN_INTEGER;}
-
-{DEC_CONST} 		{Token token(TOKEN_INTEGER, line, COL, static_cast<int>(strtol(yytext, NULL, 10))); SAVE_VAL(token); return TOKEN_INTEGER;}
+{TOKEN_INTEGER} 		{Token token(TOKEN_INTEGER, line, COL, static_cast<int>(strtol(yytext, NULL, 0))); SAVE_VAL(token); return TOKEN_INTEGER;}
 
 . 					printf("other token: %s\n", yytext);
 
