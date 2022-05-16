@@ -1,3 +1,15 @@
+int a;
+int func(int p){
+	p = p - 1;
+	return p;
+}
+int main(){
+	int b;
+	a = 10;
+	b = func(a);
+	return b;
+}
+
 input_file: test_2021/012_func_defn.sy
 line 1, col 1, TOKEN_INT
 line 1, col 5, TOKEN_IDENTIFIER, a

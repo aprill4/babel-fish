@@ -1,3 +1,9 @@
+// test hexadecimal define
+int main(){
+    int a;
+    a = 0xf;
+    return a;
+}
 input_file: test_2021/054_hex_defn.sy
 line 2, col 1, TOKEN_INT
 line 2, col 5, TOKEN_IDENTIFIER, main

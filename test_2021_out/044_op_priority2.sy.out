@@ -1,3 +1,12 @@
+//test the priority of add and mul
+int main(){
+    int a, b, c, d;
+    a = 10;
+    b = 4;
+    c = 2;
+    d = 2;
+    return (c + a) * (b - d); 
+}
 input_file: test_2021/044_op_priority2.sy
 line 2, col 1, TOKEN_INT
 line 2, col 5, TOKEN_IDENTIFIER, main

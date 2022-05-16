@@ -1,3 +1,23 @@
+int a;
+int b;
+int c;
+int d;
+int e;
+int main()
+{
+	a=getint();
+	b=getint();
+	c=getint();
+	d=getint();
+	e=getint();
+	int flag=0;
+	if(a-b*c!=d-a/c||a*b/c==e+d||a+b+c==d+e)
+	{
+		flag=1;
+	}
+	return flag;
+}
+
 input_file: test_2021/046_op_priority4.sy
 line 1, col 1, TOKEN_INT
 line 1, col 5, TOKEN_IDENTIFIER, a

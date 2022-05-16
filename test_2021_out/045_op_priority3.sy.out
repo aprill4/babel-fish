@@ -1,3 +1,10 @@
+//test the priority of  unary operator and binary operator
+int main(){
+    int a, b;
+    a = 10;
+    b = 30;
+    return a - -5 + b + -5;
+}
 input_file: test_2021/045_op_priority3.sy
 line 2, col 1, TOKEN_INT
 line 2, col 5, TOKEN_IDENTIFIER, main

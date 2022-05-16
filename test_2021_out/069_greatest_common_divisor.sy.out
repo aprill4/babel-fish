@@ -1,3 +1,23 @@
+int fun(int m,int n){
+	int rem;			
+	while(n > 0){
+		rem = m % n;
+		m = n;
+		n = rem;
+	}
+	return m;				
+}
+int main(){
+	int n,m;
+	int num;
+	m=getint();
+	n=getint();
+	num=fun(m,n);
+	putint(num);
+
+	return 0; 
+}
+
 input_file: test_2021/069_greatest_common_divisor.sy
 line 1, col 1, TOKEN_INT
 line 1, col 5, TOKEN_IDENTIFIER, fun

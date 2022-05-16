@@ -1,3 +1,10 @@
+//test add
+int main(){
+    int a, b;
+    a = 10;
+    b = -1;
+    return a + b;
+}
 input_file: test_2021/015_add2.sy
 line 2, col 1, TOKEN_INT
 line 2, col 5, TOKEN_IDENTIFIER, main

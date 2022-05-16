@@ -1,3 +1,8 @@
+int a[10];
+int main(){
+	return 0;
+}
+
 input_file: test_2021/004_arr_defn.sy
 line 1, col 1, TOKEN_INT
 line 1, col 5, TOKEN_IDENTIFIER, a

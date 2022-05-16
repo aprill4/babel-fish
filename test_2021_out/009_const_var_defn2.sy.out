@@ -1,3 +1,9 @@
+//test const gloal var define
+const int a = 10, b = 5;
+
+int main(){
+    return b;
+}
 input_file: test_2021/009_const_var_defn2.sy
 line 2, col 1, TOKEN_CONST
 line 2, col 7, TOKEN_INT

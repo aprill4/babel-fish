@@ -1,3 +1,11 @@
+//test local var define
+int main(){
+    int a, b0, _c;
+    a = 1;
+    b0 = 2;
+    _c = 3;
+    return b0 + _c;
+}
 input_file: test_2021/003_var_defn3.sy
 line 2, col 1, TOKEN_INT
 line 2, col 5, TOKEN_IDENTIFIER, main

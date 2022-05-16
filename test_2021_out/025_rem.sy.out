@@ -1,3 +1,9 @@
+//test rem
+int main(){
+    int a;
+    a = 10;
+    return a % 3;
+}
 input_file: test_2021/025_rem.sy
 line 2, col 1, TOKEN_INT
 line 2, col 5, TOKEN_IDENTIFIER, main

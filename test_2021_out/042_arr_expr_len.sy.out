@@ -1,3 +1,15 @@
+const int N = -1;
+int arr[N + 2 * 4 - 99 / 99] = {1, 2, 33, 4, 5, 6};
+
+int main() {
+  int i = 0, sum = 0;
+  while (i < 6) {
+    sum = sum + arr[i];
+    i = i + 1;
+  }
+  return sum;
+}
+
 input_file: test_2021/042_arr_expr_len.sy
 line 1, col 1, TOKEN_CONST
 line 1, col 7, TOKEN_INT

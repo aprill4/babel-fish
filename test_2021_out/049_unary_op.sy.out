@@ -1,3 +1,14 @@
+int main() {
+    int a;
+    a = 10;
+    if (+-!!!a) {
+        a = - - -1;
+    }
+    else {
+        a = 0;
+    }
+    return a;
+}
 input_file: test_2021/049_unary_op.sy
 line 1, col 1, TOKEN_INT
 line 1, col 5, TOKEN_IDENTIFIER, main

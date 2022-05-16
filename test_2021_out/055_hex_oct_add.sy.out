@@ -1,3 +1,10 @@
+//test add of hex and oct
+int main(){
+    int a, b;
+    a = 0xf;
+    b = 0xc;
+    return a + b + 075;
+}
 input_file: test_2021/055_hex_oct_add.sy
 line 2, col 1, TOKEN_INT
 line 2, col 5, TOKEN_IDENTIFIER, main

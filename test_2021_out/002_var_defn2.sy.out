@@ -1,3 +1,11 @@
+//test domain of global var define and local define
+int a = 3;
+int b = 5;
+
+int main(){
+    int a = 5;
+    return a + b;
+}
 input_file: test_2021/002_var_defn2.sy
 line 2, col 1, TOKEN_INT
 line 2, col 5, TOKEN_IDENTIFIER, a

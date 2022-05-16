@@ -1,3 +1,11 @@
+int defn(){
+    return 4;
+}
+
+int main(){
+    int a=defn();
+    return a;
+}
 input_file: test_2021/013_var_defn_func.sy
 line 1, col 1, TOKEN_INT
 line 1, col 5, TOKEN_IDENTIFIER, defn

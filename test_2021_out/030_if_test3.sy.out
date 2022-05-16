@@ -1,3 +1,22 @@
+// test if-if-else
+int ififElse() {
+  int a;
+  a = 5;
+  int b;
+  b = 10;
+  if(a == 5)
+    if (b == 10) 
+      a = 25;
+    else 
+      a = a + 15;
+    
+  return (a);
+}
+
+int main(){
+  return (ififElse());
+}
+
 input_file: test_2021/030_if_test3.sy
 line 2, col 1, TOKEN_INT
 line 2, col 5, TOKEN_IDENTIFIER, ififElse

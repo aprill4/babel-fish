@@ -1,3 +1,19 @@
+//test continue
+int main(){
+    int i;
+    i = 0;
+    int sum;
+    sum = 0;
+    while(i < 100){
+        if(i == 50){
+            i = i + 1;
+            continue;
+        }
+        sum = sum + i;
+        i = i + 1;
+    }
+    return sum;
+}
 input_file: test_2021/038_continue.sy
 line 2, col 1, TOKEN_INT
 line 2, col 5, TOKEN_IDENTIFIER, main

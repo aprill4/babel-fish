@@ -1,3 +1,29 @@
+int n;
+
+int main()
+{
+    //newline=10;
+    int i;
+    int j;
+    //m = 1478;
+    //int t;
+    i=getint();
+    j=getint();
+    int temp;
+    temp=i;
+    i=j;
+    j=temp;
+
+    putint(i);
+    temp = 10;
+    putch(temp);
+    putint(j);
+    temp = 10;
+    putch(temp);
+    
+    return 0;
+}
+
 input_file: test_2021/88_exchange_value.sy
 line 1, col 1, TOKEN_INT
 line 1, col 5, TOKEN_IDENTIFIER, n
