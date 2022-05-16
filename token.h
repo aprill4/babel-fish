@@ -2,6 +2,7 @@
 #include <string.h>
 
 #define TOKEN_ITEMS(F) \
+	F(START) \
     F(TOKEN_ADD) \
     F(TOKEN_SUB) \
     F(TOKEN_MUL) \
@@ -36,7 +37,6 @@
     F(TOKEN_LEFT_BRACES) \
     F(TOKEN_RIGHT_BRACES) \
     F(TOKEN_EOF) \
-    F(TOKEN_OTHER) \
     F(TOKEN_IDENTIFIER) \
     F(TOKEN_INTEGER) \
     F(TOKEN_FLOATPOINT)

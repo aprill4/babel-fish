@@ -54,8 +54,7 @@ TOKEN_RIGHT_BRACKETS \]
 TOKEN_LEFT_BRACES \{
 TOKEN_RIGHT_BRACES \}
 
-TAB [\t]
-SPACE [ ]
+WHITESPACE [ \t\r]+
 NEWLINE [\n]
 
 NONZERO_DIGIT [1-9]
@@ -332,8 +331,9 @@ MULTILINE_COMMENT "/*"
     return TOKEN_INTEGER;}
 
 {NEWLINE} { line++; col = 1;}
-{SPACE} {col++;}
-{TAB} {col++;}
+{WHITESPACE} {col++;}
+
+. {printf("other token: %s\n", yytext);}
 
 %%
 

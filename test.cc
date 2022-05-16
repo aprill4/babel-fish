@@ -1,4 +1,3 @@
-&&
 int main() {
 	int b_ = 89 - 43;
 	const int c = 5;
