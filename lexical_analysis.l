@@ -23,11 +23,12 @@ int col = 1;
 						   }               \
 					   }                   
 
-#define COL(yytext) col - strlen(yytext)
+#define COL col - strlen(yytext)
 
-#define TOKEN(type, yytext) Token(type, line, COL(yytext))
+#define SAVE_TOKEN(type)	token_stream.emplace_back(type, line, COL); \
+							return type
 
-#define SAVE_TOKEN(token) token_stream.emplace_back(token)
+#define SAVE_VAL(type)	token_stream.emplace_back(token)
 
 %}
 
@@ -77,56 +78,56 @@ MULTILINE_COMMENT "/*"
 [  ] 				;
 [\t\r]				;
 
-"+" 				SAVE_TOKEN(TOKEN(TOKEN_ADD, yytext)); return TOKEN_ADD;
-"-" 				SAVE_TOKEN(TOKEN(TOKEN_SUB, yytext)); return TOKEN_SUB;
-"*" 				SAVE_TOKEN(TOKEN(TOKEN_MUL, yytext)); return TOKEN_MUL;
-"/" 				SAVE_TOKEN(TOKEN(TOKEN_DIV, yytext)); return TOKEN_DIV;
-"%" 				SAVE_TOKEN(TOKEN(TOKEN_MOD, yytext)); return TOKEN_MOD;
+"+" 				SAVE_TOKEN(TOKEN_ADD); 
+"-" 				SAVE_TOKEN(TOKEN_SUB); 
+"*" 				SAVE_TOKEN(TOKEN_MUL); 
+"/" 				SAVE_TOKEN(TOKEN_DIV); 
+"%" 				SAVE_TOKEN(TOKEN_MOD); 
 
-"=="				SAVE_TOKEN(TOKEN(TOKEN_EQ, yytext)); return TOKEN_EQ;
-"!=" 				SAVE_TOKEN(TOKEN(TOKEN_NEQ, yytext)); return TOKEN_NEQ;
+"=="				SAVE_TOKEN(TOKEN_EQ); 
+"!=" 				SAVE_TOKEN(TOKEN_NEQ); 
 
-"<" 				SAVE_TOKEN(TOKEN(TOKEN_LT, yytext)); return TOKEN_LT;
-">"					SAVE_TOKEN(TOKEN(TOKEN_GT, yytext)); return TOKEN_GT;
-"<="				SAVE_TOKEN(TOKEN(TOKEN_LTE, yytext)); return TOKEN_LTE;
-">="				SAVE_TOKEN(TOKEN(TOKEN_GTE, yytext)); return TOKEN_GTE;
+"<" 				SAVE_TOKEN(TOKEN_LT); 
+">"					SAVE_TOKEN(TOKEN_GT); 
+"<="				SAVE_TOKEN(TOKEN_LTE); 
+">="				SAVE_TOKEN(TOKEN_GTE); 
 
-"="					SAVE_TOKEN(TOKEN(TOKEN_ASSIGN, yytext)); return TOKEN_ASSIGN;
-"!"					SAVE_TOKEN(TOKEN(TOKEN_NOT, yytext)); return TOKEN_NOT;
+"="					SAVE_TOKEN(TOKEN_ASSIGN); 
+"!"					SAVE_TOKEN(TOKEN_NOT); 
 
-"&&"				SAVE_TOKEN(TOKEN(TOKEN_AND, yytext)); return TOKEN_AND;
-"||"				SAVE_TOKEN(TOKEN(TOKEN_OR, yytext)); return TOKEN_OR;
+"&&"				SAVE_TOKEN(TOKEN_AND); 
+"||"				SAVE_TOKEN(TOKEN_OR); 
 
-"if"				SAVE_TOKEN(TOKEN(TOKEN_IF, yytext)); return TOKEN_IF;
-"else"				SAVE_TOKEN(TOKEN(TOKEN_ELSE, yytext)); return TOKEN_ELSE;
-"while"				SAVE_TOKEN(TOKEN(TOKEN_WHILE, yytext)); return TOKEN_WHILE;
-"continue"			SAVE_TOKEN(TOKEN(TOKEN_CONTINUE, yytext)); return TOKEN_CONTINUE;
-"break"				SAVE_TOKEN(TOKEN(TOKEN_BREAK, yytext)); return TOKEN_BREAK;
+"if"				SAVE_TOKEN(TOKEN_IF); 
+"else"				SAVE_TOKEN(TOKEN_ELSE); 
+"while"				SAVE_TOKEN(TOKEN_WHILE); 
+"continue"			SAVE_TOKEN(TOKEN_CONTINUE); 
+"break"				SAVE_TOKEN(TOKEN_BREAK); 
 
-"int"				SAVE_TOKEN(TOKEN(TOKEN_INT, yytext)); return TOKEN_INT;
-"float"				SAVE_TOKEN(TOKEN(TOKEN_FLOAT, yytext)); return TOKEN_FLOAT;
-"void"				SAVE_TOKEN(TOKEN(TOKEN_VOID, yytext)); return TOKEN_VOID;
-"const"				SAVE_TOKEN(TOKEN(TOKEN_CONST, yytext)); return TOKEN_CONST;
-"return"			SAVE_TOKEN(TOKEN(TOKEN_RETURN, yytext)); return TOKEN_RETURN;
+"int"				SAVE_TOKEN(TOKEN_INT); 
+"float"				SAVE_TOKEN(TOKEN_FLOAT); 
+"void"				SAVE_TOKEN(TOKEN_VOID); 
+"const"				SAVE_TOKEN(TOKEN_CONST); 
+"return"			SAVE_TOKEN(TOKEN_RETURN); 
 
-";"					SAVE_TOKEN(TOKEN(TOKEN_SEMICOLON, yytext)); return TOKEN_SEMICOLON;
-","					SAVE_TOKEN(TOKEN(TOKEN_COMMA, yytext)); return TOKEN_COMMA;
-"("					SAVE_TOKEN(TOKEN(TOKEN_LEFT_PARENTHESES, yytext)); return TOKEN_LEFT_PARENTHESES;
-")"					SAVE_TOKEN(TOKEN(TOKEN_RIGHT_PARENTHESES, yytext)); return TOKEN_RIGHT_PARENTHESES;
-"{"					SAVE_TOKEN(TOKEN(TOKEN_LEFT_BRACES, yytext)); return TOKEN_LEFT_BRACES;
-"}"					SAVE_TOKEN(TOKEN(TOKEN_RIGHT_BRACES, yytext)); return TOKEN_RIGHT_BRACES;
-"["					SAVE_TOKEN(TOKEN(TOKEN_LEFT_BRACKETS, yytext)); return TOKEN_LEFT_BRACKETS;
-"]"					SAVE_TOKEN(TOKEN(TOKEN_RIGHT_BRACKETS, yytext)); return TOKEN_RIGHT_BRACKETS;
+";"					SAVE_TOKEN(TOKEN_SEMICOLON); 
+","					SAVE_TOKEN(TOKEN_COMMA); 
+"("					SAVE_TOKEN(TOKEN_LEFT_PARENTHESES); 
+")"					SAVE_TOKEN(TOKEN_RIGHT_PARENTHESES); 
+"{"					SAVE_TOKEN(TOKEN_LEFT_BRACES); 
+"}"					SAVE_TOKEN(TOKEN_RIGHT_BRACES); 
+"["					SAVE_TOKEN(TOKEN_LEFT_BRACKETS); 
+"]"					SAVE_TOKEN(TOKEN_RIGHT_BRACKETS); 
 
-{TOKEN_IDENTIFIER}	{Token token(TOKEN_IDENTIFIER, line, COL(yytext), yytext); SAVE_TOKEN(token); return TOKEN_IDENTIFIER;}
+{TOKEN_IDENTIFIER}	{Token token(TOKEN_IDENTIFIER, line, COL, yytext); SAVE_VAL(token); return TOKEN_IDENTIFIER;}
 
-{TOKEN_FLOATPOINT}	{Token token(TOKEN_FLOATPOINT, line, COL(yytext), static_cast<float>(strtod(yytext,NULL))); SAVE_TOKEN(token); return TOKEN_FLOATPOINT;}
+{TOKEN_FLOATPOINT}	{Token token(TOKEN_FLOATPOINT, line, COL, static_cast<float>(strtod(yytext,NULL))); SAVE_VAL(token); return TOKEN_FLOATPOINT;}
 
-{HEX_CONST} 		{Token token(TOKEN_INTEGER, line, COL(yytext), static_cast<int>(strtol(yytext, NULL, 16))); SAVE_TOKEN(token); return TOKEN_INTEGER;}
+{HEX_CONST} 		{Token token(TOKEN_INTEGER, line, COL, static_cast<int>(strtol(yytext, NULL, 16))); SAVE_VAL(token); return TOKEN_INTEGER;}
 
-{OCT_CONST} 		{Token token(TOKEN_INTEGER, line, COL(yytext), static_cast<int>(strtol(yytext, NULL, 8))); SAVE_TOKEN(token); return TOKEN_INTEGER;}
+{OCT_CONST} 		{Token token(TOKEN_INTEGER, line, COL, static_cast<int>(strtol(yytext, NULL, 8))); SAVE_VAL(token); return TOKEN_INTEGER;}
 
-{DEC_CONST} 		{Token token(TOKEN_INTEGER, line, COL(yytext), static_cast<int>(strtol(yytext, NULL, 10))); SAVE_TOKEN(token); return TOKEN_INTEGER;}
+{DEC_CONST} 		{Token token(TOKEN_INTEGER, line, COL, static_cast<int>(strtol(yytext, NULL, 10))); SAVE_VAL(token); return TOKEN_INTEGER;}
 
 . 					printf("other token: %s\n", yytext);
 
