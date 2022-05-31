@@ -22,7 +22,6 @@ enum BinaryOp {
     MUL,
     DIV,
     MOD,
-    NOT,
     AND,
     OR
 };
@@ -73,14 +72,6 @@ struct ASTDef: ASTNode {
     string id;
 };
 
-struct ASTNum: ASTPrimaryExp {
-    SysType type;
-    union {
-        int i_val;
-        float f_val;
-    };
-};
-
 struct ASTVarDef: ASTDef {
     bool is_const; //false if variable ,true if const
     vector<unsigned>dimensions; //empty if element is not an array
@@ -89,10 +80,6 @@ struct ASTVarDef: ASTDef {
 struct ASTInitVal: ASTNode {
     vector<unsigned>dimensions; //empty if element is not an array
     vector<shared_ptr<ASTExp> > elements;
-};
-
-struct ASTDecl: ASTBlockItem {
-    vector<pair<shared_ptr<ASTVarDef>,shared_ptr<ASTInitVal> >> definitions;
 };
 
 struct ASTExp: ASTNode {
@@ -118,16 +105,20 @@ struct ASTFuncDef: ASTDef {
     shared_ptr<ASTBlock> block;
 };
 
-struct ASTBlock: ASTStatement {
-    vector<shared_ptr<ASTBlockItem>> block_items;
-};
-
 struct ASTBlockItem: ASTNode {
     
 };
 
+struct ASTDecl: ASTBlockItem {
+    vector<pair<shared_ptr<ASTVarDef>,shared_ptr<ASTInitVal> >> definitions;
+};
+
 struct ASTStatement: ASTBlockItem {
     
+};
+
+struct ASTBlock: ASTStatement {
+    vector<shared_ptr<ASTBlockItem>> block_items;
 };
 
 struct ASTSelectionStmt: ASTStatement {
@@ -152,21 +143,12 @@ struct ASTContinueStmt: ASTStatement {
 
 struct ASTReturnStmt: ASTStatement {
     // should be nullptr if return void
-    shared_ptr<ASTExpression> expression; 
+    shared_ptr<ASTExp> expression; 
 };
 
 struct ASTAssignExp: ASTStatement {
     shared_ptr<ASTLval> lval;
     shared_ptr<ASTExp> exp;
-};
-
-struct ASTLval: ASTPrimaryExp {
-    string id;
-    vector<shared_ptr<ASTExp>> dimensions;
-};
-
-struct ASTPrimaryExp: ASTUnaryExp {
-
 };
 
 struct ASTCall: ASTUnaryExp {
@@ -179,6 +161,22 @@ struct ASTUnaryOpExp: ASTUnaryExp {
     shared_ptr<ASTUnaryExp> unary_exp;
 };
 
+struct ASTPrimaryExp: ASTUnaryExp {
+
+};
+
+struct ASTLval: ASTPrimaryExp {
+    string id;
+    vector<shared_ptr<ASTExp>> dimensions;
+};
+
+struct ASTNum: ASTPrimaryExp {
+    SysType type;
+    union {
+        int i_val;
+        float f_val;
+    };
+};
 
 
 #endif
