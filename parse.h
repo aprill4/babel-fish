@@ -108,7 +108,7 @@ struct Ast_Assignment :Ast_Node {
 	Ast_Assignment() :Ast_Node(AST_Assignment) {}
 };
 struct Ast_Imm :Ast_Node {
-	uint64 number = 0;//这里有bug，只有整形没有区分浮点
+	uint64 number = 0;//TODO: distinguish between float and int
 	Ast_Imm() :Ast_Node(AST_Imm) {};
 };
 struct Ast_Operator :Ast_Node {
