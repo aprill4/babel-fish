@@ -38,13 +38,6 @@ class Statement : public Node {
 public:
 };
 
-class Identifier : public Node {
-public:
-  Identifier(const std::string &id) : id(id) {}
-  std::string id;
-  std::vector<Expression *> dimension;
-};
-
 class Number : public Expression {
 public:
   Number(SysType type) : type(type) {}
@@ -57,6 +50,30 @@ public:
     int i_val;
     float f_val;
   } value;
+};
+
+class Identifier : public Node {
+public:
+  Identifier(const std::string &id) : id(id) {}
+  void print() {
+    using namespace std;
+    cout << "<id>: " << id;
+    cout << "  <dimension>: ";
+    if (dimension.empty()) {
+      cout << "not_array";
+    } else {
+      for (auto &i : dimension) {
+        if (i == nullptr)
+          cout << "[]";
+        else
+          cout << "[" << dynamic_cast<Number *>(i)->value.i_val << "]";
+      }
+    }
+  }
+
+public:
+  std::string id;
+  std::vector<Expression *> dimension;
 };
 
 class BinaryExpression : public Expression {
@@ -113,16 +130,26 @@ protected:
 class AssignStatement : public Statement {
 public:
   AssignStatement(Expression *lhs, Expression *rhs) : lhs(lhs), rhs(rhs) {}
+  void print() {
+    using namespace std;
+    cout << "assign\n";
+  }
+
+public:
   Expression *lhs;
   Expression *rhs;
-
-protected:
 };
 
 class IfElseStatement : public Statement {
 public:
   IfElseStatement(Expression *cond, Statement *thenstmt, Statement *elsestmt)
       : cond(cond), thenstmt(thenstmt), elsestmt(elsestmt) {}
+  void print() {
+    using namespace std;
+    cout << "ifelse\n";
+  }
+
+public:
   Expression *cond;
   Statement *thenstmt;
   Statement *elsestmt;
@@ -132,19 +159,49 @@ class WhileStatement : public Statement {
 public:
   WhileStatement(Expression *cond, Statement *dostmt)
       : cond(cond), dostmt(dostmt) {}
+  void print() {
+    using namespace std;
+    cout << "while\n";
+  }
+
+public:
   Expression *cond;
   Statement *dostmt;
 };
 
-class VoidStatement : public Statement {};
+class VoidStatement : public Statement {
+public:
+  void print() {
+    using namespace std;
+    cout << "void\n";
+  }
+};
 
-class BreakStatement : public Statement {};
+class BreakStatement : public Statement {
+public:
+  void print() {
+    using namespace std;
+    cout << "break\n";
+  }
+};
 
-class ContinueStatement : public Statement {};
+class ContinueStatement : public Statement {
+public:
+  void print() {
+    using namespace std;
+    cout << "continue\n";
+  }
+};
 
 class ReturnStatement : public Statement {
 public:
   ReturnStatement(Expression *value = NULL) : value(value) {}
+  void print() {
+    using namespace std;
+    cout << "return\n";
+  }
+
+public:
   Expression *value;
 };
 
@@ -166,7 +223,7 @@ public:
     string tp[3] = {"INT", "FLOAT", "VOID"};
     cout << "decl_type: " << tp[static_cast<int>(type)] << endl;
     for (int i = 0; i < defs.size(); i++) {
-      cout << "--defs[" << i << "]" << endl;
+      cout << "    defs[" << i << "]: ";
       defs[i]->print();
     }
   }
@@ -176,12 +233,14 @@ class VarDeclare : public Declare {
 public:
   VarDeclare(Identifier *identifier, Expression *value, bool is_const)
       : identifier(identifier), value(value), is_const(is_const) {}
-  void print(){
+  void print() {
     using namespace std;
     cout << "<const>: " << ((is_const == true) ? "true" : "false");
     cout << "  <id>: " << identifier->id;
-    cout << "  <init_val>: " << dynamic_cast<Number*>(value)->value.i_val << endl;
+    cout << "  <init_val>: " << dynamic_cast<Number *>(value)->value.i_val
+         << endl;
   }
+
 public:
   Identifier *identifier;
   Expression *value;
@@ -225,11 +284,7 @@ public:
   void print() {
     using namespace std;
     cout << "<const>: " << ((is_const == true) ? "true" : "false");
-    cout << "  <id>: " << identifier->id;
-    cout << "  <dimension>: ";
-    for (auto &i : identifier->dimension) {
-      cout << "[" << dynamic_cast<Number *>(i)->value.i_val << "]";
-    }
+    identifier->print();
     cout << "  <init_val>: {";
     value->print();
     cout << "}";
@@ -245,6 +300,14 @@ class Argument : public Expression {
 public:
   Argument(SysType type, Identifier *identifier)
       : type(type), identifier(identifier) {}
+  void print() {
+    using namespace std;
+    string tp[3] = {"INT", "FLOAT", "VOID"};
+    cout << "<type>: " << tp[static_cast<int>(type)] << "  ";
+    identifier->print();
+  }
+
+public:
   SysType type;
   Identifier *identifier;
 };
@@ -267,13 +330,21 @@ public:
   void print() {
     using namespace std;
     string tp[3] = {"INT", "FLOAT", "VOID"};
-    cout << "      return_type: " << tp[static_cast<int>(return_type)] << endl;
-    cout << "      id: " << identifier->id << endl;
-    cout << "      args: " << endl;
-    for (int i = 0; args != nullptr && i < args->list.size(); i++) {
-      cout << "        arg[" << i << "]: " << args->list[i]->identifier->id;
+    cout << "return_type: " << tp[static_cast<int>(return_type)];
+    cout << "  id: " << identifier->id << endl;
+    if (args == nullptr)
+      cout << "    args: nullptr" << endl;
+    else {
+      cout << "    args: " << endl;
+      for (int i = 0; i < args->list.size(); i++) {
+        cout << "      ";
+        args->list[i]->print();
+        cout << endl;
+      }
     }
+    cout << "    statements: ";
     for (auto &i : body->statements) {
+      i->print();
     }
   }
 };
@@ -285,17 +356,17 @@ public:
   void print() {
     using namespace std;
     cout << "[root]:\n";
-    cout << "--decls: " << decls.size() << endl;
-    cout << "--func_defs: " << func_defs.size() << endl;
+    cout << "  decls: " << decls.size() << endl;
+    cout << "  func_defs: " << func_defs.size() << endl;
     cout << "[decls]: " << endl;
     for (int i = 0; i < decls.size(); i++) {
-      cout << "--decl[" << i << "]: " << endl;
+      cout << "  decl[" << i << "]: ";
       decls[i]->print();
       cout << endl;
     }
     cout << "[func_defs]: " << endl;
     for (int i = 0; i < func_defs.size(); i++) {
-      cout << "    func_defs[" << i << "] : " << endl;
+      cout << "  func_defs[" << i << "]: ";
       func_defs[i]->print();
     }
   }

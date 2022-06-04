@@ -235,7 +235,8 @@ FuncFParam: BType Ident { $$ = new Argument($1, $2); }
 
 FuncFParamArray: BType Ident LEFT_BRACKETS RIGHT_BRACKETS {
             $$ = new Argument($1, $2);
-            $$->identifier->dimension.emplace_back(new Number(SysType::INT,1));
+            $$->identifier->dimension.emplace_back(nullptr);
+            // $$->identifier->dimension.emplace_back(new Number(SysType::INT,1));
       }
       | FuncFParamArray LEFT_BRACKETS AddExp RIGHT_BRACKETS { 
             $$ = $1;
