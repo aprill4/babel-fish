@@ -111,10 +111,11 @@ public:
 class LValExpression : public Expression {
 public:
   LValExpression(Identifier *identifier) : identifier(identifier) {}
-  void print(){
+  void print() {
     using namespace std;
     identifier->print();
   }
+
 public:
   Identifier *identifier;
 };
@@ -137,6 +138,12 @@ class FunctionCall : public Expression {
 public:
   FunctionCall(Identifier *name, FunctionCallArgList *args)
       : name(name), args(args) {}
+  void print() {
+    using namespace std;
+    cout << "func_call\n";
+  }
+
+public:
   Identifier *name;
   FunctionCallArgList *args;
 
@@ -152,15 +159,19 @@ protected:
 
 class AssignStatement : public Statement {
 public:
-  AssignStatement(Expression *lhs, Expression *rhs) : lhs(lhs), rhs(rhs) {}
+  AssignStatement(Expression *left_expr, Expression *right_expr)
+      : left_expr(left_expr), right_expr(right_expr) {}
   void print() {
     using namespace std;
-    cout << "assign\n";
+    cout << "<assign_statement> ";
+    left_expr->print();
+    cout << " = ";
+    right_expr->print();
   }
 
 public:
-  Expression *lhs;
-  Expression *rhs;
+  Expression *left_expr;
+  Expression *right_expr;
 };
 
 class IfElseStatement : public Statement {
@@ -221,7 +232,13 @@ public:
   ReturnStatement(Expression *value = NULL) : value(value) {}
   void print() {
     using namespace std;
-    cout << "return\n";
+    cout << "<return_statement> return_val: ";
+    if (value == nullptr) {
+      cout << "nullptr";
+    } else {
+      value->print();
+      cout << endl;
+    }
   }
 
 public:
@@ -231,6 +248,8 @@ public:
 class EvalStatement : public Statement {
 public:
   EvalStatement(Expression *value) : value(value) {}
+
+public:
   Expression *value;
 };
 
@@ -261,7 +280,10 @@ public:
     cout << "<const>: " << ((is_const == true) ? "true" : "false") << " ";
     identifier->print();
     cout << "<value>: ";
-    value->print();
+    if (value != nullptr) {
+      value->print();
+    } else
+      cout << "nullptr";
     cout << endl;
   }
 
@@ -370,8 +392,11 @@ public:
     if (body->statements.empty()) {
       cout << "nullptr\n";
     } else {
+      cout << endl;
       for (auto &i : body->statements) {
+        cout << "      ";
         i->print();
+        cout << endl;
       }
     }
   }
