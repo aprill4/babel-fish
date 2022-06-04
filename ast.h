@@ -43,7 +43,15 @@ public:
   Number(SysType type) : type(type) {}
   Number(SysType type, int i_val) : Number(type) { value.i_val = i_val; }
   Number(SysType type, float f_val) : Number(type) { value.f_val = f_val; }
-
+  void print(){
+    using namespace std;
+    string tp[3] = {"INT", "FLOAT"};
+    if (static_cast<int>(type) == 0){
+      cout << value.i_val;
+    }else if (static_cast<int>(type) == 1) {
+      cout << value.f_val;
+    }
+  }
 public:
   SysType type;
   union {
@@ -58,7 +66,7 @@ public:
   void print() {
     using namespace std;
     cout << "<id>: " << id;
-    cout << "  <dimension>: ";
+    cout << " <dimension>: ";
     if (dimension.empty()) {
       cout << "not_array";
     } else {
@@ -69,6 +77,7 @@ public:
           cout << "[" << dynamic_cast<Number *>(i)->value.i_val << "]";
       }
     }
+    cout << " ";
   }
 
 public:
@@ -80,7 +89,13 @@ class BinaryExpression : public Expression {
 public:
   BinaryExpression(Expression *left_expr, BinaryOp op, Expression *right_expr)
       : left_expr(left_expr), op(op), right_expr(right_expr) {}
-
+  void print(){
+    using namespace std;
+    string bop[13] = {"+", "-", "*", "/", "%", "<", "<=", ">", ">=", "==", "!=", "&&", "||"};
+    left_expr->print();
+    cout <<" " << bop[static_cast<int>(op)] << " ";
+    right_expr->print();
+  }
 public:
   Expression *left_expr;
   BinaryOp op;
@@ -235,12 +250,10 @@ public:
       : identifier(identifier), value(value), is_const(is_const) {}
   void print() {
     using namespace std;
-    cout << "<const>: " << ((is_const == true) ? "true" : "false");
-    cout << "  <id>: " << identifier->id;
-    if (dynamic_cast<Number *>(value)->type == SysType::INT)
-      cout << "  <init_val>: " << dynamic_cast<Number *>(value)->value.i_val;
-    else if (dynamic_cast<Number *>(value)->type == SysType::FLOAT)
-      cout << "  <init_val>: " << dynamic_cast<Number *>(value)->value.f_val;
+    cout << "<const>: " << ((is_const == true) ? "true" : "false") << " ";
+    identifier->print();
+    cout << "<value>: ";
+    value->print();
     cout << endl;
   }
 
