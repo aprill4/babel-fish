@@ -1,14 +1,16 @@
 %option noyywrap
 %{
 #include <string>
+#include <iostream>
 #include "ast.h"
 #include "parse.tab.h"
+extern Root* root;
 
 void yyerror(const char *s);
 int yycolumn = 1;
 
 #define SAVE_TOKEN     yylval.string = new std::string(yytext, yyleng)
-#define TOKEN(t)       (yylval.token = t)
+#define TOKEN(t)       yylval.token = t
 #define YY_USER_ACTION yylloc.first_line = yylineno;            \
                        yylloc.first_column = yycolumn;          \
                        for (auto i : std::string(yytext_ptr)) { \
@@ -43,7 +45,29 @@ HEX_FLOATPOINT {HEX_PREFIX}({HEX_DIGIT}*[.]{HEX_DIGIT}+|{HEX_DIGIT}+[.])([pP][+-
 TOKEN_INTEGER {DEC_INTEGER}|{OCT_INTEGER}|{HEX_INTEGER}
 TOKEN_FLOATPOINT  {DEC_FLOATPOINT}|{HEX_FLOATPOINT}
 
+LETTER [a-zA-Z]
+TOKEN_IDENTIFIER ({LETTER}|_)({DIGIT}|{LETTER}|_)*
+
 %%
+
+\/\/.*\n?           ;
+"/*"                {
+                        int c;
+                        while((c = yyinput()) != 0) {
+                            if(c == '\n') {
+                                yylineno++;
+                                yycolumn = 1;
+                            } else if(c == '*') {
+                            if((c = yyinput()) == '/')
+                                break;
+                            else
+                                unput(c);
+                            }
+                        }
+                    }
+[ ]                                 ;
+\n                                  ;
+[\t\r]                              ;
 
 "+"                                 return TOKEN(ADD);
 "-"                                 return TOKEN(SUB);
@@ -51,49 +75,34 @@ TOKEN_FLOATPOINT  {DEC_FLOATPOINT}|{HEX_FLOATPOINT}
 "/"                                 return TOKEN(DIV);
 "%"                                 return TOKEN(MOD);
 
-
-\/\/.*\n?                           ;
-"/*"                        		{
-                                        int c;
-                                        while((c = yyinput()) != 0) {
-                                            if(c == '\n') {
-                                                yylineno++;
-                                                yycolumn = 1;
-                                            } else if(c == '*') {
-                                                if((c = yyinput()) == '/')
-                                                    break;
-                                                else
-                                                    unput(c);
-                                                }
-                                        }
-                                    }
-[ ]                                 ;
-\n                                  ;
-[\t\r]                              ;
-
 "if"                                return TOKEN(IF);
 "else"                              return TOKEN(ELSE);
 "while"                             return TOKEN(WHILE);
 "break"                             return TOKEN(BREAK);
 "continue"                          return TOKEN(CONTINUE);
 "return"                            return TOKEN(RETURN);
+
 "const"                             return TOKEN(CONST);
 "int"                               return TOKEN(INT);
 "void"                              return TOKEN(VOID);
+"float"                             return TOKEN(FLOAT);
 
-[a-zA-Z_][a-zA-Z0-9_]*              SAVE_TOKEN; return IDENTIFIER;
+{TOKEN_IDENTIFIER}                  SAVE_TOKEN; return IDENTIFIER;
 {TOKEN_INTEGER}                     yylval.token = static_cast<int>(strtol(yytext, NULL, 0)); return INTEGER;
 {TOKEN_FLOATPOINT}	                yylval.f_val = static_cast<float>(strtod(yytext, NULL)); return FLOATPOINT;
 
 "="                                 return TOKEN(ASSIGN);
 "=="                                return TOKEN(EQ);
 "!="                                return TOKEN(NEQ);
-"<"                                 return TOKEN(LT);
-"<="                                return TOKEN(LTE);
+
 ">"                                 return TOKEN(GT);
 ">="                                return TOKEN(GTE);
+"<"                                 return TOKEN(LT);
+"<="                                return TOKEN(LTE);
+
 "&&"                                return TOKEN(AND);
 "||"                                return TOKEN(OR);
+"!"                                 return TOKEN(NOT);
 
 "("                                 return TOKEN(LEFT_PARENTHESES);
 ")"                                 return TOKEN(RIGHT_PARENTHESES);
@@ -105,15 +114,6 @@ TOKEN_FLOATPOINT  {DEC_FLOATPOINT}|{HEX_FLOATPOINT}
 ","                                 return TOKEN(COMMA);
 ";"                                 return TOKEN(SEMICOLON);
 
-"!"                                 return TOKEN(NOT);
-
 .                                   yyerror((std::string("Unknown token: ") + yytext).c_str()); yyterminate();
 
 %%
-
-int main(void)
-{
-    yyparse();
-    /* while(yyparse()); // 启动解析 */
-    return 0;
-}

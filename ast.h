@@ -1,7 +1,7 @@
 #pragma once
+#include <iostream>
 #include <string>
 #include <vector>
-
 enum class SysType { INT, FLOAT, VOID };
 
 enum class BinaryOp {
@@ -27,17 +27,15 @@ public:
   int line, column;
   Node();
   virtual ~Node(){};
-
-protected:
+  virtual void print(){};
 };
 
 class Expression : public Node {
 public:
-protected:
 };
 
 class Statement : public Node {
-protected:
+public:
 };
 
 class Identifier : public Node {
@@ -49,28 +47,34 @@ public:
 
 class Number : public Expression {
 public:
+  Number(SysType type) : type(type) {}
+  Number(SysType type, int i_val) : Number(type) { value.i_val = i_val; }
+  Number(SysType type, float f_val) : Number(type) { value.f_val = f_val; }
+
+public:
   SysType type;
   union {
     int i_val;
     float f_val;
   } value;
-  Number(SysType type) : type(type) {}
-  Number(SysType type, int i_val) : Number(type) { value.i_val = i_val; }
-  Number(SysType type, float f_val) : Number(type) { value.f_val = f_val; }
 };
 
 class BinaryExpression : public Expression {
 public:
-  BinaryExpression(Expression *lhs, BinaryOp op, Expression *rhs)
-      : lexpr(lhs), rexpr(rhs), op(op) {}
+  BinaryExpression(Expression *left_expr, BinaryOp op, Expression *right_expr)
+      : left_expr(left_expr), op(op), right_expr(right_expr) {}
+
+public:
+  Expression *left_expr;
   BinaryOp op;
-  Expression *lexpr;
-  Expression *rexpr;
+  Expression *right_expr;
 };
 
 class LValExpression : public Expression {
 public:
   LValExpression(Identifier *identifier) : identifier(identifier) {}
+
+public:
   Identifier *identifier;
   std::vector<Expression *> dimension;
 };
@@ -78,6 +82,8 @@ public:
 class UnaryExpression : public Expression {
 public:
   UnaryExpression(UnaryOp op, Expression *rhs) : op(op), rexpr(rhs) {}
+
+public:
   UnaryOp op;
   Expression *rexpr;
 };
@@ -155,12 +161,27 @@ public:
   DeclareStatement(SysType type) : type(type) {}
   SysType type;
   std::vector<Declare *> defs;
+  void print() {
+    using namespace std;
+    string tp[3] = {"INT", "FLOAT", "VOID"};
+    cout << "decl_type: " << tp[static_cast<int>(type)] << endl;
+    for (int i = 0; i < defs.size(); i++) {
+      cout << "--defs[" << i << "]" << endl;
+      defs[i]->print();
+    }
+  }
 };
 
 class VarDeclare : public Declare {
 public:
   VarDeclare(Identifier *identifier, Expression *value, bool is_const)
       : identifier(identifier), value(value), is_const(is_const) {}
+  void print(){
+    using namespace std;
+    cout << "<id>: " << identifier->id;
+    cout << " <init_val>: " << dynamic_cast<Number*>(value)->value.i_val << endl;
+  }
+public:
   Identifier *identifier;
   Expression *value;
   bool is_const;
@@ -170,6 +191,26 @@ class ArrayDeclareInitValue : public Expression {
 public:
   ArrayDeclareInitValue(bool is_number, Expression *value)
       : is_number(is_number), value(value) {}
+  void print() {
+    using namespace std;
+    if (is_number == true) {
+      cout << dynamic_cast<Number *>(value)->value.i_val;
+    } else {
+      for (int i = 0; i < value_list.size(); i++) {
+        if (value_list[i]->is_number) {
+          value_list[i]->print();
+        } else {
+          cout << "{";
+          value_list[i]->print();
+          cout << "}";
+        }
+        if (i < value_list.size() - 1)
+          cout << ", ";
+      }
+    }
+  }
+
+public:
   bool is_number;
   Expression *value;
   std::vector<ArrayDeclareInitValue *> value_list;
@@ -180,6 +221,19 @@ public:
   ArrayDeclare(Identifier *identifier, ArrayDeclareInitValue *value,
                bool is_const)
       : identifier(identifier), value(value), is_const(is_const) {}
+  void print() {
+    using namespace std;
+    cout << "<id>: " << identifier->id;
+    cout << " <dimension>: ";
+    for (auto &i : identifier->dimension) {
+      cout << "[" << dynamic_cast<Number *>(i)->value.i_val << "]";
+    }
+    cout << " <init_val>: {";
+    value->print();
+    cout << "}";
+  }
+
+public:
   Identifier *identifier;
   ArrayDeclareInitValue *value;
   bool is_const;
@@ -208,10 +262,39 @@ public:
   Identifier *identifier;
   ArgumentList *args;
   Block *body;
+  void print() {
+    using namespace std;
+    string tp[3] = {"INT", "FLOAT", "VOID"};
+    cout << "      return_type: " << tp[static_cast<int>(return_type)] << endl;
+    cout << "      id: " << identifier->id << endl;
+    cout << "      args: " << endl;
+    for (int i = 0; args != nullptr && i < args->list.size(); i++) {
+      cout << "        arg[" << i << "]: " << args->list[i]->identifier->id;
+    }
+    for (auto &i : body->statements) {
+    }
+  }
 };
 
 class Root : public Node {
 public:
   std::vector<DeclareStatement *> decls;
   std::vector<FunctionDefinition *> func_defs;
+  void print() {
+    using namespace std;
+    cout << "[root]:\n";
+    cout << "--decls: " << decls.size() << endl;
+    cout << "--func_defs: " << func_defs.size() << endl;
+    cout << "[decls]: " << endl;
+    for (int i = 0; i < decls.size(); i++) {
+      cout << "--decl[" << i << "]: " << endl;
+      decls[i]->print();
+      cout << endl;
+    }
+    cout << "[func_defs]: " << endl;
+    for (int i = 0; i < func_defs.size(); i++) {
+      cout << "    func_defs[" << i << "] : " << endl;
+      func_defs[i]->print();
+    }
+  }
 };
