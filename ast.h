@@ -178,8 +178,9 @@ public:
       : identifier(identifier), value(value), is_const(is_const) {}
   void print(){
     using namespace std;
-    cout << "<id>: " << identifier->id;
-    cout << " <init_val>: " << dynamic_cast<Number*>(value)->value.i_val << endl;
+    cout << "<const>: " << ((is_const == true) ? "true" : "false");
+    cout << "  <id>: " << identifier->id;
+    cout << "  <init_val>: " << dynamic_cast<Number*>(value)->value.i_val << endl;
   }
 public:
   Identifier *identifier;
@@ -223,12 +224,13 @@ public:
       : identifier(identifier), value(value), is_const(is_const) {}
   void print() {
     using namespace std;
-    cout << "<id>: " << identifier->id;
-    cout << " <dimension>: ";
+    cout << "<const>: " << ((is_const == true) ? "true" : "false");
+    cout << "  <id>: " << identifier->id;
+    cout << "  <dimension>: ";
     for (auto &i : identifier->dimension) {
       cout << "[" << dynamic_cast<Number *>(i)->value.i_val << "]";
     }
-    cout << " <init_val>: {";
+    cout << "  <init_val>: {";
     value->print();
     cout << "}";
   }
