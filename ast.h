@@ -237,8 +237,11 @@ public:
     using namespace std;
     cout << "<const>: " << ((is_const == true) ? "true" : "false");
     cout << "  <id>: " << identifier->id;
-    cout << "  <init_val>: " << dynamic_cast<Number *>(value)->value.i_val
-         << endl;
+    if (dynamic_cast<Number *>(value)->type == SysType::INT)
+      cout << "  <init_val>: " << dynamic_cast<Number *>(value)->value.i_val;
+    else if (dynamic_cast<Number *>(value)->type == SysType::FLOAT)
+      cout << "  <init_val>: " << dynamic_cast<Number *>(value)->value.f_val;
+    cout << endl;
   }
 
 public:
