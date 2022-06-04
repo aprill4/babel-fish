@@ -283,7 +283,7 @@ public:
       : identifier(identifier), value(value), is_const(is_const) {}
   void print() {
     using namespace std;
-    cout << "<const>: " << ((is_const == true) ? "true" : "false");
+    cout << "<const>: " << ((is_const == true) ? "true" : "false") << "  ";
     identifier->print();
     cout << "  <init_val>: {";
     value->print();
