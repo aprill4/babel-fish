@@ -150,11 +150,11 @@ LVal: Ident { $$ = new LValExpression($1); }
 
 ArrayItem: Ident LEFT_BRACKETS AddExp RIGHT_BRACKETS { 
             $$ = new LValExpression($1);
-            dynamic_cast<LValExpression*>($$)->dimension.emplace_back($3);
+            dynamic_cast<LValExpression*>($$)->identifier->dimension.emplace_back($3);
       }
       | ArrayItem LEFT_BRACKETS AddExp RIGHT_BRACKETS { 
             $$ = $1;
-            dynamic_cast<LValExpression*>($$)->dimension.emplace_back($3);
+            dynamic_cast<LValExpression*>($$)->identifier->dimension.emplace_back($3);
       }
       ;
 
