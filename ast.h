@@ -323,10 +323,6 @@ public:
                      ArgumentList *args, Block *body)
       : return_type(return_type), identifier(identifier), args(args),
         body(body) {}
-  SysType return_type;
-  Identifier *identifier;
-  ArgumentList *args;
-  Block *body;
   void print() {
     using namespace std;
     string tp[3] = {"INT", "FLOAT", "VOID"};
@@ -343,10 +339,20 @@ public:
       }
     }
     cout << "    statements: ";
-    for (auto &i : body->statements) {
-      i->print();
+    if (body->statements.empty()) {
+      cout << "nullptr\n";
+    } else {
+      for (auto &i : body->statements) {
+        i->print();
+      }
     }
   }
+
+public:
+  SysType return_type;
+  Identifier *identifier;
+  ArgumentList *args;
+  Block *body;
 };
 
 class Root : public Node {
