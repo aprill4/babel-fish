@@ -244,8 +244,8 @@ FuncFParamArray: BType Ident LEFT_BRACKETS RIGHT_BRACKETS {
       }
       ;
 
-FuncRParams: AddExp { $$ = new FunctionCallArgList(); $$->args.emplace_back($1); }
-      | FuncRParams COMMA AddExp { $$ = $1; $$->args.emplace_back($3); }
+FuncRParams: AddExp { $$ = new FunctionCallArgList(); $$->list.emplace_back($1); }
+      | FuncRParams COMMA AddExp { $$ = $1; $$->list.emplace_back($3); }
       ;
 
 Block: LEFT_BRACES RIGHT_BRACES { $$ = new Block(); }
