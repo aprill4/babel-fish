@@ -122,16 +122,21 @@ public:
 
 class UnaryExpression : public Expression {
 public:
-  UnaryExpression(UnaryOp op, Expression *rhs) : op(op), rexpr(rhs) {}
-
+  UnaryExpression(UnaryOp op, Expression *right_expr) : op(op), right_expr(right_expr) {}
+  void print(){
+    using namespace std;
+    string uop[3] = {"+", "-", "!"};
+    cout << uop[static_cast<int>(op)];
+    right_expr->print();
+  }
 public:
   UnaryOp op;
-  Expression *rexpr;
+  Expression *right_expr;
 };
 
 class FunctionCallArgList : public Expression {
 public:
-  std::vector<Expression *> args;
+  std::vector<Expression *> list;
 };
 
 class FunctionCall : public Expression {
@@ -140,21 +145,24 @@ public:
       : name(name), args(args) {}
   void print() {
     using namespace std;
-    cout << "func_call\n";
+    cout << "<func_call>: { ";
+    name->print();
+    if (args != nullptr) {
+      for (auto &i : args->list) {
+        i->print();
+      }
+    }
+    cout << "}";
   }
 
 public:
   Identifier *name;
   FunctionCallArgList *args;
-
-protected:
 };
 
 class Block : public Statement {
 public:
   std::vector<Statement *> statements;
-
-protected:
 };
 
 class AssignStatement : public Statement {
@@ -248,6 +256,10 @@ public:
 class EvalStatement : public Statement {
 public:
   EvalStatement(Expression *value) : value(value) {}
+  void print() {
+    using namespace std;
+    cout << "abc\n";
+  }
 
 public:
   Expression *value;
@@ -281,7 +293,7 @@ public:
     identifier->print();
     cout << "<value>: ";
     if (value != nullptr) {
-      value->print();
+    value->print();
     } else
       cout << "nullptr";
     cout << endl;
