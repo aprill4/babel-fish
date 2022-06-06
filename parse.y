@@ -43,7 +43,7 @@ void yyerror(const char *s) {
       Expression* expr;
       Statement* stmt;
       Identifier* ident;
-      ArrayDeclareInitValue* array_val;
+      ArrayValue* array_val;
       FuncCallArgumentList* call_args;
       ArgumentList* func_args;
       Argument* arg;
@@ -117,20 +117,20 @@ ArrayIdent: Ident LEFT_BRACKETS AddExp RIGHT_BRACKETS { $$ = $1; $$->dimension.e
       | ArrayIdent LEFT_BRACKETS AddExp RIGHT_BRACKETS { $$ = $1; $$->dimension.emplace_back($3); }
       ;
 
-ArrayVal: LEFT_BRACES RIGHT_BRACES { $$ = new ArrayDeclareInitValue(false, nullptr); }
+ArrayVal: LEFT_BRACES RIGHT_BRACES { $$ = new ArrayValue(false, nullptr); }
       | LEFT_BRACES ArrayVals RIGHT_BRACES { $$ = $2; }
 
 ArrayVals: AddExp  { 
-            $$ = new ArrayDeclareInitValue(false, nullptr); 
-            $$->value_list.emplace_back(new ArrayDeclareInitValue(true, $1)); 
+            $$ = new ArrayValue(false, nullptr); 
+            $$->value_list.emplace_back(new ArrayValue(true, $1)); 
       }
       | ArrayVal {
-            $$ = new ArrayDeclareInitValue(false, nullptr);
+            $$ = new ArrayValue(false, nullptr);
             $$->value_list.emplace_back($1); 
       }
       | ArrayVals COMMA AddExp {
             $$ = $1;
-            $$->value_list.emplace_back(new ArrayDeclareInitValue(true, $3));
+            $$->value_list.emplace_back(new ArrayValue(true, $3));
       }
       | ArrayVals COMMA ArrayVal {
             $$ = $1;
