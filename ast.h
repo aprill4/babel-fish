@@ -340,9 +340,9 @@ public:
   bool is_const;
 };
 
-class ArrayDeclareInitValue : public Expression {
+class ArrayValue : public Expression {
 public:
-  ArrayDeclareInitValue(bool is_number, Expression *value)
+  ArrayValue(bool is_number, Expression *value)
       : is_number(is_number), value(value) {}
   void print() {
     using namespace std;
@@ -366,12 +366,12 @@ public:
 public:
   bool is_number;
   Expression *value;
-  std::vector<ArrayDeclareInitValue *> value_list;
+  std::vector<ArrayValue *> value_list;
 };
 
 class ArrayDeclare : public Declare {
 public:
-  ArrayDeclare(Identifier *identifier, ArrayDeclareInitValue *value,
+  ArrayDeclare(Identifier *identifier, ArrayValue *value,
                bool is_const)
       : identifier(identifier), value(value), is_const(is_const) {}
   void print() {
@@ -389,7 +389,7 @@ public:
 
 public:
   Identifier *identifier;
-  ArrayDeclareInitValue *value;
+  ArrayValue *value;
   bool is_const;
 };
 
