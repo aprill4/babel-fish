@@ -44,7 +44,7 @@ void yyerror(const char *s) {
       Statement* stmt;
       Identifier* ident;
       ArrayDeclareInitValue* array_val;
-      FunctionCallArgList* call_args;
+      FuncCallArgumentList* call_args;
       ArgumentList* func_args;
       Argument* arg;
       Block* block;
@@ -141,7 +141,7 @@ Number: INTEGER { $$ = new Number(SysType::INT, $1); }
       | FLOATPOINT { $$ = new Number(SysType::FLOAT, $1); }
       ;
 
-Ident: IDENTIFIER { $$ = new Identifier(*$1); }
+Ident: IDENTIFIER { $$ = new Identifier($1); }
       ;
 
 LVal: Ident { $$ = new LValExpression($1); }
@@ -196,10 +196,10 @@ MulExp: UnaryExp { $$ = $1; }
 
 UnaryExp: PrimaryExp { $$ = $1; }
       | Ident LEFT_PARENTHESES RIGHT_PARENTHESES { 
-            $$ = new FunctionCall($1, nullptr); 
+            $$ = new FuncCallExpression($1, nullptr); 
       }
       | Ident LEFT_PARENTHESES FuncRParams RIGHT_PARENTHESES { 
-            $$ = new FunctionCall($1, $3); 
+            $$ = new FuncCallExpression($1, $3); 
       }
       | ADD UnaryExp  { $$ = new UnaryExpression(UnaryOp::POSITIVE, $2); }
       | SUB UnaryExp  { $$ = new UnaryExpression(UnaryOp::NEGATIVE, $2); }
@@ -236,7 +236,6 @@ FuncFParam: BType Ident { $$ = new Argument($1, $2); }
 FuncFParamArray: BType Ident LEFT_BRACKETS RIGHT_BRACKETS {
             $$ = new Argument($1, $2);
             $$->identifier->dimension.emplace_back(nullptr);
-            // $$->identifier->dimension.emplace_back(new Number(SysType::INT,1));
       }
       | FuncFParamArray LEFT_BRACKETS AddExp RIGHT_BRACKETS { 
             $$ = $1;
@@ -244,7 +243,7 @@ FuncFParamArray: BType Ident LEFT_BRACKETS RIGHT_BRACKETS {
       }
       ;
 
-FuncRParams: AddExp { $$ = new FunctionCallArgList(); $$->list.emplace_back($1); }
+FuncRParams: AddExp { $$ = new FuncCallArgumentList(); $$->list.emplace_back($1); }
       | FuncRParams COMMA AddExp { $$ = $1; $$->list.emplace_back($3); }
       ;
 
@@ -252,16 +251,24 @@ Block: LEFT_BRACES RIGHT_BRACES { $$ = new Block(); }
      | LEFT_BRACES BlockItems RIGHT_BRACES { $$ = $2; }
      ;
 
-BlockItems: BlockItem { $$ = new Block(); $$->statements.emplace_back($1); }
-          | BlockItems BlockItem { $$ = $1; $$->statements.emplace_back($2); }
-          ;
+BlockItems: BlockItem { 
+            $$ = new Block(); 
+            if ($1 != nullptr)
+                  $$->statements.emplace_back($1); 
+      }
+      | BlockItems BlockItem { 
+            $$ = $1; 
+            if ($1 != nullptr)
+                  $$->statements.emplace_back($2); 
+      }
+      ;
 
 BlockItem: Decl { $$ = $1; }
-         | Stmt { $$ = $1; }
-         ;
+      | Stmt { $$ = $1; }
+      ;
 
 Stmt: LVal ASSIGN AddExp SEMICOLON { $$ = new AssignStatement($1, $3); }
-      | SEMICOLON { $$ = new VoidStatement(); }
+      | SEMICOLON { $$ = nullptr; }
       | AddExp SEMICOLON { $$ = new EvalStatement($1); }
       | Block { $$ = $1; }
       | IF LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt { $$ = new IfElseStatement($3, $5, nullptr); }

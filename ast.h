@@ -24,17 +24,15 @@ enum class UnaryOp { POSITIVE, NEGATIVE, NOT };
 
 class Node {
 public:
-  int line, column;
   Node();
   virtual ~Node(){};
   virtual void print(){};
+
+public:
+  int line, column;
 };
 
 class Expression : public Node {
-public:
-};
-
-class Statement : public Node {
 public:
 };
 
@@ -63,7 +61,7 @@ public:
 
 class Identifier : public Node {
 public:
-  Identifier(const std::string &id) : id(id) {}
+  Identifier(const std::string *id) : id(*id) {}
   void print() {
     using namespace std;
     cout << "<id>: " << id;
@@ -138,30 +136,40 @@ public:
   Expression *right_expr;
 };
 
-class FunctionCallArgList : public Expression {
+class FuncCallArgumentList : public Expression {
+public:
+  void print() {
+    using namespace std;
+    for (auto &i : list) {
+      i->print();
+    }
+  }
+
 public:
   std::vector<Expression *> list;
 };
 
-class FunctionCall : public Expression {
+class FuncCallExpression : public Expression {
 public:
-  FunctionCall(Identifier *name, FunctionCallArgList *args)
-      : name(name), args(args) {}
+  FuncCallExpression(Identifier *identifier, FuncCallArgumentList *args)
+      : identifier(identifier), args(args) {}
   void print() {
     using namespace std;
     cout << "<func_call>: { ";
-    name->print();
+    identifier->print();
     if (args != nullptr) {
-      for (auto &i : args->list) {
-        i->print();
-      }
+      args->print();
     }
     cout << "}";
   }
 
 public:
-  Identifier *name;
-  FunctionCallArgList *args;
+  Identifier *identifier;
+  FuncCallArgumentList *args;
+};
+
+class Statement : public Node {
+public:
 };
 
 class Block : public Statement {
@@ -198,8 +206,8 @@ public:
 
 class IfElseStatement : public Statement {
 public:
-  IfElseStatement(Expression *cond, Statement *thenstmt, Statement *elsestmt)
-      : cond(cond), thenstmt(thenstmt), elsestmt(elsestmt) {}
+  IfElseStatement(Expression *cond, Statement *then_stmt, Statement *else_stmt)
+      : cond(cond), then_stmt(then_stmt), else_stmt(else_stmt) {}
   void print() {
     using namespace std;
     cout << "<ifelse_statement>: ";
@@ -208,25 +216,25 @@ public:
       cond->print();
     cout << "} ";
     cout << "{<then>: ";
-    if (thenstmt != nullptr)
-      thenstmt->print();
+    if (then_stmt != nullptr)
+      then_stmt->print();
     cout << "} ";
     cout << "{<else>: ";
-    if (elsestmt != nullptr)
-      elsestmt->print();
+    if (else_stmt != nullptr)
+      else_stmt->print();
     cout << "} ";
   }
 
 public:
   Expression *cond;
-  Statement *thenstmt;
-  Statement *elsestmt;
+  Statement *then_stmt;
+  Statement *else_stmt;
 };
 
 class WhileStatement : public Statement {
 public:
-  WhileStatement(Expression *cond, Statement *dostmt)
-      : cond(cond), dostmt(dostmt) {}
+  WhileStatement(Expression *cond, Statement *do_stmt)
+      : cond(cond), do_stmt(do_stmt) {}
   void print() {
     using namespace std;
     cout << "<while_statement>: ";
@@ -235,22 +243,14 @@ public:
       cond->print();
     cout << "} ";
     cout << "{<do>: ";
-    if (dostmt != nullptr)
-      dostmt->print();
+    if (do_stmt != nullptr)
+      do_stmt->print();
     cout << "} ";
   }
 
 public:
   Expression *cond;
-  Statement *dostmt;
-};
-
-class VoidStatement : public Statement {
-public:
-  void print() {
-    using namespace std;
-    cout << "void\n";
-  }
+  Statement *do_stmt;
 };
 
 class BreakStatement : public Statement {
@@ -411,6 +411,17 @@ public:
 
 class ArgumentList : public Expression {
 public:
+  ArgumentList() = default;
+  void print() {
+    using namespace std;
+    for (int i = 0; i < list.size(); i++) {
+      cout << "      ";
+      list[i]->print();
+      cout << endl;
+    }
+  }
+
+public:
   std::vector<Argument *> list;
 };
 
@@ -429,20 +440,18 @@ public:
       cout << "    args: nullptr" << endl;
     else {
       cout << "    args: " << endl;
-      for (int i = 0; i < args->list.size(); i++) {
-        cout << "      ";
-        args->list[i]->print();
-        cout << endl;
-      }
+      args->print();
     }
     cout << "    statements: ";
     if (body->statements.empty()) {
       cout << "nullptr\n";
     } else {
       cout << endl;
+      // body->print();
       for (auto &i : body->statements) {
         cout << "      ";
-        i->print();
+        if (i != nullptr)
+          i->print();
         cout << endl;
       }
     }
