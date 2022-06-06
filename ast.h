@@ -97,9 +97,11 @@ public:
     using namespace std;
     string bop[13] = {
         "+", "-", "*", "/", "%", "<", "<=", ">", ">=", "==", "!=", "&&", "||"};
+    cout << "{ ";
     left_expr->print();
     cout << " " << bop[static_cast<int>(op)] << " ";
     right_expr->print();
+    cout << "} ";
   }
 
 public:
@@ -122,13 +124,15 @@ public:
 
 class UnaryExpression : public Expression {
 public:
-  UnaryExpression(UnaryOp op, Expression *right_expr) : op(op), right_expr(right_expr) {}
-  void print(){
+  UnaryExpression(UnaryOp op, Expression *right_expr)
+      : op(op), right_expr(right_expr) {}
+  void print() {
     using namespace std;
     string uop[3] = {"+", "-", "!"};
     cout << uop[static_cast<int>(op)];
     right_expr->print();
   }
+
 public:
   UnaryOp op;
   Expression *right_expr;
@@ -162,6 +166,16 @@ public:
 
 class Block : public Statement {
 public:
+  void print() {
+    using namespace std;
+    cout << "<block>: ";
+    for (auto &i : statements) {
+      if (i != nullptr)
+        i->print();
+    }
+  }
+
+public:
   std::vector<Statement *> statements;
 };
 
@@ -171,7 +185,7 @@ public:
       : left_expr(left_expr), right_expr(right_expr) {}
   void print() {
     using namespace std;
-    cout << "<assign_statement> ";
+    cout << "<assign_statement>: ";
     left_expr->print();
     cout << " = ";
     right_expr->print();
@@ -188,7 +202,19 @@ public:
       : cond(cond), thenstmt(thenstmt), elsestmt(elsestmt) {}
   void print() {
     using namespace std;
-    cout << "ifelse\n";
+    cout << "<ifelse_statement>: ";
+    cout << "{<cond>: ";
+    if (cond != nullptr)
+      cond->print();
+    cout << "} ";
+    cout << "{<then>: ";
+    if (thenstmt != nullptr)
+      thenstmt->print();
+    cout << "} ";
+    cout << "{<else>: ";
+    if (elsestmt != nullptr)
+      elsestmt->print();
+    cout << "} ";
   }
 
 public:
@@ -203,7 +229,15 @@ public:
       : cond(cond), dostmt(dostmt) {}
   void print() {
     using namespace std;
-    cout << "while\n";
+    cout << "<while_statement>: ";
+    cout << "{<cond>: ";
+    if (cond != nullptr)
+      cond->print();
+    cout << "} ";
+    cout << "{<do>: ";
+    if (dostmt != nullptr)
+      dostmt->print();
+    cout << "} ";
   }
 
 public:
@@ -240,7 +274,7 @@ public:
   ReturnStatement(Expression *value = NULL) : value(value) {}
   void print() {
     using namespace std;
-    cout << "<return_statement> return_val: ";
+    cout << "<return_statement>: return_val: ";
     if (value == nullptr) {
       cout << "nullptr";
     } else {
@@ -258,7 +292,8 @@ public:
   EvalStatement(Expression *value) : value(value) {}
   void print() {
     using namespace std;
-    cout << "abc\n";
+    cout << "<eval_statement>: ";
+    value->print();
   }
 
 public:
@@ -293,7 +328,7 @@ public:
     identifier->print();
     cout << "<value>: ";
     if (value != nullptr) {
-    value->print();
+      value->print();
     } else
       cout << "nullptr";
     cout << endl;
