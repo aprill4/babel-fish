@@ -271,7 +271,7 @@ public:
 
 class ReturnStatement : public Statement {
 public:
-  ReturnStatement(Expression *value = NULL) : value(value) {}
+  ReturnStatement(Expression *value = nullptr) : value(value) {}
   void print() {
     using namespace std;
     cout << "<return_statement>: return_val: ";
@@ -464,10 +464,17 @@ public:
   Block *body;
 };
 
+class Scope {
+public:
+  Scope() = default;
+
+public:
+  std::vector<DeclareStatement *> var_declares;
+};
+
 class Root : public Node {
 public:
-  std::vector<DeclareStatement *> decls;
-  std::vector<FunctionDefinition *> func_defs;
+  Root() = default;
   void print() {
     using namespace std;
     cout << "[root]:\n";
@@ -485,4 +492,9 @@ public:
       func_defs[i]->print();
     }
   }
+
+public:
+  std::vector<DeclareStatement *> decls;
+  std::vector<FunctionDefinition *> func_defs;
+  Scope *scope;
 };
