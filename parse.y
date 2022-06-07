@@ -2,35 +2,20 @@
 #include <iostream>
 #include <cstdlib>
 #include "ast.h"
+#include "parse.tab.h"
 Root* root = nullptr;
 
 extern int yylex();
+
 void yyerror(const char *s) {
-    fprintf(stderr, "%s\n", s);
+      using namespace std;
+      cerr << yylloc.first_line << ':' << yylloc.first_column << ": error: " << s << endl;
 }
-#define YYERROR_VERBOSE true
-#ifdef YYDEBUG
-#undef YYDEBUG
-#endif
-#define YYDEBUG 1
-#define YYLLOC_DEFAULT(Current, Rhs, N)                               \
-    do {                                                              \
-        if (N) {                                                      \
-            (Current).first_line   = YYRHSLOC (Rhs, 1).first_line;    \
-            (Current).first_column = YYRHSLOC (Rhs, 1).first_column;  \
-            (Current).last_line    = YYRHSLOC (Rhs, N).last_line;     \
-            (Current).last_column  = YYRHSLOC (Rhs, N).last_column;   \
-        } else {                                                      \
-            (Current).first_line   = (Current).last_line   =          \
-              YYRHSLOC (Rhs, 0).last_line;                            \
-            (Current).first_column = (Current).last_column =          \
-              YYRHSLOC (Rhs, 0).last_column;                          \
-        }                                                             \
-        yylloc = Current;                                             \
-    } while (0)
+
 %}
 
 %locations
+
 %union {
       SysType type;
       std::string *string;
@@ -38,16 +23,16 @@ void yyerror(const char *s) {
       float f_val;
       Root* root;
       DeclareStatement* declare_statement;
-      FunctionDefinition* funcdef;
+      FunctionDefinition* function_definition;
+      Identifier* ident;
       Declare* declare;
       Expression* expr;
-      Statement* stmt;
-      Identifier* ident;
-      ArrayValue* array_val;
-      FuncCallArgumentList* call_args;
-      ArgumentList* func_args;
-      Argument* arg;
       Block* block;
+      Statement* stmt;
+      ArrayValue* array_val;
+      FormalArgumentList* formal_args;
+      FormalArgument* formal_arg;
+      ActualArgumentList* actual_args;
 }
 
 %token <token> ADD SUB MUL DIV MOD
@@ -65,15 +50,15 @@ void yyerror(const char *s) {
 
 %type <root> CompUnit
 %type <type> BType
+%type <declare_statement> Decl ConstDecl VarDecl
+%type <function_definition> FuncDef
+%type <declare> VarDef ConstDef
 %type <ident> Ident ArrayIdent
 %type <array_val> ArrayVal ArrayVals
-%type <declare_statement> Decl ConstDecl VarDecl
-%type <declare> VarDef ConstDef
-%type <funcdef> FuncDef
 %type <expr> LVal ArrayItem Number LOrExp LAndExp EqExp AddExp MulExp PrimaryExp RelExp UnaryExp
-%type <func_args> FuncFParams
-%type <arg> FuncFParam FuncFParamArray
-%type <call_args> FuncRParams
+%type <formal_args> FuncFParams
+%type <formal_arg> FuncFParam FuncFParamArray
+%type <actual_args> FuncRParams
 %type <block> Block BlockItems
 %type <stmt> BlockItem Stmt
 
@@ -81,8 +66,14 @@ void yyerror(const char *s) {
 
 %%
 
-CompUnit: CompUnit Decl { $$ = $1; $$->decls.emplace_back($2); }
-      | CompUnit FuncDef { $$ = $1; $$->func_defs.emplace_back($2); }
+CompUnit: CompUnit Decl { 
+            $$ = $1; 
+            $$->decls.emplace_back($2); 
+      }
+      | CompUnit FuncDef { 
+            $$ = $1; 
+            $$->func_defs.emplace_back($2); 
+      }
       | Decl { root = new Root(); $$ = root; $$->decls.emplace_back($1); }
       | FuncDef { root = new Root(); $$ = root; $$->func_defs.emplace_back($1); }
       ;
@@ -221,7 +212,7 @@ FuncDef: BType Ident LEFT_PARENTHESES RIGHT_PARENTHESES Block {
       ;
 
 FuncFParams: FuncFParam { 
-            $$ = new ArgumentList(); 
+            $$ = new FormalArgumentList(); 
             $$->list.emplace_back($1); 
       }
       | FuncFParams COMMA FuncFParam { 
@@ -229,12 +220,12 @@ FuncFParams: FuncFParam {
       }
       ;
 
-FuncFParam: BType Ident { $$ = new Argument($1, $2); }
+FuncFParam: BType Ident { $$ = new FormalArgument($1, $2); }
       | FuncFParamArray
       ;
 
 FuncFParamArray: BType Ident LEFT_BRACKETS RIGHT_BRACKETS {
-            $$ = new Argument($1, $2);
+            $$ = new FormalArgument($1, $2);
             $$->identifier->dimension.emplace_back(nullptr);
       }
       | FuncFParamArray LEFT_BRACKETS AddExp RIGHT_BRACKETS { 
@@ -243,7 +234,7 @@ FuncFParamArray: BType Ident LEFT_BRACKETS RIGHT_BRACKETS {
       }
       ;
 
-FuncRParams: AddExp { $$ = new FuncCallArgumentList(); $$->list.emplace_back($1); }
+FuncRParams: AddExp { $$ = new ActualArgumentList(); $$->list.emplace_back($1); }
       | FuncRParams COMMA AddExp { $$ = $1; $$->list.emplace_back($3); }
       ;
 

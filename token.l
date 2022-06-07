@@ -1,10 +1,8 @@
 %option noyywrap
 %{
 #include <string>
-#include <iostream>
 #include "ast.h"
 #include "parse.tab.h"
-extern Root* root;
 
 void yyerror(const char *s);
 int yycolumn = 1;
@@ -20,9 +18,7 @@ int yycolumn = 1;
                            } else {                             \
                                yycolumn++;                      \
                            }                                    \
-                       }                                        \
-                       yylloc.last_line = yylineno;             \
-                       yylloc.last_column = yycolumn - 1;
+                       }                                        
 %}
 
 
@@ -50,7 +46,8 @@ TOKEN_IDENTIFIER ({LETTER}|_)({DIGIT}|{LETTER}|_)*
 
 %%
 
-\/\/.*\n?           ;
+\/\/.*              ;
+
 "/*"                {
                         int c;
                         while((c = yyinput()) != 0) {
@@ -65,55 +62,56 @@ TOKEN_IDENTIFIER ({LETTER}|_)({DIGIT}|{LETTER}|_)*
                             }
                         }
                     }
-[ ]                                 ;
-\n                                  ;
-[\t\r]                              ;
 
-"+"                                 return TOKEN(ADD);
-"-"                                 return TOKEN(SUB);
-"*"                                 return TOKEN(MUL);
-"/"                                 return TOKEN(DIV);
-"%"                                 return TOKEN(MOD);
+[\n]                ;
+[ ]                 ;
+[\t\r]              ;
 
-"if"                                return TOKEN(IF);
-"else"                              return TOKEN(ELSE);
-"while"                             return TOKEN(WHILE);
-"break"                             return TOKEN(BREAK);
-"continue"                          return TOKEN(CONTINUE);
-"return"                            return TOKEN(RETURN);
+"+"                 return TOKEN(ADD);
+"-"                 return TOKEN(SUB);
+"*"                 return TOKEN(MUL);
+"/"                 return TOKEN(DIV);
+"%"                 return TOKEN(MOD);
 
-"const"                             return TOKEN(CONST);
-"int"                               return TOKEN(INT);
-"void"                              return TOKEN(VOID);
-"float"                             return TOKEN(FLOAT);
+"if"                return TOKEN(IF);
+"else"              return TOKEN(ELSE);
+"while"             return TOKEN(WHILE);
+"break"             return TOKEN(BREAK);
+"continue"          return TOKEN(CONTINUE);
+"return"            return TOKEN(RETURN);
 
-{TOKEN_IDENTIFIER}                  SAVE_TOKEN; return IDENTIFIER;
-{TOKEN_INTEGER}                     yylval.token = static_cast<int>(strtol(yytext, NULL, 0)); return INTEGER;
-{TOKEN_FLOATPOINT}	                yylval.f_val = static_cast<float>(strtod(yytext, NULL)); return FLOATPOINT;
+"const"             return TOKEN(CONST);
+"int"               return TOKEN(INT);
+"void"              return TOKEN(VOID);
+"float"             return TOKEN(FLOAT);
 
-"="                                 return TOKEN(ASSIGN);
-"=="                                return TOKEN(EQ);
-"!="                                return TOKEN(NEQ);
+{TOKEN_IDENTIFIER}  SAVE_TOKEN; return IDENTIFIER;
+{TOKEN_INTEGER}     yylval.token = static_cast<int>(strtol(yytext, NULL, 0)); return INTEGER;
+{TOKEN_FLOATPOINT}	yylval.f_val = static_cast<float>(strtod(yytext, NULL)); return FLOATPOINT;
 
-">"                                 return TOKEN(GT);
-">="                                return TOKEN(GTE);
-"<"                                 return TOKEN(LT);
-"<="                                return TOKEN(LTE);
+"="                 return TOKEN(ASSIGN);
+"=="                return TOKEN(EQ);
+"!="                return TOKEN(NEQ);
 
-"&&"                                return TOKEN(AND);
-"||"                                return TOKEN(OR);
-"!"                                 return TOKEN(NOT);
+">"                 return TOKEN(GT);
+">="                return TOKEN(GTE);
+"<"                 return TOKEN(LT);
+"<="                return TOKEN(LTE);
 
-"("                                 return TOKEN(LEFT_PARENTHESES);
-")"                                 return TOKEN(RIGHT_PARENTHESES);
-"["                                 return TOKEN(LEFT_BRACKETS);
-"]"                                 return TOKEN(RIGHT_BRACKETS);
-"{"                                 return TOKEN(LEFT_BRACES);
-"}"                                 return TOKEN(RIGHT_BRACES);
+"&&"                return TOKEN(AND);
+"||"                return TOKEN(OR);
+"!"                 return TOKEN(NOT);
 
-","                                 return TOKEN(COMMA);
-";"                                 return TOKEN(SEMICOLON);
+"("                 return TOKEN(LEFT_PARENTHESES);
+")"                 return TOKEN(RIGHT_PARENTHESES);
+"["                 return TOKEN(LEFT_BRACKETS);
+"]"                 return TOKEN(RIGHT_BRACKETS);
+"{"                 return TOKEN(LEFT_BRACES);
+"}"                 return TOKEN(RIGHT_BRACES);
 
-.                                   yyerror((std::string("Unknown token: ") + yytext).c_str()); yyterminate();
+","                 return TOKEN(COMMA);
+";"                 return TOKEN(SEMICOLON);
+
+.                   yyerror((std::string("Unknown token: ") + yytext).c_str()); yyterminate();
 
 %%
