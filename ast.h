@@ -25,7 +25,7 @@ enum class UnaryOp { POSITIVE, NEGATIVE, NOT };
 class Node {
 public:
   Node();
-  virtual ~Node(){};
+  ~Node(){};
   virtual void print(){};
 
 public:
@@ -136,7 +136,7 @@ public:
   Expression *right_expr;
 };
 
-class FuncCallArgumentList : public Expression {
+class ActualArgumentList : public Node {
 public:
   void print() {
     using namespace std;
@@ -151,21 +151,21 @@ public:
 
 class FuncCallExpression : public Expression {
 public:
-  FuncCallExpression(Identifier *identifier, FuncCallArgumentList *args)
-      : identifier(identifier), args(args) {}
+  FuncCallExpression(Identifier *identifier, ActualArgumentList *actual_args)
+      : identifier(identifier), actual_args(actual_args) {}
   void print() {
     using namespace std;
     cout << "<func_call>: { ";
     identifier->print();
-    if (args != nullptr) {
-      args->print();
+    if (actual_args != nullptr) {
+      actual_args->print();
     }
     cout << "}";
   }
 
 public:
   Identifier *identifier;
-  FuncCallArgumentList *args;
+  ActualArgumentList *actual_args;
 };
 
 class Statement : public Node {
@@ -393,9 +393,9 @@ public:
   bool is_const;
 };
 
-class Argument : public Expression {
+class FormalArgument : public Node {
 public:
-  Argument(SysType type, Identifier *identifier)
+  FormalArgument(SysType type, Identifier *identifier)
       : type(type), identifier(identifier) {}
   void print() {
     using namespace std;
@@ -409,9 +409,9 @@ public:
   Identifier *identifier;
 };
 
-class ArgumentList : public Expression {
+class FormalArgumentList : public Node {
 public:
-  ArgumentList() = default;
+  FormalArgumentList() = default;
   void print() {
     using namespace std;
     for (int i = 0; i < list.size(); i++) {
@@ -422,25 +422,25 @@ public:
   }
 
 public:
-  std::vector<Argument *> list;
+  std::vector<FormalArgument *> list;
 };
 
 class FunctionDefinition : public Node {
 public:
   FunctionDefinition(SysType return_type, Identifier *identifier,
-                     ArgumentList *args, Block *body)
-      : return_type(return_type), identifier(identifier), args(args),
+                     FormalArgumentList *formal_args, Block *body)
+      : return_type(return_type), identifier(identifier), formal_args(formal_args),
         body(body) {}
   void print() {
     using namespace std;
     string tp[3] = {"INT", "FLOAT", "VOID"};
     cout << "return_type: " << tp[static_cast<int>(return_type)];
     cout << "  id: " << identifier->id << endl;
-    if (args == nullptr)
+    if (formal_args == nullptr)
       cout << "    args: nullptr" << endl;
     else {
       cout << "    args: " << endl;
-      args->print();
+      formal_args->print();
     }
     cout << "    statements: ";
     if (body->statements.empty()) {
@@ -460,7 +460,7 @@ public:
 public:
   SysType return_type;
   Identifier *identifier;
-  ArgumentList *args;
+  FormalArgumentList *formal_args;
   Block *body;
 };
 
