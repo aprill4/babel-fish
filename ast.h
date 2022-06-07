@@ -305,8 +305,6 @@ class Declare : public Node {};
 class DeclareStatement : public Statement {
 public:
   DeclareStatement(SysType type) : type(type) {}
-  SysType type;
-  std::vector<Declare *> defs;
   void print() {
     using namespace std;
     string tp[3] = {"INT", "FLOAT", "VOID"};
@@ -316,6 +314,10 @@ public:
       defs[i]->print();
     }
   }
+
+public:
+  SysType type;
+  std::vector<Declare *> defs;
 };
 
 class VarDeclare : public Declare {
@@ -371,8 +373,7 @@ public:
 
 class ArrayDeclare : public Declare {
 public:
-  ArrayDeclare(Identifier *identifier, ArrayValue *value,
-               bool is_const)
+  ArrayDeclare(Identifier *identifier, ArrayValue *value, bool is_const)
       : identifier(identifier), value(value), is_const(is_const) {}
   void print() {
     using namespace std;
@@ -429,8 +430,8 @@ class FunctionDefinition : public Node {
 public:
   FunctionDefinition(SysType return_type, Identifier *identifier,
                      FormalArgumentList *formal_args, Block *body)
-      : return_type(return_type), identifier(identifier), formal_args(formal_args),
-        body(body) {}
+      : return_type(return_type), identifier(identifier),
+        formal_args(formal_args), body(body) {}
   void print() {
     using namespace std;
     string tp[3] = {"INT", "FLOAT", "VOID"};
