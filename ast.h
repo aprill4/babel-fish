@@ -39,8 +39,8 @@ public:
 class Number : public Expression {
 public:
   Number(SysType type) : type(type) {}
-  Number(SysType type, int i_val) : Number(type) { value.i_val = i_val; }
-  Number(SysType type, float f_val) : Number(type) { value.f_val = f_val; }
+  Number(SysType type, long long i_val) : Number(type) { value.i_val = i_val; }
+  Number(SysType type, double f_val) : Number(type) { value.f_val = f_val; }
   void print() {
     using namespace std;
     string tp[3] = {"INT", "FLOAT"};
@@ -54,8 +54,8 @@ public:
 public:
   SysType type;
   union {
-    int i_val;
-    float f_val;
+    long long i_val;
+    double f_val;
   } value;
 };
 
