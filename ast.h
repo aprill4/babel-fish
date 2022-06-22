@@ -1,6 +1,8 @@
 #pragma once
 #include <iostream>
+#include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 enum class SysType { INT, FLOAT, VOID };
 
@@ -29,7 +31,7 @@ public:
   virtual void print(){};
 
 public:
-  int line, column;
+  int line_, column_;
 };
 
 class Expression : public Node {
@@ -38,38 +40,38 @@ public:
 
 class Number : public Expression {
 public:
-  Number(SysType type) : type(type) {}
-  Number(SysType type, long long i_val) : Number(type) { value.i_val = i_val; }
-  Number(SysType type, double f_val) : Number(type) { value.f_val = f_val; }
+  Number(SysType type) : type_(type) {}
+  Number(SysType type, long long i_val) : Number(type) { value_.i_val = i_val; }
+  Number(SysType type, double f_val) : Number(type) { value_.f_val = f_val; }
   void print() {
     using namespace std;
     string tp[3] = {"INT", "FLOAT"};
-    if (static_cast<int>(type) == 0) {
-      cout << value.i_val;
-    } else if (static_cast<int>(type) == 1) {
-      cout << value.f_val;
+    if (static_cast<int>(type_) == 0) {
+      cout << value_.i_val;
+    } else if (static_cast<int>(type_) == 1) {
+      cout << value_.f_val;
     }
   }
 
 public:
-  SysType type;
+  SysType type_;
   union {
     long long i_val;
     double f_val;
-  } value;
+  } value_;
 };
 
 class Identifier : public Node {
 public:
-  Identifier(const std::string *id) : id(*id) {}
+  Identifier(const std::string *id) : id_(*id) {}
   void print() {
     using namespace std;
-    cout << "<id>: " << id;
+    cout << "<id>: " << id_;
     cout << " <dimension>: ";
-    if (dimension.empty()) {
+    if (dimension_.empty()) {
       cout << "not_array";
     } else {
-      for (auto &i : dimension) {
+      for (auto &i : dimension_) {
         if (i == nullptr)
           cout << "[]";
         else {
@@ -83,89 +85,89 @@ public:
   }
 
 public:
-  std::string id;
-  std::vector<Expression *> dimension;
+  std::string id_;
+  std::vector<Expression *> dimension_;
 };
 
 class BinaryExpression : public Expression {
 public:
-  BinaryExpression(Expression *left_expr, BinaryOp op, Expression *right_expr)
-      : left_expr(left_expr), op(op), right_expr(right_expr) {}
+  BinaryExpression(Expression *lhs, BinaryOp op, Expression *rhs)
+      : lhs_(lhs), op_(op), rhs_(rhs) {}
   void print() {
     using namespace std;
     string bop[13] = {
         "+", "-", "*", "/", "%", "<", "<=", ">", ">=", "==", "!=", "&&", "||"};
     cout << "{ ";
-    left_expr->print();
-    cout << " " << bop[static_cast<int>(op)] << " ";
-    right_expr->print();
+    lhs_->print();
+    cout << " " << bop[static_cast<int>(op_)] << " ";
+    rhs_->print();
     cout << "} ";
   }
 
 public:
-  Expression *left_expr;
-  BinaryOp op;
-  Expression *right_expr;
+  Expression *lhs_;
+  BinaryOp op_;
+  Expression *rhs_;
 };
 
 class LValExpression : public Expression {
 public:
-  LValExpression(Identifier *identifier) : identifier(identifier) {}
+  LValExpression(Identifier *identifier) : identifier_(identifier) {}
   void print() {
     using namespace std;
-    identifier->print();
+    identifier_->print();
   }
 
 public:
-  Identifier *identifier;
+  Identifier *identifier_;
 };
 
 class UnaryExpression : public Expression {
 public:
-  UnaryExpression(UnaryOp op, Expression *right_expr)
-      : op(op), right_expr(right_expr) {}
+  UnaryExpression(UnaryOp op, Expression *rhs)
+      : op_(op), rhs_(rhs) {}
   void print() {
     using namespace std;
     string uop[3] = {"+", "-", "!"};
-    cout << uop[static_cast<int>(op)];
-    right_expr->print();
+    cout << uop[static_cast<int>(op_)];
+    rhs_->print();
   }
 
 public:
-  UnaryOp op;
-  Expression *right_expr;
+  UnaryOp op_;
+  Expression *rhs_;
 };
 
 class ActualArgumentList : public Node {
 public:
   void print() {
     using namespace std;
-    for (auto &i : list) {
+    for (auto &i : list_) {
       i->print();
     }
   }
 
 public:
-  std::vector<Expression *> list;
+  std::vector<Expression *> list_;
 };
 
 class FuncCallExpression : public Expression {
 public:
-  FuncCallExpression(Identifier *identifier, ActualArgumentList *actual_args)
-      : identifier(identifier), actual_args(actual_args) {}
+  FuncCallExpression(Identifier *identifier, ActualArgumentList *actualArgs)
+      : identifier_(identifier), actualArgs_(actualArgs) {}
   void print() {
     using namespace std;
     cout << "<func_call>: { ";
-    identifier->print();
-    if (actual_args != nullptr) {
-      actual_args->print();
+    identifier_->print();
+    if (actualArgs_ != nullptr) {
+      actualArgs_->print();
     }
     cout << "}";
   }
 
 public:
-  Identifier *identifier;
-  ActualArgumentList *actual_args;
+  Identifier *identifier_;
+  ActualArgumentList *actualArgs_;
 };
 
 class Statement : public Node {
@@ -177,80 +179,79 @@ public:
   void print() {
     using namespace std;
     cout << "<block>: ";
-    for (auto &i : statements) {
+    for (auto &i : statements_) {
       if (i != nullptr)
         i->print();
     }
   }
 
 public:
-  std::vector<Statement *> statements;
+  std::vector<Statement *> statements_;
 };
 
 class AssignStatement : public Statement {
 public:
-  AssignStatement(Expression *left_expr, Expression *right_expr)
-      : left_expr(left_expr), right_expr(right_expr) {}
+  AssignStatement(Expression *lhs, Expression *rhs) : lhs_(lhs), rhs_(rhs) {}
   void print() {
     using namespace std;
     cout << "<assign_statement>: ";
-    left_expr->print();
+    lhs_->print();
     cout << " = ";
-    right_expr->print();
+    rhs_->print();
   }
 
 public:
-  Expression *left_expr;
-  Expression *right_expr;
+  Expression *lhs_;
+  Expression *rhs_;
 };
 
 class IfElseStatement : public Statement {
 public:
-  IfElseStatement(Expression *cond, Statement *then_stmt, Statement *else_stmt)
-      : cond(cond), then_stmt(then_stmt), else_stmt(else_stmt) {}
+  IfElseStatement(Expression *cond, Statement *thenStmt, Statement *elseStmt)
+      : cond_(cond), thenStmt_(thenStmt), elseStmt_(elseStmt) {}
   void print() {
     using namespace std;
     cout << "<ifelse_statement>: ";
     cout << "{<cond>: ";
-    if (cond != nullptr)
-      cond->print();
+    if (cond_ != nullptr)
+      cond_->print();
     cout << "} ";
     cout << "{<then>: ";
-    if (then_stmt != nullptr)
-      then_stmt->print();
+    if (thenStmt_ != nullptr)
+      thenStmt_->print();
     cout << "} ";
     cout << "{<else>: ";
-    if (else_stmt != nullptr)
-      else_stmt->print();
+    if (elseStmt_ != nullptr)
+      elseStmt_->print();
     cout << "} ";
   }
 
 public:
-  Expression *cond;
-  Statement *then_stmt;
-  Statement *else_stmt;
+  Expression *cond_;
+  Statement *thenStmt_;
+  Statement *elseStmt_;
 };
 
 class WhileStatement : public Statement {
 public:
-  WhileStatement(Expression *cond, Statement *do_stmt)
-      : cond(cond), do_stmt(do_stmt) {}
+  WhileStatement(Expression *cond, Statement *doStmt)
+      : cond_(cond), doStmt_(doStmt) {}
   void print() {
     using namespace std;
     cout << "<while_statement>: ";
     cout << "{<cond>: ";
-    if (cond != nullptr)
-      cond->print();
+    if (cond_ != nullptr)
+      cond_->print();
     cout << "} ";
     cout << "{<do>: ";
-    if (do_stmt != nullptr)
-      do_stmt->print();
+    if (doStmt_ != nullptr)
+      doStmt_->print();
     cout << "} ";
   }
 
 public:
-  Expression *cond;
-  Statement *do_stmt;
+  Expression *cond_;
+  Statement *doStmt_;
 };
 
 class BreakStatement : public Statement {
@@ -271,143 +272,151 @@ public:
 
 class ReturnStatement : public Statement {
 public:
-  ReturnStatement(Expression *value = nullptr) : value(value) {}
+  ReturnStatement(Expression *value = nullptr) : value_(value) {}
   void print() {
     using namespace std;
     cout << "<return_statement>: return_val: ";
-    if (value == nullptr) {
+    if (value_ == nullptr) {
       cout << "nullptr";
     } else {
-      value->print();
+      value_->print();
       cout << endl;
     }
   }
 
 public:
-  Expression *value;
+  Expression *value_;
 };
 
 class EvalStatement : public Statement {
 public:
-  EvalStatement(Expression *value) : value(value) {}
+  EvalStatement(Expression *value) : value_(value) {}
   void print() {
     using namespace std;
     cout << "<eval_statement>: ";
-    value->print();
+    value_->print();
   }
 
 public:
-  Expression *value;
+  Expression *value_;
 };
 
-class Declare : public Node {};
+class Declare : public Node {
+public:
+  Declare(SysType type, Identifier *identifier, bool isConst)
+      : type_(type), identifier_(identifier), isConst_(isConst) {}
+
+public:
+  SysType type_;
+  Identifier *identifier_;
+  bool isConst_;
+};
 
 class DeclareStatement : public Statement {
 public:
-  DeclareStatement(SysType type) : type(type) {}
+  DeclareStatement(SysType type) : type_(type) {}
   void print() {
     using namespace std;
     string tp[3] = {"INT", "FLOAT", "VOID"};
-    cout << "decl_type: " << tp[static_cast<int>(type)] << endl;
-    for (int i = 0; i < defs.size(); i++) {
-      cout << "    defs[" << i << "]: ";
-      defs[i]->print();
+    cout << "decl_type: " << tp[static_cast<int>(type_)] << endl;
+    for (int i = 0; i < declares_.size(); i++) {
+      cout << "    declares_[" << i << "]: ";
+      declares_[i]->print();
     }
   }
+  SysType getType() { return type_; }
 
 public:
-  SysType type;
-  std::vector<Declare *> defs;
+  SysType type_;
+  std::vector<Declare *> declares_;
 };
 
 class VarDeclare : public Declare {
 public:
-  VarDeclare(Identifier *identifier, Expression *value, bool is_const)
-      : identifier(identifier), value(value), is_const(is_const) {}
+  VarDeclare(SysType type, Identifier *identifier, Expression *value,
+             bool is_const)
+      : Declare(type, identifier, is_const), value_(value) {}
   void print() {
     using namespace std;
-    cout << "<const>: " << ((is_const == true) ? "true" : "false") << " ";
-    identifier->print();
+    cout << "<const>: " << ((isConst_ == true) ? "true" : "false") << " ";
+    identifier_->print();
     cout << "<value>: ";
-    if (value != nullptr) {
-      value->print();
+    if (value_ != nullptr) {
+      value_->print();
     } else
       cout << "nullptr";
     cout << endl;
   }
 
 public:
-  Identifier *identifier;
-  Expression *value;
-  bool is_const;
+  Expression *value_;
 };
 
 class ArrayValue : public Expression {
 public:
   ArrayValue(bool is_number, Expression *value)
-      : is_number(is_number), value(value) {}
+      : isNumber_(is_number), value_(value) {}
   void print() {
     using namespace std;
-    if (is_number == true) {
-      value->print();
+    if (isNumber_ == true) {
+      value_->print();
     } else {
-      for (int i = 0; i < value_list.size(); i++) {
-        if (value_list[i]->is_number) {
-          value_list[i]->print();
+      for (int i = 0; i < valueList_.size(); i++) {
+        if (valueList_[i]->isNumber_) {
+          valueList_[i]->print();
         } else {
           cout << "{";
-          value_list[i]->print();
+          valueList_[i]->print();
           cout << "}";
         }
-        if (i < value_list.size() - 1)
+        if (i < valueList_.size() - 1)
           cout << ", ";
       }
     }
   }
 
 public:
-  bool is_number;
-  Expression *value;
-  std::vector<ArrayValue *> value_list;
+  bool isNumber_;
+  Expression *value_;
+  std::vector<ArrayValue *> valueList_;
 };
 
 class ArrayDeclare : public Declare {
 public:
-  ArrayDeclare(Identifier *identifier, ArrayValue *value, bool is_const)
-      : identifier(identifier), value(value), is_const(is_const) {}
+  ArrayDeclare(SysType type, Identifier *identifier, ArrayValue *value,
+               bool is_const)
+      : Declare(type, identifier, is_const), value_(value) {}
   void print() {
     using namespace std;
-    cout << "<const>: " << ((is_const == true) ? "true" : "false") << " ";
-    identifier->print();
+    cout << "<const>: " << ((isConst_ == true) ? "true" : "false") << " ";
+    identifier_->print();
     cout << "<init_val>: ";
-    if (value != nullptr) {
+    if (value_ != nullptr) {
       cout << "{";
-      value->print();
+      value_->print();
       cout << "}";
     } else
       cout << "nullptr";
   }
 
 public:
-  Identifier *identifier;
-  ArrayValue *value;
-  bool is_const;
+  ArrayValue *value_;
 };
 
 class FormalArgument : public Node {
 public:
   FormalArgument(SysType type, Identifier *identifier)
-      : type(type), identifier(identifier) {}
+      : type_(type), identifier_(identifier) {}
   void print() {
     using namespace std;
     string tp[3] = {"INT", "FLOAT", "VOID"};
-    cout << "<type>: " << tp[static_cast<int>(type)] << "  ";
-    identifier->print();
+    cout << "<type>: " << tp[static_cast<int>(type_)] << "  ";
+    identifier_->print();
   }
 
 public:
-  SysType type;
-  Identifier *identifier;
+  SysType type_;
+  Identifier *identifier_;
 };
 
 class FormalArgumentList : public Node {
@@ -415,41 +424,41 @@ public:
   FormalArgumentList() = default;
   void print() {
     using namespace std;
-    for (int i = 0; i < list.size(); i++) {
+    for (int i = 0; i < list_.size(); i++) {
       cout << "      ";
-      list[i]->print();
+      list_[i]->print();
       cout << endl;
     }
   }
 
 public:
-  std::vector<FormalArgument *> list;
+  std::vector<FormalArgument *> list_;
 };
 
 class FunctionDefinition : public Node {
 public:
-  FunctionDefinition(SysType return_type, Identifier *identifier,
-                     FormalArgumentList *formal_args, Block *body)
-      : return_type(return_type), identifier(identifier),
-        formal_args(formal_args), body(body) {}
+  FunctionDefinition(SysType returnType, Identifier *identifier,
+                     FormalArgumentList *formalArgs, Block *body)
+      : returnType_(returnType), identifier_(identifier),
+        formalArgs_(formalArgs), body_(body) {}
   void print() {
     using namespace std;
     string tp[3] = {"INT", "FLOAT", "VOID"};
-    cout << "return_type: " << tp[static_cast<int>(return_type)];
-    cout << "  id: " << identifier->id << endl;
-    if (formal_args == nullptr)
+    cout << "return_type: " << tp[static_cast<int>(returnType_)];
+    cout << "  id: " << identifier_->id_ << endl;
+    if (formalArgs_ == nullptr)
       cout << "    args: nullptr" << endl;
     else {
       cout << "    args: " << endl;
-      formal_args->print();
+      formalArgs_->print();
     }
     cout << "    statements: ";
-    if (body->statements.empty()) {
+    if (body_->statements_.empty()) {
       cout << "nullptr\n";
     } else {
       cout << endl;
       // body->print();
-      for (auto &i : body->statements) {
+      for (auto &i : body_->statements_) {
         cout << "      ";
         if (i != nullptr)
           i->print();
@@ -459,10 +468,10 @@ public:
   }
 
 public:
-  SysType return_type;
-  Identifier *identifier;
-  FormalArgumentList *formal_args;
-  Block *body;
+  SysType returnType_;
+  Identifier *identifier_;
+  FormalArgumentList *formalArgs_;
+  Block *body_;
 };
 
 class Scope {
@@ -470,7 +479,8 @@ public:
   Scope() = default;
 
 public:
-  std::vector<DeclareStatement *> var_declares;
+  std::unordered_map<std::string, Declare *> varDeclares_;
+  std::unordered_map<std::string, FunctionDefinition *> funcDeclares_;
 };
 
 class Root : public Node {
@@ -479,23 +489,23 @@ public:
   void print() {
     using namespace std;
     cout << "[root]:\n";
-    cout << "  decls: " << decls.size() << endl;
-    cout << "  func_defs: " << func_defs.size() << endl;
-    cout << "[decls]: " << endl;
-    for (int i = 0; i < decls.size(); i++) {
+    cout << "  declareStatement_: " << declareStatement_.size() << endl;
+    cout << "  functionDefinition_: " << functionDefinitions_.size() << endl;
+    cout << "[declareStatement_]: " << endl;
+    for (int i = 0; i < declareStatement_.size(); i++) {
       cout << "  decl[" << i << "]: ";
-      decls[i]->print();
+      declareStatement_[i]->print();
       cout << endl;
     }
-    cout << "[func_defs]: " << endl;
-    for (int i = 0; i < func_defs.size(); i++) {
-      cout << "  func_defs[" << i << "]: ";
-      func_defs[i]->print();
+    cout << "[functionDefinition_]: " << endl;
+    for (int i = 0; i < functionDefinitions_.size(); i++) {
+      cout << "  functionDefinition_[" << i << "]: ";
+      functionDefinitions_[i]->print();
     }
   }
 
 public:
-  std::vector<DeclareStatement *> decls;
-  std::vector<FunctionDefinition *> func_defs;
-  Scope *scope;
+  std::vector<DeclareStatement *> declareStatement_;
+  std::vector<FunctionDefinition *> functionDefinitions_;
+  Scope *scope_;
 };
