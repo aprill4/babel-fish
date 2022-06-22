@@ -52,7 +52,6 @@ void yyerror(const char *s) {
 %type <type> BType
 %type <declare_statement> Decl ConstDecl VarDecl
 %type <function_definition> FuncDef
-%type <declare> VarDef ConstDef
 %type <ident> Ident ArrayIdent
 %type <array_val> ArrayVal ArrayVals
 %type <expr> LVal ArrayItem Number LOrExp LAndExp EqExp AddExp MulExp PrimaryExp RelExp UnaryExp
@@ -68,14 +67,14 @@ void yyerror(const char *s) {
 
 CompUnit: CompUnit Decl { 
             $$ = $1; 
-            $$->decls.emplace_back($2); 
+            $$->declareStatement_.emplace_back($2); 
       }
       | CompUnit FuncDef { 
             $$ = $1; 
-            $$->func_defs.emplace_back($2); 
+            $$->functionDefinitions_.emplace_back($2); 
       }
-      | Decl { root = new Root(); $$ = root; $$->decls.emplace_back($1); }
-      | FuncDef { root = new Root(); $$ = root; $$->func_defs.emplace_back($1); }
+      | Decl { root = new Root(); $$ = root; $$->declareStatement_.emplace_back($1); }
+      | FuncDef { root = new Root(); $$ = root; $$->functionDefinitions_.emplace_back($1); }
       ;
 
 Decl: ConstDecl SEMICOLON { $$ = $1;}
@@ -86,26 +85,60 @@ BType: INT { $$ = SysType::INT; }
     | FLOAT { $$ = SysType::FLOAT; }
     ;
 
-ConstDecl: CONST BType ConstDef { $$ = new DeclareStatement($2); $$->defs.emplace_back($3); }
-      | ConstDecl COMMA ConstDef { $$ = $1; $$->defs.emplace_back($3); }
+ConstDecl: CONST BType Ident ASSIGN AddExp { 
+            $$ = new DeclareStatement($2); 
+            $$->declares_.emplace_back(new VarDeclare{$2, $3, $5, true}); 
+      }
+      | ConstDecl COMMA Ident ASSIGN AddExp { 
+            $$ = $1; 
+            $$->declares_.emplace_back(new VarDeclare{$1->getType(),$3, $5, true}); 
+      }
+      | CONST BType ArrayIdent ASSIGN ArrayVal { 
+            $$ = new DeclareStatement($2); 
+            $$->declares_.emplace_back(new ArrayDeclare{$2, $3, $5, true}); 
+      }
+      | ConstDecl COMMA ArrayIdent ASSIGN ArrayVal { 
+            $$ = $1; 
+            $$->declares_.emplace_back(new ArrayDeclare{$1->getType(), $3, $5, true}); 
+      }
       ;
 
-ConstDef: Ident ASSIGN AddExp { $$ = new VarDeclare($1, $3, true); }
-      | ArrayIdent ASSIGN ArrayVal { $$ = new ArrayDeclare($1, $3, true); }
+VarDecl: BType Ident { 
+            $$ = new DeclareStatement($1); 
+            $$->declares_.emplace_back(new VarDeclare($1, $2, nullptr, false)); 
+      }
+      | BType Ident ASSIGN AddExp { 
+            $$ = new DeclareStatement($1); 
+            $$->declares_.emplace_back(new VarDeclare($1, $2, $4, false)); 
+      }
+      | BType ArrayIdent { 
+            $$ = new DeclareStatement($1); 
+            $$->declares_.emplace_back(new ArrayDeclare($1, $2, nullptr, false)); 
+      }
+      | BType ArrayIdent ASSIGN ArrayVal { 
+            $$ = new DeclareStatement($1); 
+            $$->declares_.emplace_back(new ArrayDeclare($1, $2, $4, false)); 
+      }
+      | VarDecl COMMA Ident { 
+            $$ = $1; 
+            $$->declares_.emplace_back(new VarDeclare($1->getType(), $3, nullptr, false)); 
+      }
+      | VarDecl COMMA Ident ASSIGN AddExp { 
+            $$ = $1; 
+            $$->declares_.emplace_back(new VarDeclare($1->getType(), $3, $5, false)); 
+      }
+      | VarDecl COMMA ArrayIdent { 
+            $$ = $1; 
+            $$->declares_.emplace_back(new ArrayDeclare($1->getType(),$3, nullptr, false)); 
+      }
+      | VarDecl COMMA ArrayIdent ASSIGN ArrayVal { 
+            $$ = $1; 
+            $$->declares_.emplace_back(new ArrayDeclare($1->getType(), $3, $5, false)); 
+      }
       ;
 
-VarDecl: BType VarDef { $$ = new DeclareStatement($1); $$->defs.emplace_back($2); }
-      | VarDecl COMMA VarDef { $$ = $1; $$->defs.emplace_back($3); }
-      ;
-
-VarDef: Ident { $$ = new VarDeclare($1, nullptr, false); }
-      | Ident ASSIGN AddExp { $$ = new VarDeclare($1, $3, false); }
-      | ArrayIdent { $$ = new ArrayDeclare($1, nullptr, false); }
-      | ArrayIdent ASSIGN ArrayVal { $$ = new ArrayDeclare($1, $3, false); }
-      ;
-
-ArrayIdent: Ident LEFT_BRACKETS AddExp RIGHT_BRACKETS { $$ = $1; $$->dimension.emplace_back($3); }
-      | ArrayIdent LEFT_BRACKETS AddExp RIGHT_BRACKETS { $$ = $1; $$->dimension.emplace_back($3); }
+ArrayIdent: Ident LEFT_BRACKETS AddExp RIGHT_BRACKETS { $$ = $1; $$->dimension_.emplace_back($3); }
+      | ArrayIdent LEFT_BRACKETS AddExp RIGHT_BRACKETS { $$ = $1; $$->dimension_.emplace_back($3); }
       ;
 
 ArrayVal: LEFT_BRACES RIGHT_BRACES { $$ = new ArrayValue(false, nullptr); }
@@ -113,19 +146,19 @@ ArrayVal: LEFT_BRACES RIGHT_BRACES { $$ = new ArrayValue(false, nullptr); }
 
 ArrayVals: AddExp  { 
             $$ = new ArrayValue(false, nullptr); 
-            $$->value_list.emplace_back(new ArrayValue(true, $1)); 
+            $$->valueList_.emplace_back(new ArrayValue(true, $1)); 
       }
       | ArrayVal {
             $$ = new ArrayValue(false, nullptr);
-            $$->value_list.emplace_back($1); 
+            $$->valueList_.emplace_back($1); 
       }
       | ArrayVals COMMA AddExp {
             $$ = $1;
-            $$->value_list.emplace_back(new ArrayValue(true, $3));
+            $$->valueList_.emplace_back(new ArrayValue(true, $3));
       }
       | ArrayVals COMMA ArrayVal {
             $$ = $1;
-            $$->value_list.emplace_back($3);
+            $$->valueList_.emplace_back($3);
       }
 
 Number: INTEGER { $$ = new Number(SysType::INT, $1); }
@@ -141,11 +174,11 @@ LVal: Ident { $$ = new LValExpression($1); }
 
 ArrayItem: Ident LEFT_BRACKETS AddExp RIGHT_BRACKETS { 
             $$ = new LValExpression($1);
-            dynamic_cast<LValExpression*>($$)->identifier->dimension.emplace_back($3);
+            dynamic_cast<LValExpression*>($$)->identifier_->dimension_.emplace_back($3);
       }
       | ArrayItem LEFT_BRACKETS AddExp RIGHT_BRACKETS { 
             $$ = $1;
-            dynamic_cast<LValExpression*>($$)->identifier->dimension.emplace_back($3);
+            dynamic_cast<LValExpression*>($$)->identifier_->dimension_.emplace_back($3);
       }
       ;
 
@@ -212,11 +245,15 @@ FuncDef: BType Ident LEFT_PARENTHESES RIGHT_PARENTHESES Block {
       ;
 
 FuncFParams: FuncFParam { 
+            // $$ = new std::vector<FormalArgument*>();
+            // $$->emplace_back($1);
             $$ = new FormalArgumentList(); 
-            $$->list.emplace_back($1); 
+            $$->list_.emplace_back($1); 
       }
       | FuncFParams COMMA FuncFParam { 
-            $$->list.emplace_back($3); 
+            $$ = $1;
+            // $$->emplace_back($3);
+            $$->list_.emplace_back($3); 
       }
       ;
 
@@ -226,16 +263,16 @@ FuncFParam: BType Ident { $$ = new FormalArgument($1, $2); }
 
 FuncFParamArray: BType Ident LEFT_BRACKETS RIGHT_BRACKETS {
             $$ = new FormalArgument($1, $2);
-            $$->identifier->dimension.emplace_back(nullptr);
+            $$->identifier_->dimension_.emplace_back(nullptr);
       }
       | FuncFParamArray LEFT_BRACKETS AddExp RIGHT_BRACKETS { 
             $$ = $1;
-            $$->identifier->dimension.emplace_back($3);
+            $$->identifier_->dimension_.emplace_back($3);
       }
       ;
 
-FuncRParams: AddExp { $$ = new ActualArgumentList(); $$->list.emplace_back($1); }
-      | FuncRParams COMMA AddExp { $$ = $1; $$->list.emplace_back($3); }
+FuncRParams: AddExp { $$ = new ActualArgumentList(); $$->list_.emplace_back($1); }
+      | FuncRParams COMMA AddExp { $$ = $1; $$->list_.emplace_back($3); }
       ;
 
 Block: LEFT_BRACES RIGHT_BRACES { $$ = new Block(); }
@@ -245,12 +282,12 @@ Block: LEFT_BRACES RIGHT_BRACES { $$ = new Block(); }
 BlockItems: BlockItem { 
             $$ = new Block(); 
             if ($1 != nullptr)
-                  $$->statements.emplace_back($1); 
+                  $$->statements_.emplace_back($1); 
       }
       | BlockItems BlockItem { 
             $$ = $1; 
             if ($1 != nullptr)
-                  $$->statements.emplace_back($2); 
+                  $$->statements_.emplace_back($2); 
       }
       ;
 
