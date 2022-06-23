@@ -2,7 +2,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
-#include <unordered_map>
+#include <map>
 #include <vector>
 enum class SysType { INT, FLOAT, VOID };
 
@@ -174,20 +174,6 @@ class Statement : public Node {
 public:
 };
 
-class Block : public Statement {
-public:
-  void print() {
-    using namespace std;
-    cout << "<block>: ";
-    for (auto &i : statements_) {
-      if (i != nullptr)
-        i->print();
-    }
-  }
-
-public:
-  std::vector<Statement *> statements_;
-};
 
 class AssignStatement : public Statement {
 public:
@@ -476,11 +462,27 @@ public:
 
 class Scope {
 public:
-  Scope() = default;
+  Scope() { parent = nullptr; }
+  public:
+  Scope* parent;
+  std::map<std::string, Declare *> varDeclares_;
+  std::map<std::string, FunctionDefinition *> funcDeclares_;
+};
+
+class Block : public Statement {
+public:
+  void print() {
+    using namespace std;
+    cout << "<block>: ";
+    for (auto &i : statements_) {
+      if (i != nullptr)
+        i->print();
+    }
+  }
 
 public:
-  std::unordered_map<std::string, Declare *> varDeclares_;
-  std::unordered_map<std::string, FunctionDefinition *> funcDeclares_;
+  Scope* scope_;
+  std::vector<Statement *> statements_;
 };
 
 class Root : public Node {
@@ -509,3 +511,5 @@ public:
   std::vector<FunctionDefinition *> functionDefinitions_;
   Scope *scope_;
 };
+
+void* find_symbol(Scope* scope, std::string symbol, bool is_var);
