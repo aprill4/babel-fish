@@ -1,4 +1,4 @@
-#include "../include/ArrayType.h"
+#include "../../include/Types/ArrayType.h"
 
 ArrayType::ArrayType(Type *elementType, std::size_t elementNum)
     : Type(TypeId::ArrayTypeId), elementType_(elementType),

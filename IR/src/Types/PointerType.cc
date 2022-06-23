@@ -1,4 +1,4 @@
-#include "../include/PointerType.h"
+#include "../../include/Types/PointerType.h"
 
 PointerType::PointerType(Type *pElementType)
     : Type(TypeId::PointerTypeId), pElementType_(pElementType) {}

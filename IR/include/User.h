@@ -11,9 +11,12 @@ public:
   ~User() = default;
   std::size_t getOperandNum();
   Value *getOperand(std::size_t idx);
+  Type *getOperandType(std::size_t idx);
+  std::string getOperandTypeName(std::size_t idx);
 
+  void setOperand(Value* value, std::size_t idx);
+  void addOperand(Value* value);
 private:
   std::vector<Value *> operands_;
   std::size_t operandNum_;
-  std::list<Use> operandList_;
 };

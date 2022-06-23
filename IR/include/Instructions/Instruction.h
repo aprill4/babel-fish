@@ -1,5 +1,6 @@
 #pragma once
-#include "User.h"
+#include "../User.h"
+#include "../Types/Type.h"
 
 class BasicBlock;
 class Module;
