@@ -1,8 +1,8 @@
 #pragma once
 #include <iostream>
+#include <map>
 #include <memory>
 #include <string>
-#include <map>
 #include <vector>
 enum class SysType { INT, FLOAT, VOID };
 
@@ -33,6 +33,8 @@ public:
 public:
   int line_, column_;
 };
+
+class Scope;
 
 class Expression : public Node {
 public:
@@ -124,8 +126,7 @@ public:
 
 class UnaryExpression : public Expression {
 public:
-  UnaryExpression(UnaryOp op, Expression *rhs)
-      : op_(op), rhs_(rhs) {}
+  UnaryExpression(UnaryOp op, Expression *rhs) : op_(op), rhs_(rhs) {}
   void print() {
     using namespace std;
     string uop[3] = {"+", "-", "!"};
@@ -174,6 +175,21 @@ class Statement : public Node {
 public:
 };
 
+class Block : public Statement {
+public:
+  void print() {
+    using namespace std;
+    cout << "<block>: ";
+    for (auto &i : statements_) {
+      if (i != nullptr)
+        i->print();
+    }
+  }
+
+public:
+  Scope *scope_;
+  std::vector<Statement *> statements_;
+};
 
 class AssignStatement : public Statement {
 public:
@@ -389,20 +405,16 @@ public:
   ArrayValue *value_;
 };
 
-class FormalArgument : public Node {
+class FormalArgument : public Declare {
 public:
   FormalArgument(SysType type, Identifier *identifier)
-      : type_(type), identifier_(identifier) {}
+      : Declare(type, identifier, false) {}
   void print() {
     using namespace std;
     string tp[3] = {"INT", "FLOAT", "VOID"};
     cout << "<type>: " << tp[static_cast<int>(type_)] << "  ";
     identifier_->print();
   }
-
-public:
-  SysType type_;
-  Identifier *identifier_;
 };
 
 class FormalArgumentList : public Node {
@@ -463,26 +475,11 @@ public:
 class Scope {
 public:
   Scope() { parent = nullptr; }
-  public:
-  Scope* parent;
+
+public:
+  Scope *parent;
   std::map<std::string, Declare *> varDeclares_;
   std::map<std::string, FunctionDefinition *> funcDeclares_;
-};
-
-class Block : public Statement {
-public:
-  void print() {
-    using namespace std;
-    cout << "<block>: ";
-    for (auto &i : statements_) {
-      if (i != nullptr)
-        i->print();
-    }
-  }
-
-public:
-  Scope* scope_;
-  std::vector<Statement *> statements_;
 };
 
 class Root : public Node {
@@ -512,4 +509,4 @@ public:
   Scope *scope_;
 };
 
-void* find_symbol(Scope* scope, std::string symbol, bool is_var);
+void *find_symbol(Scope *scope, std::string symbol, bool is_var);
