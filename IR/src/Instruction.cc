@@ -1,8 +1,11 @@
 #include "../include/Instruction.h"
+#include "../include/BasicBlock.h"
 
 Instruction::Instruction(Type *type, OpId opId, std::size_t operandNum,
                          BasicBlock *parent, const std::string &name)
     : User(type, name, operandNum), opId_(opId), parent_(parent) {}
+
+Module *Instruction::getModule() { return parent_->getModule(); }
 
 bool Instruction::isVoid() {
   //   return ((opId_ == ret) || (opId_ == br) || (opId_ == store) ||
@@ -29,7 +32,7 @@ bool Instruction::isFdiv() { return opId_ == OpId::fdiv; }
 bool Instruction::isFp2si() { return opId_ == OpId::fptosi; }
 bool Instruction::isSi2fp() { return opId_ == OpId::sitofp; }
 
-bool Instruction::isCmp() { return opId_ == OpId::cmp; }
+bool Instruction::isIcmp() { return opId_ == OpId::icmp; }
 bool Instruction::isFcmp() { return opId_ == OpId::fcmp; }
 
 bool Instruction::isCall() { return opId_ == OpId::call; }
@@ -43,3 +46,75 @@ bool Instruction::isBinary() {
 }
 
 bool Instruction::isTerminator() { return isBr() || isRet(); }
+
+std::string Instruction::getInstructionOpName() {
+  std::string opName;
+  switch (opId_) {
+  case OpId::ret:
+    opName = "ret";
+    break;
+  case OpId::br:
+    opName = "br";
+    break;
+  case OpId::add:
+    opName = "add";
+    break;
+  case OpId::sub:
+    opName = "sub";
+    break;
+  case OpId::mul:
+    opName = "mul";
+    break;
+  case OpId::sdiv:
+    opName = "sdiv";
+    break;
+  case OpId::fadd:
+    opName = "fadd";
+    break;
+  case OpId::fsub:
+    opName = "fsub";
+    break;
+  case OpId::fmul:
+    opName = "fmul";
+    break;
+  case OpId::fdiv:
+    opName = "fdiv";
+    break;
+  case OpId::alloca:
+    opName = "alloca";
+    break;
+  case OpId::load:
+    opName = "load";
+    break;
+  case OpId::store:
+    opName = "store";
+    break;
+  case OpId::icmp:
+    opName = "cmp";
+    break;
+  case OpId::fcmp:
+    opName = "fcmp";
+    break;
+  case OpId::phi:
+    opName = "phi";
+    break;
+  case OpId::call:
+    opName = "call";
+    break;
+  case OpId::getelementptr:
+    opName = "getelementptr";
+    break;
+  case OpId::zext:
+    opName = "zext";
+    break;
+  case OpId::fptosi:
+    opName = "fptosi";
+    break;
+  case OpId::sitofp:
+    opName = "sitofp";
+    break;
+  default:
+    break;
+  }
+  return opName;
+}

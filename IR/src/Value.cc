@@ -12,6 +12,7 @@ bool Value::setName(const std::string &name) {
   }
   return false;
 }
+std::string Value::getName() { return name_; }
 
 Type *Value::getType() { return type_; }
 
