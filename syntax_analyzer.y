@@ -68,13 +68,33 @@ void yyerror(const char *s) {
 CompUnit: CompUnit Decl { 
             $$ = $1; 
             $$->declareStatement_.emplace_back($2); 
+            if($$->scope_ == nullptr) $$->scope_ = new Scope();
+            for(auto&declare : $2->declares_)
+                $$->scope_->varDeclares_[declare->identifier_->id_] = declare;
       }
       | CompUnit FuncDef { 
             $$ = $1; 
             $$->functionDefinitions_.emplace_back($2); 
+            if($$->scope_ == nullptr) $$->scope_ = new Scope();
+            $$->scope_->funcDeclares_[$2->identifier_->id_] = $2;
+            $2->body_->scope_->parent = $$->scope_;
       }
-      | Decl { root = new Root(); $$ = root; $$->declareStatement_.emplace_back($1); }
-      | FuncDef { root = new Root(); $$ = root; $$->functionDefinitions_.emplace_back($1); }
+      | Decl {
+            root = new Root(); 
+            $$ = root; 
+            $$->declareStatement_.emplace_back($1);
+            if($$->scope_ == nullptr) $$->scope_ = new Scope();
+            for(auto&declare : $1->declares_)
+                $$->scope_->varDeclares_[declare->identifier_->id_] = declare;
+      }
+      | FuncDef { 
+            root = new Root(); 
+            $$ = root; 
+            $$->functionDefinitions_.emplace_back($1); 
+            if($$->scope_ == nullptr) $$->scope_ = new Scope();
+            $$->scope_->funcDeclares_[$1->identifier_->id_] = $1;
+            $1->body_->scope_->parent = $$->scope_;
+      }
       ;
 
 Decl: ConstDecl SEMICOLON { $$ = $1;}
@@ -231,16 +251,20 @@ UnaryExp: PrimaryExp { $$ = $1; }
       ;
 
 FuncDef: BType Ident LEFT_PARENTHESES RIGHT_PARENTHESES Block { 
-            $$ = new FunctionDefinition($1, $2, nullptr, $5); 
+            $$ = new FunctionDefinition($1, $2, nullptr, $5);  
       }
       | BType Ident LEFT_PARENTHESES FuncFParams RIGHT_PARENTHESES Block { 
             $$ = new FunctionDefinition($1, $2, $4, $6); 
+            for(auto&arg : $4->list_) 
+                $$->body_->scope_->varDeclares_[arg->identifier_->id_] = arg;
       }
       | VOID Ident LEFT_PARENTHESES RIGHT_PARENTHESES Block { 
             $$ = new FunctionDefinition(SysType::VOID, $2, nullptr, $5); 
       }
       | VOID Ident LEFT_PARENTHESES FuncFParams RIGHT_PARENTHESES Block { 
             $$ = new FunctionDefinition(SysType::VOID, $2, $4, $6); 
+            for(auto&arg : $4->list_) 
+                $$->body_->scope_->varDeclares_[arg->identifier_->id_] = arg;
       }
       ;
 
@@ -276,7 +300,17 @@ FuncRParams: AddExp { $$ = new ActualArgumentList(); $$->list_.emplace_back($1);
       ;
 
 Block: LEFT_BRACES RIGHT_BRACES { $$ = new Block(); }
-     | LEFT_BRACES BlockItems RIGHT_BRACES { $$ = $2; }
+     | LEFT_BRACES BlockItems RIGHT_BRACES { 
+            $$ = $2; 
+            if($$->scope_ == nullptr) $$->scope_ = new Scope();
+            for(auto&stmt : $2->statements_)
+                if(stmt->statement_type() == StmtType::DECL)
+                  for(auto&declare : stmt->declares_)
+                        $$->scope_->varDeclares_[declare->identifier_->id_] = declare;
+                else if(stmt->statement_type() == StmtType::Block)
+                  stmt->scope_->parent = $$->scope_;
+                else continue;
+      }
      ;
 
 BlockItems: BlockItem { 
