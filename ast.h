@@ -24,6 +24,8 @@ enum class BinaryOp {
 
 enum class UnaryOp { POSITIVE, NEGATIVE, NOT };
 
+enum class StmtType { BLOCK, DECL, OTHER };
+
 class Node {
 public:
   Node();
@@ -173,6 +175,9 @@ public:
 
 class Statement : public Node {
 public:
+  virtual StmtType statement_type() {
+    return StmtType::OTHER;
+  }
 };
 
 class Block : public Statement {
@@ -184,6 +189,9 @@ public:
       if (i != nullptr)
         i->print();
     }
+  }
+  StmtType statement_type() {
+    return StmtType::BLOCK;
   }
 
 public:
@@ -327,6 +335,9 @@ public:
     }
   }
   SysType getType() { return type_; }
+  virtual StmtType statement_type() {
+    return StmtType::DECL;
+  }
 
 public:
   SysType type_;
