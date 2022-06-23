@@ -1,6 +1,7 @@
 #pragma once
 
 #include <utility>
+#include <string>
 
 class Type {
 public:
@@ -25,6 +26,7 @@ public:
   bool isArrayType() { return typeId_ == TypeId::ArrayTypeId; }
   bool isLabelType() { return typeId_ == TypeId::LabelTypeId; }
   bool isPointerType() { return typeId_ == TypeId::PointerTypeId; }
+  std::string getTypeName();
 
 private:
   TypeId typeId_;

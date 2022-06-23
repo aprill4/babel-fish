@@ -2,6 +2,7 @@
 #include "User.h"
 
 class BasicBlock;
+class Module;
 
 class Instruction : public User {
 public:
@@ -24,7 +25,7 @@ public:
     load,
     store,
     // Other operators
-    cmp,
+    icmp,
     fcmp,
     phi,
     call,
@@ -36,6 +37,11 @@ public:
   };
   Instruction(Type *type, OpId opId, std::size_t operandNum, BasicBlock *parent,
               const std::string &name = "");
+  Module *getModule();
+
+  OpId getInstrcutionType() { return opId_; }
+  std::string getInstructionOpName();
+  
   bool isPhi();
   bool isStore();
   bool isAlloca();
@@ -56,7 +62,7 @@ public:
   bool isFp2si();
   bool isSi2fp();
 
-  bool isCmp();
+  bool isIcmp();
   bool isFcmp();
 
   bool isCall();
