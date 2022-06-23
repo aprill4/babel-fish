@@ -4,6 +4,7 @@
 class BasicBlock;
 class Argument;
 class Module;
+
 class Function : public Value {
 public:
   Module *getParent();
