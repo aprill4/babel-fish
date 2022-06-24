@@ -1,8 +1,8 @@
-#include "../../include/Instructions/ReturnInst.h"
-#include "../../include/BasicBlock.h"
-#include "../../include/Types/Type.h"
-#include "../../include/Util.h"
-#include "../../include/Value.h"
+#include "Instructions/ReturnInst.h"
+#include "BasicBlock.h"
+#include "Types/Type.h"
+#include "Util.h"
+#include "Value.h"
 
 // ReturnInst::ReturnInst(Value *val, BasicBlock *bb)
 //     : Instruction(Type::get_void_type(bb->get_module()),

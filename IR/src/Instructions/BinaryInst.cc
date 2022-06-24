@@ -1,8 +1,8 @@
-#include "../../include/Instructions/BinaryInst.h"
-#include "../../include/BasicBlock.h"
-#include "../../include/Types/Type.h"
-#include "../../include/Util.h"
-#include "../../include/Value.h"
+#include "Instructions/BinaryInst.h"
+#include "BasicBlock.h"
+#include "Types/Type.h"
+#include "Util.h"
+#include "Value.h"
 
 
 BinaryInst::BinaryInst(Type *type, OpId opId, Value *valueL, Value *valueR,

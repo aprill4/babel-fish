@@ -1,5 +1,5 @@
-#include "../include/Value.h"
-#include "../include/Use.h"
+#include "Value.h"
+#include "Use.h"
 
 Value::Value(Type *type, const std::string &name) : type_(type), name_(name) {}
 

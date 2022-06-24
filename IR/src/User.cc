@@ -1,7 +1,6 @@
-#include "../include/User.h"
-#include "../include/Types/Type.h"
-
-#include "../include/Use.h"
+#include "User.h"
+#include "Type.h"
+#include "Use.h"
 #include <cassert>
 
 User::User(Type *type, const std::string &name, std::size_t operandNum)

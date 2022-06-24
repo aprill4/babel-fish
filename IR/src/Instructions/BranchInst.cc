@@ -1,8 +1,8 @@
-#include "../../include/Instructions/BranchInst.h"
-#include "../../include/BasicBlock.h"
-#include "../../include/Types/Type.h"
-#include "../../include/Util.h"
-#include "../../include/Value.h"
+#include "Instructions/BranchInst.h"
+#include "BasicBlock.h"
+#include "Types/Type.h"
+#include "Util.h"
+#include "Value.h"
 
 // BranchInst::BranchInst(Value *cond, BasicBlock *if_true, BasicBlock
 // *if_false,

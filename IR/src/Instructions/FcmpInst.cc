@@ -1,8 +1,8 @@
-#include "../../include/Instructions/FcmpInst.h"
-#include "../../include/BasicBlock.h"
-#include "../../include/Types/Type.h"
-#include "../../include/Util.h"
-#include "../../include/Value.h"
+#include "Instructions/FcmpInst.h"
+#include "BasicBlock.h"
+#include "Types/Type.h"
+#include "Util.h"
+#include "Value.h"
 
 FcmpInst::FcmpInst(Type *type, FcmpOp fcmpOp, Value *lhs, Value *rhs,
                    BasicBlock *bb)
