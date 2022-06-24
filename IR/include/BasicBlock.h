@@ -7,8 +7,10 @@ class Function;
 
 class BasicBlock : Value {
 public:
-  explicit BasicBlock(Module *m, const std::string &name, Function *parent);
+  BasicBlock(const std::string &name, Function *parent);
   Module *getModule();
+  std::string print() override;
+  void addInstruction(Instruction *instruction);
 
 private:
   Function *parent_;

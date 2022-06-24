@@ -8,6 +8,9 @@
 class GlobalVariable;
 class Function;
 class Value;
+class Type;
+class FloatType;
+class IntegerType;
 
 class Module {
   typedef std::vector<Function *>::iterator func_iterator;
@@ -36,6 +39,19 @@ public:
   global_const_iterator global_end() const { return globalVariableList_.end(); }
   size_t global_size() const { return globalVariableList_.size(); }
   bool global_empty() const { return globalVariableList_.empty(); }
+
+  Type *getLabelType() { return labelType_; }
+  Type *getVoidType() { return voidType_; }
+  IntegerType *getInt1Type() { return int1Type_; }
+  IntegerType *getInt32Type() { return int32Type_; }
+  FloatType *getFloatType() { return float32Type_; }
+  std::string print();
+private: // type
+  Type *labelType_;
+  Type *voidType_;
+  IntegerType *int1Type_;
+  IntegerType *int32Type_;
+  FloatType *float32Type_;
 
 private:
   std::string moduleName_;
