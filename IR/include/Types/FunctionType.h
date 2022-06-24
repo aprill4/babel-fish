@@ -4,9 +4,11 @@
 
 class FunctionType : public Type {
 public:
-  FunctionType(Type *result, std::vector<Type *> args);
+  FunctionType(Type *resultType, std::vector<Type *> argumentsType_);
+  std::size_t getArgumentsNum();
+  Type *getReturnType();
 
 private:
-  Type *result_;
-  std::vector<Type *> args_;
+  Type *resultType_;
+  std::vector<Type *> argumentsType_;
 };
