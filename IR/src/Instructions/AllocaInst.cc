@@ -1,8 +1,8 @@
-#include "../../include/Instructions/AllocaInst.h"
-#include "../../include/BasicBlock.h"
-#include "../../include/Types/Type.h"
-#include "../../include/Util.h"
-#include "../../include/Value.h"
+#include "Instructions/AllocaInst.h"
+#include "BasicBlock.h"
+#include "Types/Type.h"
+#include "Util.h"
+#include "Value.h"
 
 Type *AllocaInst::getAllocaType() { return allocaType_; }
 

@@ -1,8 +1,8 @@
-#include "../../include/Instructions/IcmpInst.h"
-#include "../../include/BasicBlock.h"
-#include "../../include/Types/Type.h"
-#include "../../include/Util.h"
-#include "../../include/Value.h"
+#include "Instructions/IcmpInst.h"
+#include "BasicBlock.h"
+#include "Types/Type.h"
+#include "Util.h"
+#include "Value.h"
 #include <string>
 
 IcmpInst::IcmpInst(Type *type, Value *lhs, IcmpOp icmpOp, Value *rhs,

@@ -1,9 +1,8 @@
-#include "../../include/Types/Type.h"
-#include "../../include/Types/ArrayType.h"
-#include "../../include/Types/FunctionType.h"
-#include "../../include/Types/IntegerType.h"
-#include "../../include/Types/PointerType.h"
-
+#include "Types/Type.h"
+#include "Types/ArrayType.h"
+#include "Types/FunctionType.h"
+#include "Types/IntegerType.h"
+#include "Types/PointerType.h"
 #include <stdio.h>
 
 Type::Type(TypeId typdId) : typeId_(typdId) {}

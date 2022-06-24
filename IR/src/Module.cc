@@ -1,4 +1,4 @@
-#include "../include/Module.h"
+#include "Module.h"
 
 Module::Module(const std::string &moduleName) : moduleName_(moduleName) {}
 

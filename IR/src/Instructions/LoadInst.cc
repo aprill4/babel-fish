@@ -1,9 +1,9 @@
-#include "../../include/Instructions/LoadInst.h"
-#include "../../include/BasicBlock.h"
-#include "../../include/Types/PointerType.h"
-#include "../../include/Types/Type.h"
-#include "../../include/Util.h"
-#include "../../include/Value.h"
+#include "Instructions/LoadInst.h"
+#include "BasicBlock.h"
+#include "Types/PointerType.h"
+#include "Types/Type.h"
+#include "Util.h"
+#include "Value.h"
 #include <cassert>
 
 

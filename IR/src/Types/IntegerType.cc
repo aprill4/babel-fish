@@ -1,4 +1,4 @@
-#include "../../include/Types/IntegerType.h"
+#include "Types/IntegerType.h"
 
 IntegerType::IntegerType(std::size_t bitsNum)
     : Type(TypeId::IntegerTypeId), bitsNum_(bitsNum) {}

@@ -1,5 +1,5 @@
-#include "../../include/Instructions/Instruction.h"
-#include "../../include/BasicBlock.h"
+#include "Instructions/Instruction.h"
+#include "BasicBlock.h"
 
 Instruction::Instruction(Type *type, OpId opId, std::size_t operandNum,
                          BasicBlock *parent, const std::string &name)
