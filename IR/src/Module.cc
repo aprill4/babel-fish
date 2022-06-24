@@ -1,9 +1,9 @@
 #include "Module.h"
+#include "Function.h"
+#include "GlobalVariable.h"
 #include "Types/FloatType.h"
 #include "Types/IntegerType.h"
 #include "Types/Type.h"
-#include "Function.h"
-#include "GlobalVariable.h"
 #include <iostream>
 
 Module::Module(const std::string &moduleName) : moduleName_(moduleName) {
@@ -22,11 +22,11 @@ void Module::addGlobalVariable(GlobalVariable *gVariable) {
 
 std::string Module::print() {
   std::string module_ir;
-  for (auto global_val : this->globalVariableList_) {
+  for (auto global_val : globalVariableList_) {
     // module_ir += global_val->print();
     // module_ir += "\n";
   }
-  for (auto& func : this->functionList_) {
+  for (auto &func : functionList_) {
     module_ir += func->print();
     module_ir += "\n";
   }

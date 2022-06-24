@@ -3,8 +3,8 @@
 
 class ReturnInst : public Instruction {
 public:
-  ReturnInst(Value *val, BasicBlock *bb);
   ReturnInst(BasicBlock *bb);
+  ReturnInst(Value *val, BasicBlock *bb);
   bool isVoidRet();
   std::string print() override;
 

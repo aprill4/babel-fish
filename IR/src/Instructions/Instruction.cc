@@ -2,8 +2,8 @@
 #include "BasicBlock.h"
 
 Instruction::Instruction(Type *type, OpId opId, std::size_t operandNum,
-                         BasicBlock *parent, const std::string &name)
-    : User(type, name, operandNum), opId_(opId), parent_(parent) {}
+                         BasicBlock *parent)
+    : User(type, "", operandNum), opId_(opId), parent_(parent) {}
 
 Module *Instruction::getModule() { return parent_->getModule(); }
 
