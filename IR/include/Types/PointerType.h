@@ -3,10 +3,10 @@
 
 class PointerType : public Type {
 public:
-  PointerType(Type *pElementType);
+  PointerType(Type *ptrElementType);
 
-  Type *getElementType();
+  Type *getPtrElementType();
 
 private:
-  Type *pElementType_;
+  Type *ptrElementType_;
 };
