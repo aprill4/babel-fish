@@ -305,10 +305,10 @@ Block: LEFT_BRACES RIGHT_BRACES { $$ = new Block(); }
             if($$->scope_ == nullptr) $$->scope_ = new Scope();
             for(auto&stmt : $2->statements_)
                 if(stmt->statement_type() == StmtType::DECL)
-                  for(auto&declare : stmt->declares_)
+                  for(auto&declare : dynamic_cast<DeclareStatement*>(stmt)->declares_)
                         $$->scope_->varDeclares_[declare->identifier_->id_] = declare;
-                else if(stmt->statement_type() == StmtType::Block)
-                  stmt->scope_->parent = $$->scope_;
+                else if(stmt->statement_type() == StmtType::BLOCK)
+                  dynamic_cast<Block*>(stmt)->scope_->parent = $$->scope_;
                 else continue;
       }
      ;
