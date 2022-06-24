@@ -6,6 +6,7 @@
 #include "Types/Type.h"
 #include "Value.h"
 #include <string>
+#include <iostream>
 
 inline std::string print_as_op(Value *v) {
   std::string op_ir;

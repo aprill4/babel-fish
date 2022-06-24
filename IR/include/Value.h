@@ -14,9 +14,7 @@ public:
   bool setName(const std::string &name);
   std::string getName();
   void addUse(const Use &u);
-  
   virtual std::string print() = 0;
-
 private:
   Type *type_;
   std::string name_;

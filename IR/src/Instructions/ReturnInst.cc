@@ -1,19 +1,18 @@
 #include "Instructions/ReturnInst.h"
 #include "BasicBlock.h"
+#include "Module.h"
 #include "Types/Type.h"
 #include "Util.h"
 #include "Value.h"
+#include <iostream>
 
-// ReturnInst::ReturnInst(Value *val, BasicBlock *bb)
-//     : Instruction(Type::get_void_type(bb->get_module()),
-//     Instruction::OpId::ret, 1,
-//                   bb) {
-//   setOperand(val,0);
-// }
+ReturnInst::ReturnInst(Value *value, BasicBlock *bb)
+    : Instruction(bb->getModule()->getVoidType(), OpId::ret, 1, bb) {
+  setOperand(value, 0);
+}
 
-// ReturnInst::ReturnInst(BasicBlock *bb)
-//     : Instruction(Type::get_void_type(bb->get_module()), Instruction::ret, 0,
-//                   bb) {}
+ReturnInst::ReturnInst(BasicBlock *bb)
+    : Instruction(bb->getModule()->getVoidType(), OpId::ret, 0, bb) {}
 
 bool ReturnInst::isVoidRet() { return getOperandNum() == 0; }
 

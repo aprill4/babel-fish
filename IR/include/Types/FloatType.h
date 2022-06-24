@@ -5,5 +5,7 @@
 class FloatType : public Type {
 
 public:
+  FloatType();
+
 private:
 };

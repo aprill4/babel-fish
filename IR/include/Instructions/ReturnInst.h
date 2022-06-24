@@ -7,4 +7,6 @@ public:
   ReturnInst(BasicBlock *bb);
   bool isVoidRet();
   std::string print() override;
+
+private:
 };
