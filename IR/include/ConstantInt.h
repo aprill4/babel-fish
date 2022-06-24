@@ -5,10 +5,9 @@
 
 class ConstantInt : public Constant {
 public:
-  ConstantInt(Type *ty, int val) : Constant(ty, "", 0), value_(val) {
-    // std::cout << "1\n";
-  }
+  ConstantInt(Type *ty, ssize_t val) : Constant(ty, "", 0), value_(val) {}
   std::string print() override;
+  ssize_t getValue() { return value_; }
 
 private:
   ssize_t value_;

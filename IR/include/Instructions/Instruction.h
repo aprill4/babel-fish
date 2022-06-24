@@ -1,6 +1,6 @@
 #pragma once
-#include "../User.h"
 #include "../Types/Type.h"
+#include "../User.h"
 
 class BasicBlock;
 class Module;
@@ -8,41 +8,35 @@ class Module;
 class Instruction : public User {
 public:
   enum class OpId {
-    // Terminator Instructions
     ret,
     br,
-    // Standard binary operators
     add,
     sub,
     mul,
     sdiv,
-    // float binary operators
     fadd,
     fsub,
     fmul,
     fdiv,
-    // Memory operators
     alloca,
     load,
     store,
-    // Other operators
     icmp,
     fcmp,
     phi,
     call,
     getelementptr,
-    zext, // zero extend
+    zext,
     fptosi,
     sitofp
-    // float binary operators Logical operators
   };
-  Instruction(Type *type, OpId opId, std::size_t operandNum, BasicBlock *parent,
-              const std::string &name = "");
+  Instruction(Type *type, OpId opId, std::size_t operandNum,
+              BasicBlock *parent);
   Module *getModule();
 
   OpId getInstrcutionType() { return opId_; }
   std::string getInstructionOpName();
-  
+
   bool isPhi();
   bool isStore();
   bool isAlloca();

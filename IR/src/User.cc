@@ -1,10 +1,11 @@
 #include "User.h"
 #include "Type.h"
 #include "Use.h"
+#include "Util.h"
 #include <cassert>
 
 User::User(Type *type, const std::string &name, std::size_t operandNum)
-    : Value(type, name), operandNum_(operandNum) {}
+    : Value(type, name), operandNum_(operandNum), operands_(operandNum) {}
 
 std::size_t User::getOperandNum() { return operandNum_; }
 
