@@ -17,7 +17,7 @@ class Module {
 
 public:
   explicit Module(const std::string &moduleName);
-  ~Module();
+  ~Module() = default;
   void addFuntion(Function *func);
   void addGlobalVariable(GlobalVariable *gVariable);
 

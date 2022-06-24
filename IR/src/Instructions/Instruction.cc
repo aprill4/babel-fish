@@ -8,9 +8,9 @@ Instruction::Instruction(Type *type, OpId opId, std::size_t operandNum,
 Module *Instruction::getModule() { return parent_->getModule(); }
 
 bool Instruction::isVoid() {
-  //   return ((opId_ == ret) || (opId_ == br) || (opId_ == store) ||
-  //   (opId_ == call && this->get_type()->is_void_type()));
-  return false;
+  return ((opId_ == OpId::ret) || (opId_ == OpId::br) ||
+          (opId_ == OpId::store) ||
+          (opId_ == OpId::call && getType()->isVoidType()));
 }
 
 bool Instruction::isPhi() { return opId_ == OpId::phi; }
