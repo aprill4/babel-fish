@@ -1,6 +1,6 @@
 #include "../../include/Types/PointerType.h"
 
-PointerType::PointerType(Type *pElementType)
-    : Type(TypeId::PointerTypeId), pElementType_(pElementType) {}
+PointerType::PointerType(Type *ptrElementType)
+    : Type(TypeId::PointerTypeId), ptrElementType_(ptrElementType) {}
 
-Type *PointerType::getElementType() { return pElementType_; }
+Type *PointerType::getPtrElementType() { return ptrElementType_; }

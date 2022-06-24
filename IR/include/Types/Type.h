@@ -27,6 +27,7 @@ public:
   bool isLabelType() { return typeId_ == TypeId::LabelTypeId; }
   bool isPointerType() { return typeId_ == TypeId::PointerTypeId; }
   std::string getTypeName();
+  Type *getPtrElementType();
   static bool isEqType(Type *typeL, Type *typeR);
 
 private:

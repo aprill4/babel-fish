@@ -2,6 +2,7 @@
 #include "../../include/Types/ArrayType.h"
 #include "../../include/Types/FunctionType.h"
 #include "../../include/Types/IntegerType.h"
+#include "../../include/Types/PointerType.h"
 
 #include <stdio.h>
 
@@ -23,13 +24,14 @@ std::string Type::getTypeName() {
         "i" + std::to_string(static_cast<IntegerType *>(this)->getBitsNum());
     break;
   case TypeId::FunctionTypeId:
-    // typeName += static_cast<FunctionType *>(this)->get_return_type()->print();
-    // typeName += " (";
-    // for (int i = 0; i < static_cast<FunctionType *>(this)->get_num_of_args();
+    // typeName += static_cast<FunctionType
+    // *>(this)->get_return_type()->print(); typeName += " ("; for (int i = 0; i
+    // < static_cast<FunctionType *>(this)->get_num_of_args();
     //      i++) {
     //   if (i)
     //     typeName += ", ";
-    //   typeName += static_cast<FunctionType *>(this)->get_param_type(i)->print();
+    //   typeName += static_cast<FunctionType
+    //   *>(this)->get_param_type(i)->print();
     // }
     // typeName += ")";
     break;
@@ -40,7 +42,8 @@ std::string Type::getTypeName() {
   case TypeId::ArrayTypeId:
     // typeName += "[";
     // typeName +=
-    //     std::to_string(static_cast<ArrayType *>(this)->get_num_of_elements());
+    //     std::to_string(static_cast<ArrayType
+    //     *>(this)->get_num_of_elements());
     // typeName += " x ";
     // typeName += static_cast<ArrayType *>(this)->get_element_type()->print();
     // typeName += "]";
@@ -52,4 +55,11 @@ std::string Type::getTypeName() {
     break;
   }
   return typeName;
+}
+
+Type *Type::getPtrElementType() {
+  if (this->isPointerType())
+    return static_cast<PointerType *>(this)->getPtrElementType();
+  else
+    return nullptr;
 }
