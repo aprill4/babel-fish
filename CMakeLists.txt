@@ -1,6 +1,6 @@
 project(babel-fish)
 
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 2.54)
 
 add_subdirectory(IR)
 
