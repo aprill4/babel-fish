@@ -8,6 +8,7 @@ set(IR_SRC
     Instructions/AllocaInst.cc
     Instructions/BranchInst.cc
     Instructions/LoadInst.cc
+    Instructions/StoreInst.cc
     Instructions/BinaryInst.cc
     Instructions/IcmpInst.cc
     Instructions/FcmpInst.cc

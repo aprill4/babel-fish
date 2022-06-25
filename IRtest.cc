@@ -5,6 +5,7 @@
 #include "Instructions/AllocaInst.h"
 #include "Instructions/GetElementPtrInst.h"
 #include "Instructions/ReturnInst.h"
+#include "Instructions/StoreInst.h"
 #include "Module.h"
 #include "Types/ArrayType.h"
 #include "Types/FunctionType.h"
@@ -13,7 +14,7 @@
 using namespace std;
 
 Module *yy() {
-  Context * c = new Context();
+  Context *c = new Context();
   Module *m = new Module(*c, "m");
   FunctionType *ft = FunctionType::get(Type::getInt1Type(*c));
   Function *func = Function::Create(ft, "main", m);
@@ -35,7 +36,6 @@ int main() {
   // auto x = a->print();
   // std::cout << x;
   Context c;
-  cout << &c << endl;
   Module *m = new Module(c, "m");
   FunctionType *ft = FunctionType::get(Type::getInt1Type(c));
   Function *func = Function::Create(ft, "main", m);
@@ -44,10 +44,13 @@ int main() {
   ReturnInst::Create(c, val, bb);
   ArrayType *i32_arr10_t = ArrayType::get(c, Type::getInt32Type(c), 10);
   auto a = AllocaInst::Create(c, i32_arr10_t, bb);
-  GetElementPtrInst::Create(c, a,
-                            {new ConstantInt(Type::getInt32Type(c), 0),
-                             new ConstantInt(Type::getInt32Type(c), 0)},
-                            bb);
+  cout << a->getAllocaType()->getTypeName() << endl;
+  auto a_0 =
+      GetElementPtrInst::Create(c, a,
+                                {new ConstantInt(Type::getInt32Type(c), 0),
+                                 new ConstantInt(Type::getInt32Type(c), 0)},
+                                bb);
+  StoreInst::Create(c, new ConstantInt(Type::getInt32Type(c), 0), a_0, bb);
   cout << m->print() << endl;
   return 0;
 }
