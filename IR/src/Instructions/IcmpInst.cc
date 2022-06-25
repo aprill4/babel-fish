@@ -1,13 +1,24 @@
 #include "Instructions/IcmpInst.h"
 #include "BasicBlock.h"
+#include "Types/IntegerType.h"
 #include "Types/Type.h"
 #include "Util.h"
 #include "Value.h"
 #include <string>
 
-IcmpInst::IcmpInst(Type *type, Value *lhs, IcmpOp icmpOp, Value *rhs,
-                   BasicBlock *bb)
-    : Instruction(type, Instruction::OpId::icmp, 2, bb), icmpOp_(icmpOp) {}
+IcmpInst::IcmpInst(Type *type, IcmpOp icmpOp, Value *leftValue,
+                   Value *rightValue, BasicBlock *insertedBlock)
+    : Instruction(type, InstId::icmp, 2, insertedBlock), icmpOp_(icmpOp) {
+  setOperand(leftValue, 0);
+  setOperand(rightValue, 0);
+  insertedBlock->addInstruction(this);
+}
+
+IcmpInst *IcmpInst::Create(Context &context, IcmpOp icmpOp, Value *leftValue,
+                           Value *rightValue, BasicBlock *insertedBlock) {
+  return new IcmpInst(Type::getInt1Type(context), icmpOp, leftValue, rightValue,
+                      insertedBlock);
+}
 
 std::string IcmpInst::getIcmpOpName() {
   std::string icmpOpName;
