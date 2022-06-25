@@ -4,13 +4,18 @@
 #include "Util.h"
 #include "Value.h"
 
-// StoreInst::StoreInst(Value *val, Value *ptr, BasicBlock *bb)
-//     : Instruction(Type::get_void_type(bb->get_module()), Instruction::store, 2, bb)
-// {
-//     set_operand(0, val);
-//     set_operand(1, ptr);
-// }
+StoreInst::StoreInst(Context &context, Value *value, Value *ptr,
+                     BasicBlock *insertedBlock)
+    : Instruction(Type::getVoidType(context), InstId::store, 2, insertedBlock) {
+  setOperand(value, 0);
+  setOperand(ptr, 1);
+  insertedBlock->addInstruction(this);
+}
 
+StoreInst *StoreInst::Create(Context &context, Value *value, Value *ptr,
+                             BasicBlock *insertedBlock) {
+  return new StoreInst(context, value, ptr, insertedBlock);
+}
 
 std::string StoreInst::print() {
   std::string IR;
