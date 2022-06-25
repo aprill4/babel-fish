@@ -6,7 +6,7 @@ class Instruction;
 class Module;
 class Function;
 
-class BasicBlock : Value {
+class BasicBlock : public Value {
 public:
   BasicBlock(Context &context, const std::string &name, Function *parent);
   Module *getModule();
