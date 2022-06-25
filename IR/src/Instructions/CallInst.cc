@@ -1,18 +1,25 @@
 #include "Instructions/CallInst.h"
+#include "BasicBlock.h"
 #include "Function.h"
 #include "Types/FunctionType.h"
 #include "Util.h"
 #include <cassert>
 
-CallInst::CallInst(Function *func, std::vector<Value *> args, BasicBlock *bb)
-    : Instruction(func->getReturnType(), Instruction::OpId::call,
-                  args.size() + 1, bb) {
-  assert(func->getArgumentsNum() == args.size());
-  int operandNum = args.size() + 1;
+CallInst::CallInst(Function *func, std::vector<Value *> funcArgs,
+                   BasicBlock *insertedBlock)
+    : Instruction(func->getReturnType(), InstId::call, funcArgs.size() + 1,
+                  insertedBlock) {
+  assert(func->getArgumentsNum() == funcArgs.size());
   setOperand(func, 0);
-  for (int i = 1; i < operandNum; i++) {
-    setOperand(args[i - 1], i);
+  for (int i = 0; i < funcArgs.size(); i++) {
+    setOperand(funcArgs[i], i + 1);
   }
+  insertedBlock->addInstruction(this);
+}
+
+CallInst *CallInst::Create(Function *func, std::vector<Value *> funcArgs,
+                           BasicBlock *insertedBlock) {
+  return new CallInst(func, funcArgs, insertedBlock);
 }
 
 FunctionType *CallInst::getFunctionType() {
