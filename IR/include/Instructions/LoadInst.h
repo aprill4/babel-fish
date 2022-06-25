@@ -3,9 +3,11 @@
 
 class LoadInst : Instruction {
 public:
-  LoadInst(Type *ty, Value *ptr, BasicBlock *bb);
-  Value *getLval();
-  Type *getLoadType();
+  LoadInst(Type *type, Value *ptr, BasicBlock *insertedBlock);
   std::string print() override;
+
+public:
+  static LoadInst *Create(Type *type, Value *ptr, BasicBlock *insertedBlock);
+
 private:
 };
