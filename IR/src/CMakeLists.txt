@@ -5,7 +5,14 @@ set(IR_SRC
     Types/ArrayType.cc
     Types/FunctionType.cc
     Instructions/Instruction.cc
+    Instructions/AllocaInst.cc
+    Instructions/BranchInst.cc
+    Instructions/LoadInst.cc
+    Instructions/BinaryInst.cc
+    Instructions/IcmpInst.cc
+    Instructions/FcmpInst.cc
     Instructions/ReturnInst.cc
+    Instructions/GetElementPtrInst.cc
     ConstantInt.cc
     Module.cc
     Value.cc 

@@ -4,13 +4,16 @@
 
 class GetElementPtrInst : public Instruction {
 public:
-  GetElementPtrInst(Value *ptr, std::vector<Value *> idxs, BasicBlock *bb);
-  //   static Type *get_element_type(Value *ptr, std::vector<Value *> idxs);
-  //   static GetElementPtrInst *create_gep(Value *ptr, std::vector<Value *>
-  //   idxs,
-  //    BasicBlock *bb);
+  GetElementPtrInst(Context &context, Value *ptr, std::vector<Value *> idxList,
+                    BasicBlock *insertedBlock);
   Type *getElementType();
+  Type *computeElementType(Value *ptr, std::vector<Value *> idxList);
   std::string print() override;
+
+public:
+  static GetElementPtrInst *Create(Context &context, Value *ptr,
+                                   std::vector<Value *> idxList,
+                                   BasicBlock *insertedBlock);
 
 private:
   Type *elementType_;

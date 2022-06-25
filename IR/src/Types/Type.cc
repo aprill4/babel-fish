@@ -10,15 +10,15 @@ Type::Type(TypeId typdId) : typeId_(typdId) {}
 
 bool Type::operator==(const Type &type) { return typeId_ == type.typeId_; }
 
-Type *Type::getVoidType(Context &context) { return &context.VoidType; }
+Type *Type::getVoidType(Context &context) { return context.VoidType; }
 
-Type *Type::getLabelType(Context &context) { return &context.LabelType; }
+Type *Type::getLabelType(Context &context) { return context.LabelType; }
 
-IntegerType *Type::getInt1Type(Context &context) { return &context.Int1Type; }
+IntegerType *Type::getInt1Type(Context &context) { return context.Int1Type; }
 
-IntegerType *Type::getInt32Type(Context &context) { return &context.Int32Type; }
+IntegerType *Type::getInt32Type(Context &context) { return context.Int32Type; }
 
-Type *Type::getFloatType(Context &context) { return &context.FloatType; }
+Type *Type::getFloatType(Context &context) { return context.FloatType; }
 
 PointerType *Type::getPtrType(Context &context, Type *ptrElementType) {
   return PointerType::get(context, ptrElementType);
@@ -55,17 +55,15 @@ std::string Type::getTypeName() {
     // typeName += ")";
     break;
   case TypeId::PointerTypeId:
-    // typeName += this->get_pointer_element_type()->print();
-    // typeName += "*";
+    typeName += this->getPtrElementType()->getTypeName();
+    typeName += "*";
     break;
   case TypeId::ArrayTypeId:
-    // typeName += "[";
-    // typeName +=
-    //     std::to_string(static_cast<ArrayType
-    //     *>(this)->get_num_of_elements());
-    // typeName += " x ";
-    // typeName += static_cast<ArrayType *>(this)->get_element_type()->print();
-    // typeName += "]";
+    typeName += "[";
+    typeName += std::to_string(static_cast<ArrayType *>(this)->getElementNum());
+    typeName += " x ";
+    typeName += static_cast<ArrayType *>(this)->getElementType()->getTypeName();
+    typeName += "]";
     break;
   case TypeId::FloatTypeId:
     typeName += "float";

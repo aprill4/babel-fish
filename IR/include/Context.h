@@ -11,9 +11,10 @@ class Module;
 class Context {
 public:
   Context();
+  ~Context();
   Module *ownerModule;
-  Type VoidType, LabelType, FloatType;
-  IntegerType Int1Type, Int32Type;
+  Type *VoidType, *LabelType, *FloatType;
+  IntegerType *Int1Type, *Int32Type;
   std::map<std::pair<Type *, std::size_t>, ArrayType *> ArrayTypes;
   std::map<Type *, PointerType *> PointerTypes;
   void addModule(Module *module);

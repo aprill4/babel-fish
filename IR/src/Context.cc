@@ -3,8 +3,24 @@
 #include "Util.h"
 
 Context::Context()
-    : VoidType(Type::TypeId::VoidTypeId), FloatType(Type::TypeId::FloatTypeId),
-      LabelType(Type::TypeId::LabelTypeId), Int1Type(1), Int32Type(32) {}
+    : VoidType(new Type(Type::TypeId::VoidTypeId)),
+      FloatType(new Type(Type::TypeId::FloatTypeId)),
+      LabelType(new Type(Type::TypeId::LabelTypeId)),
+      Int1Type(new IntegerType(1)), Int32Type(new IntegerType(32)) {}
+
+Context::~Context() {
+  delete VoidType;
+  delete LabelType;
+  delete FloatType;
+  delete Int1Type;
+  delete Int32Type;
+  for (auto &ptr : PointerTypes) {
+    delete ptr.second;
+  }
+  for (auto &arr : ArrayTypes) {
+    delete arr.second;
+  }
+}
 
 void Context::addModule(Module *module) { ownerModule = module; }
 
