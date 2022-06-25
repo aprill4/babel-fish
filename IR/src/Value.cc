@@ -3,8 +3,6 @@
 
 Value::Value(Type *type, const std::string &name) : type_(type), name_(name) {}
 
-Value::~Value() {}
-
 bool Value::setName(const std::string &name) {
   if (name_ == "") {
     name_ = name;
@@ -12,6 +10,7 @@ bool Value::setName(const std::string &name) {
   }
   return false;
 }
+
 std::string Value::getName() { return name_; }
 
 Type *Value::getType() { return type_; }

@@ -15,7 +15,7 @@ BinaryInst::BinaryInst(Type *type, OpId opId, Value *valueL, Value *valueR,
 std::string BinaryInst::print() {
   std::string IR;
   char IRtemp[30];
-  if (Type::isEqType(getOperandType(0), getOperandType(1))) {
+  if (getOperandType(0) == getOperandType(1)) {
     // <result> = add <type> <op1>, <op2>
     std::string fmt("%%%s = %s %s %s, %s");
     std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getName().c_str(),

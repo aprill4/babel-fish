@@ -8,14 +8,17 @@ class FunctionType;
 
 class Function : public Value {
 public:
-  Function(const std::string &name, FunctionType *type, Module *parent);
-  ~Function() = default;
+  Function(FunctionType *funcType, const std::string &funcName, Module *parent);
   Module *getModule();
   Type *getReturnType();
   std::size_t getArgumentsNum();
   FunctionType *getFunctionType();
   void addBasicBlock(BasicBlock *bb);
   std::string print() override;
+
+public:
+  static Function *Create(FunctionType *funcType, const std::string &funcName,
+                          Module *parent);
 
 private:
   Module *parent_;

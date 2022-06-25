@@ -1,4 +1,5 @@
 #include "Types/Type.h"
+#include "Context.h"
 #include "Types/ArrayType.h"
 #include "Types/FunctionType.h"
 #include "Types/IntegerType.h"
@@ -7,7 +8,26 @@
 
 Type::Type(TypeId typdId) : typeId_(typdId) {}
 
-bool Type::isEqType(Type *typeL, Type *typeR) { return typeL == typeR; }
+bool Type::operator==(const Type &type) { return typeId_ == type.typeId_; }
+
+Type *Type::getVoidType(Context &context) { return &context.VoidType; }
+
+Type *Type::getLabelType(Context &context) { return &context.LabelType; }
+
+IntegerType *Type::getInt1Type(Context &context) { return &context.Int1Type; }
+
+IntegerType *Type::getInt32Type(Context &context) { return &context.Int32Type; }
+
+Type *Type::getFloatType(Context &context) { return &context.FloatType; }
+
+PointerType *Type::getPtrType(Context &context, Type *ptrElementType) {
+  return PointerType::get(context, ptrElementType);
+}
+
+ArrayType *Type::getArrayType(Context &context, Type *elementType,
+                              std::size_t elementNum) {
+  return ArrayType::get(context, elementType, elementNum);
+}
 
 std::string Type::getTypeName() {
   std::string typeName;

@@ -4,10 +4,13 @@
 
 class AllocaInst : public Instruction {
 public:
-  AllocaInst(Type *ty, BasicBlock *bb);
-  //   static AllocaInst *create_alloca(Type *ty, BasicBlock *bb);
+  AllocaInst(Context &context, Type *allocaType, BasicBlock *insertedBlock);
   Type *getAllocaType();
   std::string print() override;
+
+public:
+  static AllocaInst *Create(Context &context, Type *allocaType,
+                                   BasicBlock *insertedBlock);
 
 private:
   Type *allocaType_;

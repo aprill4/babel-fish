@@ -1,10 +1,22 @@
 #include "Function.h"
 #include "BasicBlock.h"
+#include "Module.h"
 #include "Types/FunctionType.h"
 #include "Util.h"
+#include <cassert>
 
-Function::Function(const std::string &name, FunctionType *type, Module *parent)
-    : Value(type, name), parent_(parent) {}
+Function::Function(FunctionType *funcType, const std::string &funcName,
+                   Module *parent)
+    : Value(funcType, funcName), parent_(parent) {
+  assert(parent != nullptr);
+  parent_->addFuntion(this);
+}
+
+Function *Function::Create(FunctionType *funcType, const std::string &funcName,
+                           Module *parent) {
+  assert(parent != nullptr);
+  return new Function(funcType, funcName, parent);
+}
 
 Module *Function::getModule() { return parent_; }
 

@@ -41,7 +41,7 @@ std::string FcmpInst::getFcmpOpName() {
 std::string FcmpInst::print() {
   std::string IR;
   char IRtemp[30];
-  if (Type::isEqType(getOperandType(0), getOperandType(1))) {
+  if (getOperandType(0) == getOperandType(1)) {
     std::string fmt("%%%s = fcmp %s %s %s, %s");
     std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getName().c_str(),
                   getFcmpOpName().c_str(), getOperandTypeName(0).c_str(),

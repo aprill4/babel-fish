@@ -1,23 +1,20 @@
 #include "Module.h"
+#include "Context.h"
 #include "Function.h"
 #include "GlobalVariable.h"
-#include "Types/FloatType.h"
 #include "Types/IntegerType.h"
 #include "Types/Type.h"
 #include <iostream>
 
-Module::Module(const std::string &moduleName) : moduleName_(moduleName) {
-  voidType_ = new Type(Type::TypeId::VoidTypeId);
-  labelType_ = new Type(Type::TypeId::LabelTypeId);
-  int1Type_ = new IntegerType(1);
-  int32Type_ = new IntegerType(32);
-  float32Type_ = new FloatType();
+Module::Module(Context &context, const std::string &moduleName)
+    : context_(context), moduleName_(moduleName) {
+  context_.addModule(this);
 }
 
 void Module::addFuntion(Function *func) { functionList_.emplace_back(func); }
 
-void Module::addGlobalVariable(GlobalVariable *gVariable) {
-  globalVariableList_.emplace_back(gVariable);
+void Module::addGlobalVariable(GlobalVariable *globalVariable) {
+  globalVariableList_.emplace_back(globalVariable);
 }
 
 std::string Module::print() {

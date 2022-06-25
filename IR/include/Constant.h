@@ -3,7 +3,6 @@
 
 class Constant : public User {
 public:
-  Constant(Type *ty, const std::string &name = "", std::size_t num_ops = 0)
-      : User(ty, name, num_ops) {}
-  ~Constant() = default;
+  Constant(Type *type, const std::string &name = "", std::size_t operandNum = 0)
+      : User(type, name, operandNum) {}
 };

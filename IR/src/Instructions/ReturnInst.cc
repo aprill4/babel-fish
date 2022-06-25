@@ -4,22 +4,40 @@
 #include "Types/Type.h"
 #include "Util.h"
 #include "Value.h"
+#include <cassert>
 #include <iostream>
 
-ReturnInst::ReturnInst(Value *value, BasicBlock *bb)
-    : Instruction(bb->getModule()->getVoidType(), OpId::ret, 1, bb) {
+ReturnInst::ReturnInst(Context &context, BasicBlock *insertedBlock)
+    : Instruction(Type::getVoidType(context), InstId::ret, 0, insertedBlock) {
+  assert(insertedBlock != nullptr);
+  insertedBlock->addInstruction(this);
+}
+
+ReturnInst::ReturnInst(Context &context, Value *value,
+                       BasicBlock *insertedBlock)
+    : Instruction(Type::getVoidType(context), InstId::ret, 1, insertedBlock) {
+  assert(insertedBlock != nullptr);
+  insertedBlock->addInstruction(this);
   setOperand(value, 0);
 }
 
-ReturnInst::ReturnInst(BasicBlock *bb)
-    : Instruction(bb->getModule()->getVoidType(), OpId::ret, 0, bb) {}
+ReturnInst *ReturnInst::Create(Context &context, BasicBlock *insertedBlock) {
+  assert(insertedBlock != nullptr);
+  return new ReturnInst(context, insertedBlock);
+}
 
-bool ReturnInst::isVoidRet() { return getOperandNum() == 0; }
+ReturnInst *ReturnInst::Create(Context &context, Value *retVal,
+                               BasicBlock *insertedBlock) {
+  assert(insertedBlock != nullptr);
+  return new ReturnInst(context, retVal, insertedBlock);
+}
+
+bool ReturnInst::isRetVoid() { return getOperandNum() == 0; }
 
 std::string ReturnInst::print() {
   std::string IR;
   char IRtemp[30];
-  if (!isVoidRet()) {
+  if (!isRetVoid()) {
     // ret <type> <value>
     std::string fmt("ret %s %s");
     std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(),

@@ -1,4 +1,5 @@
 #pragma once
+#include "Type.h"
 #include "Value.h"
 
 class Instruction;
@@ -7,10 +8,14 @@ class Function;
 
 class BasicBlock : Value {
 public:
-  BasicBlock(const std::string &name, Function *parent);
+  BasicBlock(Context &context, const std::string &name, Function *parent);
   Module *getModule();
   std::string print() override;
   void addInstruction(Instruction *instruction);
+
+public:
+  static BasicBlock *Create(Context &context, const std::string &name,
+                            Function *parent);
 
 private:
   Function *parent_;
