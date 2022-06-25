@@ -5,17 +5,15 @@
 class FcmpInst : public Instruction {
 public:
   enum FcmpOp { EQ, NEQ, GT, GTE, LT, LTE };
-  FcmpInst(Type *type, FcmpOp fcmpOp, Value *lhs, Value *rhs, BasicBlock *bb);
+  FcmpInst(Type *type, FcmpOp fcmpOp, Value *leftValue, Value *rightValue,
+           BasicBlock *insertedBlock);
+  FcmpOp getFcmpOp();
+  std::string getFcmpOpName();
+  std::string print() override;
 
 public:
-  //   static FCmpInst *create_fcmp(CmpOp op, Value *lhs, Value *rhs, BasicBlock
-  //   *bb,
-  //    Module *m);
-
-  FcmpOp getFcmpOp();
-
-  virtual std::string print() override;
-  std::string getFcmpOpName();
+  static FcmpInst *Create(Context &context, FcmpOp fcmpOp, Value *leftValue,
+                          Value *rightValue, BasicBlock *insertedBlock);
 
 private:
   FcmpOp fcmpOp_;

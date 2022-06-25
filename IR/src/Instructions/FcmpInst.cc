@@ -1,12 +1,23 @@
 #include "Instructions/FcmpInst.h"
 #include "BasicBlock.h"
+#include "Types/IntegerType.h"
 #include "Types/Type.h"
 #include "Util.h"
 #include "Value.h"
 
-FcmpInst::FcmpInst(Type *type, FcmpOp fcmpOp, Value *lhs, Value *rhs,
-                   BasicBlock *bb)
-    : Instruction(type, Instruction::OpId::fcmp, 2, bb), fcmpOp_(fcmpOp) {}
+FcmpInst::FcmpInst(Type *type, FcmpOp fcmpOp, Value *leftValue,
+                   Value *rightValue, BasicBlock *insertedBlock)
+    : Instruction(type, InstId::fcmp, 2, insertedBlock), fcmpOp_(fcmpOp) {
+  setOperand(leftValue, 0);
+  setOperand(rightValue, 1);
+  insertedBlock->addInstruction(this);
+}
+
+FcmpInst *FcmpInst::Create(Context &context, FcmpOp fcmpOp, Value *leftValue,
+                           Value *rightValue, BasicBlock *insertedBlock) {
+  return new FcmpInst(Type::getInt1Type(context), fcmpOp, leftValue, rightValue,
+                      insertedBlock);
+}
 
 FcmpInst::FcmpOp FcmpInst::getFcmpOp() { return fcmpOp_; }
 
