@@ -1,5 +1,6 @@
 #pragma once
 #include "Value.h"
+#include <vector>
 
 class BasicBlock;
 class Argument;
@@ -23,5 +24,5 @@ public:
 private:
   Module *parent_;
   std::list<BasicBlock *> basicBlocks_;
-  std::list<Argument *> arguments_;
+  std::vector<Argument *> arguments_; // formalArgs
 };
