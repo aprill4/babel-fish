@@ -10,6 +10,7 @@ public:
   static FunctionType *get(Type *resultType, std::vector<Type *> paramsType);
   std::size_t getArgumentsNum();
   Type *getReturnType();
+  Type *getArgumentType(std::size_t idx);
 
 private:
   Type *resultType_;

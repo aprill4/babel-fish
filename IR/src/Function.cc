@@ -1,4 +1,5 @@
 #include "Function.h"
+#include "Argument.h"
 #include "BasicBlock.h"
 #include "Module.h"
 #include "Types/FunctionType.h"
@@ -10,6 +11,10 @@ Function::Function(FunctionType *funcType, const std::string &funcName,
     : Value(funcType, funcName), parent_(parent) {
   assert(parent != nullptr);
   parent_->addFuntion(this);
+  for (int i = 0; i < getArgumentsNum(); i++) {
+    arguments_.emplace_back(
+        new Argument(funcType->getArgumentType(i), "", this, i));
+  }
 }
 
 Function *Function::Create(FunctionType *funcType, const std::string &funcName,

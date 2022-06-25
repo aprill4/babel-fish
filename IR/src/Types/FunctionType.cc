@@ -19,3 +19,7 @@ FunctionType *FunctionType::get(Type *resultType,
 std::size_t FunctionType::getArgumentsNum() { return argumentsType_.size(); }
 
 Type *FunctionType::getReturnType() { return resultType_; }
+
+Type *FunctionType::getArgumentType(std::size_t idx) {
+  return argumentsType_[idx];
+}
