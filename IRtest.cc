@@ -12,7 +12,7 @@
 #include "Types/IntegerType.h"
 #include <iostream>
 using namespace std;
-
+/*
 Module *yy() {
   Context *c = new Context();
   Module *m = new Module(*c, "m");
@@ -30,7 +30,7 @@ Module *yy() {
   // ReturnInst *ret = new ReturnInst(c, val, bb);
   return m;
 }
-
+*/
 int main() {
   // auto a = yy();
   // auto x = a->print();
