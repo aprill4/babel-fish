@@ -7,8 +7,14 @@ class Function;
 
 class CallInst : public Instruction {
 public:
-  CallInst(Function *func, std::vector<Value *> args, BasicBlock *bb);
+  CallInst(Function *func, std::vector<Value *> funcArgs,
+           BasicBlock *insertedBlock);
   FunctionType *getFunctionType();
-  std::string print() override; 
+  std::string print() override;
+
+public:
+  static CallInst *Create(Function *func, std::vector<Value *> funcArgs,
+                          BasicBlock *insertedBlock);
+
 private:
 };
