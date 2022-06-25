@@ -1,8 +1,22 @@
 #include "Instructions/AllocaInst.h"
 #include "BasicBlock.h"
+#include "Types/PointerType.h"
 #include "Types/Type.h"
 #include "Util.h"
 #include "Value.h"
+
+AllocaInst::AllocaInst(Context &context, Type *allocaType,
+                       BasicBlock *insertedBlock)
+    : Instruction(PointerType::get(context, allocaType), InstId::alloca, 0,
+                  insertedBlock),
+      allocaType_(allocaType) {
+  insertedBlock->addInstruction(this);
+}
+
+AllocaInst *AllocaInst::Create(Context &context, Type *allocaType,
+                               BasicBlock *insertedBlock) {
+  return new AllocaInst(context, allocaType, insertedBlock);
+}
 
 Type *AllocaInst::getAllocaType() { return allocaType_; }
 

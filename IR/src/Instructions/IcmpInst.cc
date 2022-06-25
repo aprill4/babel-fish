@@ -42,7 +42,7 @@ IcmpInst::IcmpOp IcmpInst::getIcmpOp() { return icmpOp_; }
 std::string IcmpInst::print() {
   std::string IR;
   char IRtemp[30];
-  if (Type::isEqType(getOperandType(0), getOperandType(1))) {
+  if (getOperandType(0) == getOperandType(1)) {
     // <result> = icmp <cond> <type> <op1>, <op2>
     std::string fmt("%%%s = icmp %s %s %s, %s");
     std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getName().c_str(),

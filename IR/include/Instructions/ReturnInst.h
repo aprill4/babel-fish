@@ -3,10 +3,15 @@
 
 class ReturnInst : public Instruction {
 public:
-  ReturnInst(BasicBlock *bb);
-  ReturnInst(Value *val, BasicBlock *bb);
-  bool isVoidRet();
+  ReturnInst(Context &context, BasicBlock *insertedBlock);
+  ReturnInst(Context &context, Value *retValue, BasicBlock *insertedBlock);
+  bool isRetVoid();
   std::string print() override;
+
+public:
+  static ReturnInst *Create(Context &context, BasicBlock *insertedBlock);
+  static ReturnInst *Create(Context &context, Value *retValue,
+                            BasicBlock *insertedBlock);
 
 private:
 };

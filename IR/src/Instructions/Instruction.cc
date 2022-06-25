@@ -1,43 +1,43 @@
 #include "Instructions/Instruction.h"
 #include "BasicBlock.h"
 
-Instruction::Instruction(Type *type, OpId opId, std::size_t operandNum,
+Instruction::Instruction(Type *type, InstId instId, std::size_t operandNum,
                          BasicBlock *parent)
-    : User(type, "", operandNum), opId_(opId), parent_(parent) {}
+    : User(type, "", operandNum), instId_(instId), parent_(parent) {}
 
 Module *Instruction::getModule() { return parent_->getModule(); }
 
 bool Instruction::isVoid() {
-  return ((opId_ == OpId::ret) || (opId_ == OpId::br) ||
-          (opId_ == OpId::store) ||
-          (opId_ == OpId::call && getType()->isVoidType()));
+  return ((instId_ == InstId::ret) || (instId_ == InstId::br) ||
+          (instId_ == InstId::store) ||
+          (instId_ == InstId::call && getType()->isVoidType()));
 }
 
-bool Instruction::isPhi() { return opId_ == OpId::phi; }
-bool Instruction::isStore() { return opId_ == OpId::store; }
-bool Instruction::isAlloca() { return opId_ == OpId::alloca; }
-bool Instruction::isRet() { return opId_ == OpId::ret; }
-bool Instruction::isLoad() { return opId_ == OpId::load; }
-bool Instruction::isBr() { return opId_ == OpId::br; }
+bool Instruction::isPhi() { return instId_ == InstId::phi; }
+bool Instruction::isStore() { return instId_ == InstId::store; }
+bool Instruction::isAlloca() { return instId_ == InstId::alloca; }
+bool Instruction::isRet() { return instId_ == InstId::ret; }
+bool Instruction::isLoad() { return instId_ == InstId::load; }
+bool Instruction::isBr() { return instId_ == InstId::br; }
 
-bool Instruction::isAdd() { return opId_ == OpId::add; }
-bool Instruction::isSub() { return opId_ == OpId::sub; }
-bool Instruction::isMul() { return opId_ == OpId::mul; }
-bool Instruction::isDiv() { return opId_ == OpId::sdiv; }
+bool Instruction::isAdd() { return instId_ == InstId::add; }
+bool Instruction::isSub() { return instId_ == InstId::sub; }
+bool Instruction::isMul() { return instId_ == InstId::mul; }
+bool Instruction::isDiv() { return instId_ == InstId::sdiv; }
 
-bool Instruction::isFadd() { return opId_ == OpId::fadd; }
-bool Instruction::isFsub() { return opId_ == OpId::fsub; }
-bool Instruction::isFmul() { return opId_ == OpId::fmul; }
-bool Instruction::isFdiv() { return opId_ == OpId::fdiv; }
-bool Instruction::isFp2si() { return opId_ == OpId::fptosi; }
-bool Instruction::isSi2fp() { return opId_ == OpId::sitofp; }
+bool Instruction::isFadd() { return instId_ == InstId::fadd; }
+bool Instruction::isFsub() { return instId_ == InstId::fsub; }
+bool Instruction::isFmul() { return instId_ == InstId::fmul; }
+bool Instruction::isFdiv() { return instId_ == InstId::fdiv; }
+bool Instruction::isFp2si() { return instId_ == InstId::fptosi; }
+bool Instruction::isSi2fp() { return instId_ == InstId::sitofp; }
 
-bool Instruction::isIcmp() { return opId_ == OpId::icmp; }
-bool Instruction::isFcmp() { return opId_ == OpId::fcmp; }
+bool Instruction::isIcmp() { return instId_ == InstId::icmp; }
+bool Instruction::isFcmp() { return instId_ == InstId::fcmp; }
 
-bool Instruction::isCall() { return opId_ == OpId::call; }
-bool Instruction::isGep() { return opId_ == OpId::getelementptr; }
-bool Instruction::isZext() { return opId_ == OpId::zext; }
+bool Instruction::isCall() { return instId_ == InstId::call; }
+bool Instruction::isGep() { return instId_ == InstId::getelementptr; }
+bool Instruction::isZext() { return instId_ == InstId::zext; }
 
 bool Instruction::isBinary() {
   return (isAdd() || isSub() || isMul() || isDiv() || isFadd() || isFsub() ||
@@ -48,73 +48,73 @@ bool Instruction::isBinary() {
 bool Instruction::isTerminator() { return isBr() || isRet(); }
 
 std::string Instruction::getInstructionOpName() {
-  std::string opName;
-  switch (opId_) {
-  case OpId::ret:
-    opName = "ret";
+  std::string instName;
+  switch (instId_) {
+  case InstId::ret:
+    instName = "ret";
     break;
-  case OpId::br:
-    opName = "br";
+  case InstId::br:
+    instName = "br";
     break;
-  case OpId::add:
-    opName = "add";
+  case InstId::add:
+    instName = "add";
     break;
-  case OpId::sub:
-    opName = "sub";
+  case InstId::sub:
+    instName = "sub";
     break;
-  case OpId::mul:
-    opName = "mul";
+  case InstId::mul:
+    instName = "mul";
     break;
-  case OpId::sdiv:
-    opName = "sdiv";
+  case InstId::sdiv:
+    instName = "sdiv";
     break;
-  case OpId::fadd:
-    opName = "fadd";
+  case InstId::fadd:
+    instName = "fadd";
     break;
-  case OpId::fsub:
-    opName = "fsub";
+  case InstId::fsub:
+    instName = "fsub";
     break;
-  case OpId::fmul:
-    opName = "fmul";
+  case InstId::fmul:
+    instName = "fmul";
     break;
-  case OpId::fdiv:
-    opName = "fdiv";
+  case InstId::fdiv:
+    instName = "fdiv";
     break;
-  case OpId::alloca:
-    opName = "alloca";
+  case InstId::alloca:
+    instName = "alloca";
     break;
-  case OpId::load:
-    opName = "load";
+  case InstId::load:
+    instName = "load";
     break;
-  case OpId::store:
-    opName = "store";
+  case InstId::store:
+    instName = "store";
     break;
-  case OpId::icmp:
-    opName = "cmp";
+  case InstId::icmp:
+    instName = "cmp";
     break;
-  case OpId::fcmp:
-    opName = "fcmp";
+  case InstId::fcmp:
+    instName = "fcmp";
     break;
-  case OpId::phi:
-    opName = "phi";
+  case InstId::phi:
+    instName = "phi";
     break;
-  case OpId::call:
-    opName = "call";
+  case InstId::call:
+    instName = "call";
     break;
-  case OpId::getelementptr:
-    opName = "getelementptr";
+  case InstId::getelementptr:
+    instName = "getelementptr";
     break;
-  case OpId::zext:
-    opName = "zext";
+  case InstId::zext:
+    instName = "zext";
     break;
-  case OpId::fptosi:
-    opName = "fptosi";
+  case InstId::fptosi:
+    instName = "fptosi";
     break;
-  case OpId::sitofp:
-    opName = "sitofp";
+  case InstId::sitofp:
+    instName = "sitofp";
     break;
   default:
     break;
   }
-  return opName;
+  return instName;
 }

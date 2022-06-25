@@ -11,29 +11,17 @@ class Value;
 class Type;
 class FloatType;
 class IntegerType;
+class Context;
 
 class Module {
 public:
-  explicit Module(const std::string &moduleName);
-  ~Module() = default;
+  Module(Context &context, const std::string &moduleName);
   void addFuntion(Function *func);
-  void addGlobalVariable(GlobalVariable *gVariable);
-
-  Type *getLabelType() { return labelType_; }
-  Type *getVoidType() { return voidType_; }
-  IntegerType *getInt1Type() { return int1Type_; }
-  IntegerType *getInt32Type() { return int32Type_; }
-  FloatType *getFloatType() { return float32Type_; }
+  void addGlobalVariable(GlobalVariable *globalVariable);
   std::string print();
 
 private:
-  Type *labelType_;
-  Type *voidType_;
-  IntegerType *int1Type_;
-  IntegerType *int32Type_;
-  FloatType *float32Type_;
-
-private:
+  Context &context_;
   std::string moduleName_;
   std::vector<GlobalVariable *> globalVariableList_;
   std::vector<Function *> functionList_;

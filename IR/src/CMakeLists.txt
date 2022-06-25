@@ -2,7 +2,7 @@ set(IR_SRC
     Types/Type.cc
     Types/PointerType.cc
     Types/IntegerType.cc
-    Types/FloatType.cc
+    Types/ArrayType.cc
     Types/FunctionType.cc
     Instructions/Instruction.cc
     Instructions/ReturnInst.cc
@@ -11,6 +11,7 @@ set(IR_SRC
     Value.cc 
     BasicBlock.cc
     Argument.cc
+    Context.cc
     Function.cc
     Use.cc
     User.cc

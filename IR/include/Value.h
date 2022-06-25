@@ -2,14 +2,14 @@
 #include <list>
 #include <memory>
 #include <string>
+#include "Use.h"
 
 class Type;
-class Use;
 
 class Value {
 public:
   explicit Value(Type *type, const std::string &name = "");
-  ~Value();
+  virtual ~Value() = default;
   Type *getType();
   bool setName(const std::string &name);
   std::string getName();

@@ -7,7 +7,7 @@ class Module;
 
 class Instruction : public User {
 public:
-  enum class OpId {
+  enum class InstId {
     ret,
     br,
     add,
@@ -30,11 +30,11 @@ public:
     fptosi,
     sitofp
   };
-  Instruction(Type *type, OpId opId, std::size_t operandNum,
+  Instruction(Type *type, InstId instId, std::size_t operandNum,
               BasicBlock *parent);
   Module *getModule();
 
-  OpId getInstrcutionType() { return opId_; }
+  InstId getInstrcutionType() { return instId_; }
   std::string getInstructionOpName();
 
   bool isPhi();
@@ -70,5 +70,5 @@ public:
 
 private:
   BasicBlock *parent_;
-  OpId opId_;
+  InstId instId_;
 };
