@@ -4,23 +4,34 @@
 #include "Util.h"
 #include "Value.h"
 
-// BranchInst::BranchInst(Value *cond, BasicBlock *if_true, BasicBlock
-// *if_false,
-//                        BasicBlock *bb)
-//     : Instruction(Type::get_void_type(if_true->get_module()),
-//     Instruction::br,
-//                   3, bb) {
-//   set_operand(0, cond);
-//   set_operand(1, if_true);
-//   set_operand(2, if_false);
-// }
+BranchInst::BranchInst(Context &context, BasicBlock *ifTrueBlock,
+                       BasicBlock *insertedBlock)
+    : Instruction(Type::getVoidType(context), InstId::br, 1, insertedBlock) {
+  setOperand(ifTrueBlock, 0);
+  insertedBlock->addInstruction(this);
+}
 
-// BranchInst::BranchInst(BasicBlock *if_true, BasicBlock *bb)
-//     : Instruction(Type::get_void_type(if_true->get_module()),
-//     Instruction::br,
-//                   1, bb) {
-//   set_operand(0, if_true);
-// }
+BranchInst::BranchInst(Context &context, Value *cond, BasicBlock *ifTrueBlock,
+                       BasicBlock *ifFalseBlock, BasicBlock *insertedBlock)
+    : Instruction(Type::getVoidType(context), InstId::br, 3, insertedBlock) {
+  setOperand(cond, 0);
+  setOperand(ifTrueBlock, 1);
+  setOperand(ifFalseBlock, 2);
+  insertedBlock->addInstruction(this);
+}
+
+BranchInst *BranchInst::Create(Context &context, BasicBlock *ifTrueBlock,
+                               BasicBlock *insertedBlock) {
+  return new BranchInst(context, ifTrueBlock, insertedBlock);
+}
+
+BranchInst *BranchInst::Create(Context &context, Value *cond,
+                               BasicBlock *ifTrueBlock,
+                               BasicBlock *ifFalseBlock,
+                               BasicBlock *insertedBlock) {
+  return new BranchInst(context, cond, ifTrueBlock, ifFalseBlock,
+                        insertedBlock);
+}
 
 bool BranchInst::isCondBr() { return getOperandNum() == 3; }
 

@@ -4,9 +4,19 @@
 
 class BranchInst : public Instruction {
 public:
-  BranchInst(Value *cond, BasicBlock *if_true, BasicBlock *if_false,
-             BasicBlock *bb);
-  BranchInst(BasicBlock *if_true, BasicBlock *bb);
+  BranchInst(Context &context, BasicBlock *ifTrueBlock,
+             BasicBlock *insertedBlock);
+  BranchInst(Context &context, Value *cond, BasicBlock *ifTrueBlock,
+             BasicBlock *ifFalseBlock, BasicBlock *insertedBlock);
   bool isCondBr();
   std::string print() override;
+
+public:
+  static BranchInst *Create(Context &context, BasicBlock *ifTrueBlock,
+                            BasicBlock *insertedBlock);
+  static BranchInst *Create(Context &context, Value *cond,
+                            BasicBlock *ifTrueBlock, BasicBlock *ifFalseBlock,
+                            BasicBlock *insertedBlock);
+
+private:
 };
