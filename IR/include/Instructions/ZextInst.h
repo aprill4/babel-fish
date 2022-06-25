@@ -4,11 +4,14 @@
 
 class ZextInst : public Instruction {
 public:
-  ZextInst(OpId op, Value *val, Type *ty, BasicBlock *bb);
-  //   static ZextInst *create_zext(Value *val, Type *ty, BasicBlock *bb);
-  //   Type *get_dest_type() const;
+  ZextInst(Type *destType, Value *value, BasicBlock *insertedBlock);
+  Type *getDestType();
   std::string print() override;
 
+public:
+  static ZextInst *Create(Type *destType, Value *value,
+                          BasicBlock *insertedBlock);
+
 private:
-  Type *dest_ty_;
+  Type *destType_;
 };
