@@ -4,10 +4,13 @@
 
 class SiToFpInst : public Instruction {
 public:
-  SiToFpInst(OpId op, Value *val, Type *ty, BasicBlock *bb);
-  //   static SiToFpInst *create_sitofp(Value *val, Type *ty, BasicBlock *bb);
-  //   Type *get_dest_type() const;
+  SiToFpInst(Type *destType, Value *value, BasicBlock *insertedBlock);
+  Type *getDestType();
   std::string print() override;
+
+public:
+  static SiToFpInst *Create(Type *destType, Value *value,
+                            BasicBlock *insertedBlock);
 
 private:
   Type *destType_;
