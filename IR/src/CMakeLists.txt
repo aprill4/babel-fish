@@ -4,25 +4,30 @@ set(IR_SRC
     Types/IntegerType.cc
     Types/ArrayType.cc
     Types/FunctionType.cc
-    Instructions/Instruction.cc
     Instructions/AllocaInst.cc
-    Instructions/BranchInst.cc
-    Instructions/LoadInst.cc
-    Instructions/StoreInst.cc
     Instructions/BinaryInst.cc
-    Instructions/IcmpInst.cc
+    Instructions/BranchInst.cc
+    Instructions/CallInst.cc
     Instructions/FcmpInst.cc
-    Instructions/ReturnInst.cc
+    Instructions/FpToSiInst.cc
     Instructions/GetElementPtrInst.cc
-    ConstantInt.cc
-    Module.cc
-    Value.cc 
-    BasicBlock.cc
+    Instructions/IcmpInst.cc
+    Instructions/Instruction.cc
+    Instructions/LoadInst.cc
+    Instructions/PhiInst.cc
+    Instructions/ReturnInst.cc
+    Instructions/SiToFpInst.cc
+    Instructions/StoreInst.cc
+    Instructions/ZextInst.cc
     Argument.cc
+    BasicBlock.cc
+    ConstantInt.cc
     Context.cc
     Function.cc
+    Module.cc
     Use.cc
     User.cc
+    Value.cc 
 )
 
 add_library(IR ${IR_SRC})
