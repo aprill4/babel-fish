@@ -1,15 +1,72 @@
 #include "Instructions/BinaryInst.h"
 #include "BasicBlock.h"
+#include "Types/IntegerType.h"
 #include "Types/Type.h"
 #include "Util.h"
 #include "Value.h"
 
+BinaryInst::BinaryInst(Type *type, InstId instId, Value *leftValue,
+                       Value *rightValue, BasicBlock *insertedBlock)
+    : Instruction(type, instId, 2, insertedBlock) {
+  setOperand(leftValue, 0);
+  setOperand(rightValue, 1);
+  insertedBlock->addInstruction(this);
+}
 
-BinaryInst::BinaryInst(Type *type, OpId opId, Value *valueL, Value *valueR,
-                       BasicBlock *bb)
-    : Instruction(type, opId, 2, bb) {
-  setOperand(valueL, 0);
-  setOperand(valueR, 1);
+BinaryInst *BinaryInst::CreateAdd(Context &context, Value *leftValue,
+                                  Value *rightValue,
+                                  BasicBlock *insertedBlock) {
+  return new BinaryInst(Type::getInt32Type(context), InstId::add, leftValue,
+                        rightValue, insertedBlock);
+}
+
+BinaryInst *BinaryInst::CreateSub(Context &context, Value *leftValue,
+                                  Value *rightValue,
+                                  BasicBlock *insertedBlock) {
+  return new BinaryInst(Type::getInt32Type(context), InstId::sub, leftValue,
+                        rightValue, insertedBlock);
+}
+
+BinaryInst *BinaryInst::CreateMul(Context &context, Value *leftValue,
+                                  Value *rightValue,
+                                  BasicBlock *insertedBlock) {
+  return new BinaryInst(Type::getInt32Type(context), InstId::mul, leftValue,
+                        rightValue, insertedBlock);
+}
+
+BinaryInst *BinaryInst::CreateSdiv(Context &context, Value *leftValue,
+                                   Value *rightValue,
+                                   BasicBlock *insertedBlock) {
+  return new BinaryInst(Type::getInt32Type(context), InstId::sdiv, leftValue,
+                        rightValue, insertedBlock);
+}
+
+BinaryInst *BinaryInst::CreateFadd(Context &context, Value *leftValue,
+                                   Value *rightValue,
+                                   BasicBlock *insertedBlock) {
+  return new BinaryInst(Type::getFloatType(context), InstId::fadd, leftValue,
+                        rightValue, insertedBlock);
+}
+
+BinaryInst *BinaryInst::CreateFsub(Context &context, Value *leftValue,
+                                   Value *rightValue,
+                                   BasicBlock *insertedBlock) {
+  return new BinaryInst(Type::getFloatType(context), InstId::fsub, leftValue,
+                        rightValue, insertedBlock);
+}
+
+BinaryInst *BinaryInst::CreateFmul(Context &context, Value *leftValue,
+                                   Value *rightValue,
+                                   BasicBlock *insertedBlock) {
+  return new BinaryInst(Type::getFloatType(context), InstId::fmul, leftValue,
+                        rightValue, insertedBlock);
+}
+
+BinaryInst *BinaryInst::CreateFdiv(Context &context, Value *leftValue,
+                                   Value *rightValue,
+                                   BasicBlock *insertedBlock) {
+  return new BinaryInst(Type::getFloatType(context), InstId::fdiv, leftValue,
+                        rightValue, insertedBlock);
 }
 
 std::string BinaryInst::print() {
