@@ -27,6 +27,7 @@ set(IR_SRC
     ConstantZero.cc
     Context.cc
     Function.cc
+    GlobalVariable.cc
     Module.cc
     Use.cc
     User.cc
