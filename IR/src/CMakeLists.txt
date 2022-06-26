@@ -21,7 +21,10 @@ set(IR_SRC
     Instructions/ZextInst.cc
     Argument.cc
     BasicBlock.cc
+    ConstantArray.cc
+    ConstantFloat.cc
     ConstantInt.cc
+    ConstantZero.cc
     Context.cc
     Function.cc
     Module.cc
