@@ -43,19 +43,20 @@ std::string Type::getTypeName() {
         "i" + std::to_string(static_cast<IntegerType *>(this)->getBitsNum());
     break;
   case TypeId::FunctionTypeId:
-    typeName += static_cast<FunctionType *>(this)->getReturnType()->getTypeName();
+    typeName +=
+        static_cast<FunctionType *>(this)->getReturnType()->getTypeName();
     typeName += " (";
     for (int i = 0; i < static_cast<FunctionType *>(this)->getArgumentsNum();
          i++) {
       if (i)
         typeName += ", ";
-      // typeName += static_cast<FunctionType *>(this)->getParamsType(i)->print();
+      typeName +=
+          static_cast<FunctionType *>(this)->getArgumentType(i)->getTypeName();
     }
     typeName += ")";
     break;
   case TypeId::PointerTypeId:
     typeName += this->getPtrElementType()->getTypeName();
-    // typeName += "*";
     break;
   case TypeId::ArrayTypeId:
     typeName += "[";

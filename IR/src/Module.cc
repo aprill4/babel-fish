@@ -20,8 +20,8 @@ void Module::addGlobalVariable(GlobalVariable *globalVariable) {
 std::string Module::print() {
   std::string module_ir;
   for (auto global_val : globalVariableList_) {
-    // module_ir += global_val->print();
-    // module_ir += "\n";
+    module_ir += global_val->print();
+    module_ir += "\n";
   }
   for (auto &func : functionList_) {
     module_ir += func->print();
