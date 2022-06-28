@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -eu
+
 if [ -d "./build" ]; then
     echo "directory \"./build\" exists"
     cd build || exit
@@ -12,4 +14,4 @@ else
     make
 fi
 
-cp IRtest ../IRtest
+cp IRtest.out ../IRtest.out
