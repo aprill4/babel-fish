@@ -12,4 +12,4 @@ else
     make
 fi
 
-cp IRtest ../IRtest
+cp IRtest.out ../IRtest.out
