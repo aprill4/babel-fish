@@ -1,7 +1,7 @@
 #pragma once
 #include "Instruction.h"
 
-class LoadInst : Instruction {
+class LoadInst : public Instruction {
 public:
   LoadInst(Type *type, Value *ptr, BasicBlock *insertedBlock);
   std::string print() override;

@@ -14,6 +14,6 @@ include_directories(${PROJECT_SOURCE_DIR}/IR/include/Instructions)
 
 add_subdirectory(IR)
 
-add_executable(IRtest IRtest.cc)
+add_executable(IRtest.out IRtest.cc)
 
-target_link_libraries(IRtest PUBLIC IR)
+target_link_libraries(IRtest.out PUBLIC IR)
