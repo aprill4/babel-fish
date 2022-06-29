@@ -69,6 +69,20 @@ BinaryInst *BinaryInst::CreateFdiv(Context &context, Value *leftValue,
                         rightValue, insertedBlock);
 }
 
+BinaryInst *BinaryInst::CreateAnd(Context &context, Value *leftValue,
+                                   Value *rightValue,
+                                   BasicBlock *insertedBlock) {
+  return new BinaryInst(Type::getFloatType(context), InstId::and, leftValue,
+                        rightValue, insertedBlock);
+}
+
+BinaryInst *BinaryInst::CreateOr(Context &context, Value *leftValue,
+                                   Value *rightValue,
+                                   BasicBlock *insertedBlock) {
+  return new BinaryInst(Type::getFloatType(context), InstId::or, leftValue,
+                        rightValue, insertedBlock);
+}
+
 std::string BinaryInst::print() {
   std::string IR;
   char IRtemp[30];

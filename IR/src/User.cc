@@ -24,9 +24,3 @@ void User::setOperand(Value *value, std::size_t idx) {
   operands_[idx] = value;
   value->addUse(Use(this, value));
 }
-
-void User::addOperand(Value *value) {
-  operands_.emplace_back(value);
-  value->addUse(Use(this, value));
-  operandNum_++;
-}
