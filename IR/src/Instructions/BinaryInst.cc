@@ -16,56 +16,56 @@ BinaryInst::BinaryInst(Type *type, InstId instId, Value *leftValue,
 BinaryInst *BinaryInst::CreateAdd(Context &context, Value *leftValue,
                                   Value *rightValue,
                                   BasicBlock *insertedBlock) {
-  return new BinaryInst(Type::getInt32Type(context), InstId::add, leftValue,
+  return new BinaryInst(Type::getInt32Type(context), InstId::Add, leftValue,
                         rightValue, insertedBlock);
 }
 
 BinaryInst *BinaryInst::CreateSub(Context &context, Value *leftValue,
                                   Value *rightValue,
                                   BasicBlock *insertedBlock) {
-  return new BinaryInst(Type::getInt32Type(context), InstId::sub, leftValue,
+  return new BinaryInst(Type::getInt32Type(context), InstId::Sub, leftValue,
                         rightValue, insertedBlock);
 }
 
 BinaryInst *BinaryInst::CreateMul(Context &context, Value *leftValue,
                                   Value *rightValue,
                                   BasicBlock *insertedBlock) {
-  return new BinaryInst(Type::getInt32Type(context), InstId::mul, leftValue,
+  return new BinaryInst(Type::getInt32Type(context), InstId::Mul, leftValue,
                         rightValue, insertedBlock);
 }
 
 BinaryInst *BinaryInst::CreateSdiv(Context &context, Value *leftValue,
                                    Value *rightValue,
                                    BasicBlock *insertedBlock) {
-  return new BinaryInst(Type::getInt32Type(context), InstId::sdiv, leftValue,
+  return new BinaryInst(Type::getInt32Type(context), InstId::Sdiv, leftValue,
                         rightValue, insertedBlock);
 }
 
 BinaryInst *BinaryInst::CreateFadd(Context &context, Value *leftValue,
                                    Value *rightValue,
                                    BasicBlock *insertedBlock) {
-  return new BinaryInst(Type::getFloatType(context), InstId::fadd, leftValue,
+  return new BinaryInst(Type::getFloatType(context), InstId::Fadd, leftValue,
                         rightValue, insertedBlock);
 }
 
 BinaryInst *BinaryInst::CreateFsub(Context &context, Value *leftValue,
                                    Value *rightValue,
                                    BasicBlock *insertedBlock) {
-  return new BinaryInst(Type::getFloatType(context), InstId::fsub, leftValue,
+  return new BinaryInst(Type::getFloatType(context), InstId::Fsub, leftValue,
                         rightValue, insertedBlock);
 }
 
 BinaryInst *BinaryInst::CreateFmul(Context &context, Value *leftValue,
                                    Value *rightValue,
                                    BasicBlock *insertedBlock) {
-  return new BinaryInst(Type::getFloatType(context), InstId::fmul, leftValue,
+  return new BinaryInst(Type::getFloatType(context), InstId::Fmul, leftValue,
                         rightValue, insertedBlock);
 }
 
 BinaryInst *BinaryInst::CreateFdiv(Context &context, Value *leftValue,
                                    Value *rightValue,
                                    BasicBlock *insertedBlock) {
-  return new BinaryInst(Type::getFloatType(context), InstId::fdiv, leftValue,
+  return new BinaryInst(Type::getFloatType(context), InstId::Fdiv, leftValue,
                         rightValue, insertedBlock);
 }
 

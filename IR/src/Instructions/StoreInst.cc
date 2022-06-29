@@ -6,7 +6,7 @@
 
 StoreInst::StoreInst(Context &context, Value *value, Value *ptr,
                      BasicBlock *insertedBlock)
-    : Instruction(Type::getVoidType(context), InstId::store, 2, insertedBlock) {
+    : Instruction(Type::getVoidType(context), InstId::Store, 2, insertedBlock) {
   setOperand(value, 0);
   setOperand(ptr, 1);
   insertedBlock->addInstruction(this);

@@ -1,4 +1,5 @@
 test
 build
 *.sy
+*.json
 *.out

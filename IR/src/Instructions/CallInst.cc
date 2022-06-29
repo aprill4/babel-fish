@@ -7,7 +7,7 @@
 
 CallInst::CallInst(Function *func, std::vector<Value *> funcArgs,
                    BasicBlock *insertedBlock)
-    : Instruction(func->getReturnType(), InstId::call, funcArgs.size() + 1,
+    : Instruction(func->getReturnType(), InstId::Call, funcArgs.size() + 1,
                   insertedBlock) {
   assert(func->getArgumentsNum() == funcArgs.size());
   setOperand(func, 0);

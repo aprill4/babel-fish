@@ -11,7 +11,7 @@ GetElementPtrInst::GetElementPtrInst(Context &context, Value *ptr,
                                      std::vector<Value *> idxList,
                                      BasicBlock *insertedBlock)
     : Instruction(PointerType::get(context, computeElementType(ptr, idxList)),
-                  InstId::getelementptr, idxList.size() + 1, insertedBlock) {
+                  InstId::Getelementptr, idxList.size() + 1, insertedBlock) {
   setOperand(ptr, 0);
   for (int i = 0; i < idxList.size(); i++) {
     setOperand(idxList[i], i + 1);

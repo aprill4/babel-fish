@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -eu
 
 if [ -d "./build" ]; then
     echo "directory \"./build\" exists"

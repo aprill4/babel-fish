@@ -6,14 +6,14 @@
 
 BranchInst::BranchInst(Context &context, BasicBlock *ifTrueBlock,
                        BasicBlock *insertedBlock)
-    : Instruction(Type::getVoidType(context), InstId::br, 1, insertedBlock) {
+    : Instruction(Type::getVoidType(context), InstId::Br, 1, insertedBlock) {
   setOperand(ifTrueBlock, 0);
   insertedBlock->addInstruction(this);
 }
 
 BranchInst::BranchInst(Context &context, Value *cond, BasicBlock *ifTrueBlock,
                        BasicBlock *ifFalseBlock, BasicBlock *insertedBlock)
-    : Instruction(Type::getVoidType(context), InstId::br, 3, insertedBlock) {
+    : Instruction(Type::getVoidType(context), InstId::Br, 3, insertedBlock) {
   setOperand(cond, 0);
   setOperand(ifTrueBlock, 1);
   setOperand(ifFalseBlock, 2);

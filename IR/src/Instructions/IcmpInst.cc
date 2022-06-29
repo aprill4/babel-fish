@@ -8,7 +8,7 @@
 
 IcmpInst::IcmpInst(Type *type, IcmpOp icmpOp, Value *leftValue,
                    Value *rightValue, BasicBlock *insertedBlock)
-    : Instruction(type, InstId::icmp, 2, insertedBlock), icmpOp_(icmpOp) {
+    : Instruction(type, InstId::Icmp, 2, insertedBlock), icmpOp_(icmpOp) {
   setOperand(leftValue, 0);
   setOperand(rightValue, 0);
   insertedBlock->addInstruction(this);

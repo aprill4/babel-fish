@@ -7,7 +7,7 @@
 
 AllocaInst::AllocaInst(Context &context, Type *allocaType,
                        BasicBlock *insertedBlock)
-    : Instruction(PointerType::get(context, allocaType), InstId::alloca, 0,
+    : Instruction(PointerType::get(context, allocaType), InstId::Alloca, 0,
                   insertedBlock),
       allocaType_(allocaType) {
   insertedBlock->addInstruction(this);
