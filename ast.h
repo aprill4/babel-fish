@@ -50,7 +50,8 @@ public:
   Number(SysType type) : type_(type) {}
   Number(SysType type, long long i_val) : Number(type) { value_.i_val = i_val; }
   Number(SysType type, double f_val) : Number(type) { value_.f_val = f_val; }
-  void print();
+  void print() override;
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   SysType type_;
@@ -299,7 +300,7 @@ class Root : public Node {
 public:
   Root() = default;
   void print() override;
-  void generate(IRBuilder* irBuilder) override;
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   std::vector<DeclareStatement *> declareStatement_;

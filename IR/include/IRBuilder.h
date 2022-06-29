@@ -4,11 +4,17 @@
 class IRBuilder {
 public:
   IRBuilder() {
-    Context &c = *new Context();
-    m = new Module(c, "main_module");
+    Context &context_ = *new Context();
+    module_ = new Module(context_, "main_module");
   }
 
+public:
+  Module *&getModule() { return module_; }
+  Context &getContext() { return context_; }
+  void setTmpVal(Value *val) { tmp_ = val; }
+
 private:
-  Context c;
-  Module *m;
+  Value *tmp_;
+  Context context_;
+  Module *module_;
 };

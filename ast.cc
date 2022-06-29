@@ -1,7 +1,7 @@
 #include "ast.h"
 #include "IRBuilder.h"
-#include "syntax_analyzer.tab.h"
-Node::Node() : line_(yylloc.first_line), column_(yylloc.first_column) {}
+// #include "syntax_analyzer.tab.h"
+// Node::Node() : line_(yylloc.first_line), column_(yylloc.first_column) {}
 
 void *find_symbol(Scope *scope, std::string symbol, bool is_var) {
   while (scope)
@@ -269,6 +269,23 @@ void Root::print() {
   for (int i = 0; i < functionDefinitions_.size(); i++) {
     cout << "  functionDefinition_[" << i << "]: ";
     functionDefinitions_[i]->print();
+  }
+}
+
+void Number::generate(IRBuilder *irBuilder) {
+  switch (type_) {
+  case SysType::INT:
+    irBuilder->setTmpVal(ConstantInt::get(
+        Type::getInt32Type(irBuilder->getContext()), value_.i_val));
+    break;
+  case SysType::FLOAT:
+    irBuilder->setTmpVal(ConstantInt::get(
+        Type::getFloatType(irBuilder->getContext()), value_.f_val));
+    break;
+  case SysType::VOID:
+    break;
+  default:
+    break;
   }
 }
 
