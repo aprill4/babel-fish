@@ -6,21 +6,21 @@
 #include "Util.h"
 #include <cassert>
 
-Function::Function(FunctionType *funcType, const std::string &funcName,
+Function::Function(FunctionType *funcType, const std::string args_name[], const std::string &funcName,
                    Module *parent)
     : Value(funcType, funcName), parent_(parent) {
   assert(parent != nullptr);
   parent_->addFuntion(this);
   for (int i = 0; i < getArgumentsNum(); i++) {
     arguments_.emplace_back(
-        new Argument(funcType->getArgumentType(i), "", this, i));
+        new Argument(funcType->getArgumentType(i), args_name[i], this, i));
   }
 }
 
-Function *Function::Create(FunctionType *funcType, const std::string &funcName,
+Function *Function::Create(FunctionType *funcType, const std::string args_name[], const std::string &funcName,
                            Module *parent) {
   assert(parent != nullptr);
-  return new Function(funcType, funcName, parent);
+  return new Function(funcType, args_name, funcName, parent);
 }
 
 Module *Function::getModule() { return parent_; }
@@ -37,6 +37,12 @@ FunctionType *Function::getFunctionType() {
 
 void Function::addBasicBlock(BasicBlock *bb) { basicBlocks_.emplace_back(bb); }
 
+
+Argument *Function::getArgument(size_t idx) { 
+  assert(idx < getArgumentsNum() && "argument idx is out of range");
+  return arguments_[idx];
+}
+
 std::string Function::print() {
   std::string func_ir;
   // set_instr_name();
@@ -51,6 +57,19 @@ std::string Function::print() {
   func_ir += print_as_op(this);
   func_ir += "(";
 
+  int args_num = getArgumentsNum();
+  for (int i = 0; i < args_num; i++){
+    auto arg = arguments_[i];
+    func_ir += arg->getType()->getTypeName();
+    func_ir += " %";
+    func_ir += arg->getName();
+
+    if (args_num-1 > i){
+      func_ir += ", ";
+    }
+  }
+
+  func_ir += ")";
   // // print arg
   // if (this->is_declaration()) {
   //   for (int i = 0; i < this->get_num_of_args(); i++) {
