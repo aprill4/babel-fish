@@ -57,6 +57,7 @@ std::string Type::getTypeName() {
     break;
   case TypeId::PointerTypeId:
     typeName += this->getPtrElementType()->getTypeName();
+    typeName += "*";
     break;
   case TypeId::ArrayTypeId:
     typeName += "[";
