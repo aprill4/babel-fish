@@ -9,16 +9,22 @@ class FunctionType;
 
 class Function : public Value {
 public:
-  Function(FunctionType *funcType, const std::string &funcName, Module *parent);
+  Function(FunctionType *funcType, const std::string args_name[], const std::string &funcName, Module *parent);
+
   Module *getModule();
   Type *getReturnType();
+
   std::size_t getArgumentsNum();
   FunctionType *getFunctionType();
+
   void addBasicBlock(BasicBlock *bb);
+
+  Argument *getArgument(size_t idx);
+
   std::string print() override;
 
 public:
-  static Function *Create(FunctionType *funcType, const std::string &funcName,
+  static Function *Create(FunctionType *funcType, const std::string args_name[], const std::string &funcName,
                           Module *parent);
 
 private:
