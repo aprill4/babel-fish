@@ -18,6 +18,8 @@ public:
     fsub,
     fmul,
     fdiv,
+    and,
+    or,
     alloca,
     load,
     store,
@@ -53,6 +55,9 @@ public:
   bool isFsub();
   bool isFmul();
   bool isFdiv();
+
+  bool isAnd();
+  bool isOr();
 
   bool isFp2si();
   bool isSi2fp();

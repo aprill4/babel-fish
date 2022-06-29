@@ -25,6 +25,9 @@ bool Instruction::isSub() { return instId_ == InstId::sub; }
 bool Instruction::isMul() { return instId_ == InstId::mul; }
 bool Instruction::isDiv() { return instId_ == InstId::sdiv; }
 
+bool Instruction::isAnd() { return instId_ == InstId::and; }
+bool Instruction::isOr() { return instId_ == InstId::or; }
+
 bool Instruction::isFadd() { return instId_ == InstId::fadd; }
 bool Instruction::isFsub() { return instId_ == InstId::fsub; }
 bool Instruction::isFmul() { return instId_ == InstId::fmul; }
@@ -79,6 +82,12 @@ std::string Instruction::getInstructionOpName() {
     break;
   case InstId::fdiv:
     instName = "fdiv";
+    break;
+  case InstId::and:
+    instName = "and";
+    break;
+  case InstId::or:
+    instName = "or";
     break;
   case InstId::alloca:
     instName = "alloca";
