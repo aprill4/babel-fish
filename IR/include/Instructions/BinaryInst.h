@@ -24,6 +24,9 @@ public:
                                 Value *rightValue, BasicBlock *insertedBlock);
   static BinaryInst *CreateFdiv(Context &context, Value *leftValue,
                                 Value *rightValue, BasicBlock *insertedBlock);
-
+  static BinaryInst *CreateAnd(Context &context, Value *leftValue,
+                                Value *rightValue, BasicBlock *insertedBlock);
+  static BinaryInst *CreateOr(Context &context, Value *leftValue,
+                                Value *rightValue, BasicBlock *insertedBlock);
 private:
 };

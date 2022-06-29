@@ -26,11 +26,14 @@ enum class UnaryOp { POSITIVE, NEGATIVE, NOT };
 
 enum class StmtType { BLOCK, DECL, OTHER };
 
+class IRBuilder;
+
 class Node {
 public:
   Node();
   ~Node(){};
   virtual void print(){};
+  virtual void generate(IRBuilder *irBuilder){};
 
 public:
   int line_, column_;
@@ -48,7 +51,7 @@ public:
   Number(SysType type, long long i_val) : Number(type) { value_.i_val = i_val; }
   Number(SysType type, double f_val) : Number(type) { value_.f_val = f_val; }
   void print();
-  
+
 public:
   SysType type_;
   union {
@@ -119,17 +122,13 @@ public:
 
 class Statement : public Node {
 public:
-  virtual StmtType statement_type() {
-    return StmtType::OTHER;
-  }
+  virtual StmtType statement_type() { return StmtType::OTHER; }
 };
 
 class Block : public Statement {
 public:
   void print();
-  StmtType statement_type() {
-    return StmtType::BLOCK;
-  }
+  StmtType statement_type() { return StmtType::BLOCK; }
 
 public:
   Scope *scope_;
@@ -163,6 +162,7 @@ public:
   WhileStatement(Expression *cond, Statement *doStmt)
       : cond_(cond), doStmt_(doStmt) {}
   void print();
+
 public:
   Expression *cond_;
   Statement *doStmt_;
@@ -211,9 +211,7 @@ class DeclareStatement : public Statement {
 public:
   DeclareStatement(SysType type) : type_(type) {}
   SysType getType() { return type_; }
-  virtual StmtType statement_type() {
-    return StmtType::DECL;
-  }
+  virtual StmtType statement_type() { return StmtType::DECL; }
   void print();
 
 public:
@@ -249,7 +247,7 @@ public:
   ArrayDeclare(SysType type, Identifier *identifier, ArrayValue *value,
                bool is_const)
       : Declare(type, identifier, is_const), value_(value) {}
-  void print(); 
+  void print();
 
 public:
   ArrayValue *value_;
@@ -260,7 +258,6 @@ public:
   FormalArgument(SysType type, Identifier *identifier)
       : Declare(type, identifier, false) {}
   void print();
-
 };
 
 class FormalArgumentList : public Node {
@@ -301,7 +298,8 @@ public:
 class Root : public Node {
 public:
   Root() = default;
-  void print();
+  void print() override;
+  void generate(IRBuilder* irBuilder) override;
 
 public:
   std::vector<DeclareStatement *> declareStatement_;
