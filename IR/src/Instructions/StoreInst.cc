@@ -21,7 +21,7 @@ std::string StoreInst::print() {
   std::string IR;
   char IRtemp[30];
   // store <type> <value>, <type>* <pointer>
-  std::string fmt("store %s %s, %s* %s");
+  std::string fmt("store %s %s, %s %s");
   std::snprintf(
       IRtemp, sizeof IRtemp, fmt.c_str(), getOperandTypeName(0).c_str(),
       print_as_op(getOperand(0)).c_str(), getOperandTypeName(1).c_str(),
