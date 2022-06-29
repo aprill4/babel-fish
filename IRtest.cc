@@ -61,7 +61,47 @@ int main() {
   cout << m->print() << endl;
   return 0;
   */
+  //int main(){
+  //int a=1;
+  //if(a>0) a++;
+  //else a--;
+  //int b=a;} 
+  Context context;
+  Module *module = new Module(context, "m");
+  FunctionType *ft = FunctionType::get(Type::getInt1Type(c));
+  Function *func = Function::Create(ft, "main", m);
+  BasicBlock *bb = new BasicBlock(context, "bb", func);
+  auto a_add = AllocaInst.Create(context, context.Int32Type, bb);
+  StoreInst.Create(context, new ConstantInt(context.Int32Type, 1), a0, bb);
+  auto a = LoadInst.Create(context.Int32Type, a_add, bb);
+  auto cond = IcmpInst.Create(context.Int32Type, IcmpOp::GT, a, new ConstantInt(context.Int32Type, 1), bb);
+  BasicBlock *bb1 = new BasicBlock(context, "bb1", func);
+  BasicBlock *bb2 = new BasicBlock(context, "bb2", func);
+  BasicBlock *bb3 = new BasicBlock(context, "bb3", func);
+  bb->addSuccessor(bb1);
+  bb->addSuccessor(bb2);
+  bb1->addPredecessor(bb);
+  bb1->addSuccessor(bb3);
+  bb2->addPredecessor(bb);
+  bb2->addSuccessor(bb3);
+  BranchInst.Create(context, cond, bb1, bb2, bb);
+  auto a_tmp = LoadInst.Create(context.Int32Type, a_add, bb1);
+  a = BinaryInst.CreateAdd(context, a_tmp, new ConstantInt(context.Int32Type, 1), bb1);
+  StoreInst.Create(context, a, a_add, bb1);
+  BranchInst.Create(context, bb3, bb1);
+  auto a_tmp = LoadInst.Create(context.Int32Type, a_add, bb2); 
+  a = BinaryInst.CreateSub(context, a_tmp, new ConstantInt(context.Int32Type, 1), bb2);
+  StoreInst.Create(context, a, a_add, bb2);
+  BranchInst.Create(context, bb3, bb1);
+  auto b_add = AllocaInst.Create(context, context.Int32Type, bb3);
+  StoreInst.Create(context, a, b_add, bb3);
+  ReturnInst.Create(context, new ConstantInt(context.Int32Type, 0), bb3);
+  cout << m->print() << endl;
+  return 0;
+}
 
+/*
+int main(){
   Context c;
   Module *m = new Module(c, "m");
 
@@ -94,4 +134,4 @@ int main() {
 
   cout << m->print() << endl;
   return 0;
-}
+}*/

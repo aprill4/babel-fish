@@ -12,6 +12,8 @@ public:
   Module *getModule();
   std::string print() override;
   void addInstruction(Instruction *instruction);
+  void addPredecessor(BasicBlock* pre);
+  void addSuccessor(BasicBlock* suc);
 
 public:
   static BasicBlock *Create(Context &context, const std::string &name,
