@@ -2,3 +2,4 @@ test
 build
 *.sy
 *.out
+.vscode/settings.json
