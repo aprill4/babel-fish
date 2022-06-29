@@ -10,7 +10,7 @@ IcmpInst::IcmpInst(Type *type, IcmpOp icmpOp, Value *leftValue,
                    Value *rightValue, BasicBlock *insertedBlock)
     : Instruction(type, InstId::Icmp, 2, insertedBlock), icmpOp_(icmpOp) {
   setOperand(leftValue, 0);
-  setOperand(rightValue, 0);
+  setOperand(rightValue, 1);
   insertedBlock->addInstruction(this);
 }
 
@@ -53,6 +53,9 @@ IcmpInst::IcmpOp IcmpInst::getIcmpOp() { return icmpOp_; }
 std::string IcmpInst::print() {
   std::string IR;
   char IRtemp[30];
+  std::cout << "1111\n";
+  std::cout << getOperandType(0)->getTypeName() << std::endl;
+  std::cout << getOperandType(1)->getTypeName() << std::endl;
   if (getOperandType(0) == getOperandType(1)) {
     // <result> = icmp <cond> <type> <op1>, <op2>
     std::string fmt("%%%s = icmp %s %s %s, %s");
