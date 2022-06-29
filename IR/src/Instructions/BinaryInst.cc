@@ -72,14 +72,14 @@ BinaryInst *BinaryInst::CreateFdiv(Context &context, Value *leftValue,
 BinaryInst *BinaryInst::CreateAnd(Context &context, Value *leftValue,
                                    Value *rightValue,
                                    BasicBlock *insertedBlock) {
-  return new BinaryInst(Type::getFloatType(context), InstId::and, leftValue,
+  return new BinaryInst(Type::getFloatType(context), InstId::And, leftValue,
                         rightValue, insertedBlock);
 }
 
 BinaryInst *BinaryInst::CreateOr(Context &context, Value *leftValue,
                                    Value *rightValue,
                                    BasicBlock *insertedBlock) {
-  return new BinaryInst(Type::getFloatType(context), InstId::or, leftValue,
+  return new BinaryInst(Type::getFloatType(context), InstId::Or, leftValue,
                         rightValue, insertedBlock);
 }
 

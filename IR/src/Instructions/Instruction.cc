@@ -83,10 +83,10 @@ std::string Instruction::getInstructionOpName() {
   case InstId::fdiv:
     instName = "fdiv";
     break;
-  case InstId::and:
+  case InstId::And:
     instName = "and";
     break;
-  case InstId::or:
+  case InstId::Or:
     instName = "or";
     break;
   case InstId::alloca:
