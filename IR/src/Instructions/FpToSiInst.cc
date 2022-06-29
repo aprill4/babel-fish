@@ -3,7 +3,7 @@
 #include "Util.h"
 
 FpToSiInst::FpToSiInst(Type *destType, Value *value, BasicBlock *insertedBlock)
-    : Instruction(destType, InstId::fptosi, 1, insertedBlock),
+    : Instruction(destType, InstId::Fptosi, 1, insertedBlock),
       destType_(destType) {
   setOperand(value, 0);
   insertedBlock->addInstruction(this);

@@ -8,39 +8,39 @@ Instruction::Instruction(Type *type, InstId instId, std::size_t operandNum,
 Module *Instruction::getModule() { return parent_->getModule(); }
 
 bool Instruction::isVoid() {
-  return ((instId_ == InstId::ret) || (instId_ == InstId::br) ||
-          (instId_ == InstId::store) ||
-          (instId_ == InstId::call && getType()->isVoidType()));
+  return ((instId_ == InstId::Ret) || (instId_ == InstId::Br) ||
+          (instId_ == InstId::Store) ||
+          (instId_ == InstId::Call && getType()->isVoidType()));
 }
 
-bool Instruction::isPhi() { return instId_ == InstId::phi; }
-bool Instruction::isStore() { return instId_ == InstId::store; }
-bool Instruction::isAlloca() { return instId_ == InstId::alloca; }
-bool Instruction::isRet() { return instId_ == InstId::ret; }
-bool Instruction::isLoad() { return instId_ == InstId::load; }
-bool Instruction::isBr() { return instId_ == InstId::br; }
+bool Instruction::isPhi() { return instId_ == InstId::Phi; }
+bool Instruction::isStore() { return instId_ == InstId::Store; }
+bool Instruction::isAlloca() { return instId_ == InstId::Alloca; }
+bool Instruction::isRet() { return instId_ == InstId::Ret; }
+bool Instruction::isLoad() { return instId_ == InstId::Load; }
+bool Instruction::isBr() { return instId_ == InstId::Br; }
 
-bool Instruction::isAdd() { return instId_ == InstId::add; }
-bool Instruction::isSub() { return instId_ == InstId::sub; }
-bool Instruction::isMul() { return instId_ == InstId::mul; }
-bool Instruction::isDiv() { return instId_ == InstId::sdiv; }
+bool Instruction::isAdd() { return instId_ == InstId::Add; }
+bool Instruction::isSub() { return instId_ == InstId::Sub; }
+bool Instruction::isMul() { return instId_ == InstId::Mul; }
+bool Instruction::isDiv() { return instId_ == InstId::Sdiv; }
 
-bool Instruction::isAnd() { return instId_ == InstId::and; }
-bool Instruction::isOr() { return instId_ == InstId::or; }
+bool Instruction::isAnd() { return instId_ == InstId::And; }
+bool Instruction::isOr() { return instId_ == InstId::Or; }
 
-bool Instruction::isFadd() { return instId_ == InstId::fadd; }
-bool Instruction::isFsub() { return instId_ == InstId::fsub; }
-bool Instruction::isFmul() { return instId_ == InstId::fmul; }
-bool Instruction::isFdiv() { return instId_ == InstId::fdiv; }
-bool Instruction::isFp2si() { return instId_ == InstId::fptosi; }
-bool Instruction::isSi2fp() { return instId_ == InstId::sitofp; }
+bool Instruction::isFadd() { return instId_ == InstId::Fadd; }
+bool Instruction::isFsub() { return instId_ == InstId::Fsub; }
+bool Instruction::isFmul() { return instId_ == InstId::Fmul; }
+bool Instruction::isFdiv() { return instId_ == InstId::Fdiv; }
+bool Instruction::isFp2si() { return instId_ == InstId::Fptosi; }
+bool Instruction::isSi2fp() { return instId_ == InstId::Sitofp; }
 
-bool Instruction::isIcmp() { return instId_ == InstId::icmp; }
-bool Instruction::isFcmp() { return instId_ == InstId::fcmp; }
+bool Instruction::isIcmp() { return instId_ == InstId::Icmp; }
+bool Instruction::isFcmp() { return instId_ == InstId::Fcmp; }
 
-bool Instruction::isCall() { return instId_ == InstId::call; }
-bool Instruction::isGep() { return instId_ == InstId::getelementptr; }
-bool Instruction::isZext() { return instId_ == InstId::zext; }
+bool Instruction::isCall() { return instId_ == InstId::Call; }
+bool Instruction::isGep() { return instId_ == InstId::Getelementptr; }
+bool Instruction::isZext() { return instId_ == InstId::Zext; }
 
 bool Instruction::isBinary() {
   return (isAdd() || isSub() || isMul() || isDiv() || isFadd() || isFsub() ||
@@ -53,34 +53,34 @@ bool Instruction::isTerminator() { return isBr() || isRet(); }
 std::string Instruction::getInstructionOpName() {
   std::string instName;
   switch (instId_) {
-  case InstId::ret:
+  case InstId::Ret:
     instName = "ret";
     break;
-  case InstId::br:
+  case InstId::Br:
     instName = "br";
     break;
-  case InstId::add:
+  case InstId::Add:
     instName = "add";
     break;
-  case InstId::sub:
+  case InstId::Sub:
     instName = "sub";
     break;
-  case InstId::mul:
+  case InstId::Mul:
     instName = "mul";
     break;
-  case InstId::sdiv:
+  case InstId::Sdiv:
     instName = "sdiv";
     break;
-  case InstId::fadd:
+  case InstId::Fadd:
     instName = "fadd";
     break;
-  case InstId::fsub:
+  case InstId::Fsub:
     instName = "fsub";
     break;
-  case InstId::fmul:
+  case InstId::Fmul:
     instName = "fmul";
     break;
-  case InstId::fdiv:
+  case InstId::Fdiv:
     instName = "fdiv";
     break;
   case InstId::And:
@@ -89,37 +89,37 @@ std::string Instruction::getInstructionOpName() {
   case InstId::Or:
     instName = "or";
     break;
-  case InstId::alloca:
+  case InstId::Alloca:
     instName = "alloca";
     break;
-  case InstId::load:
+  case InstId::Load:
     instName = "load";
     break;
-  case InstId::store:
+  case InstId::Store:
     instName = "store";
     break;
-  case InstId::icmp:
+  case InstId::Icmp:
     instName = "cmp";
     break;
-  case InstId::fcmp:
+  case InstId::Fcmp:
     instName = "fcmp";
     break;
-  case InstId::phi:
+  case InstId::Phi:
     instName = "phi";
     break;
-  case InstId::call:
+  case InstId::Call:
     instName = "call";
     break;
-  case InstId::getelementptr:
+  case InstId::Getelementptr:
     instName = "getelementptr";
     break;
-  case InstId::zext:
+  case InstId::Zext:
     instName = "zext";
     break;
-  case InstId::fptosi:
+  case InstId::Fptosi:
     instName = "fptosi";
     break;
-  case InstId::sitofp:
+  case InstId::Sitofp:
     instName = "sitofp";
     break;
   default:

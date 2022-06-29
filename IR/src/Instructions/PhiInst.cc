@@ -5,7 +5,7 @@
 PhiInst::PhiInst(Type *type,
                  std::vector<std::pair<Value *, BasicBlock *>> valAndLabels,
                  BasicBlock *insertedBlock)
-    : Instruction(type, InstId::phi, 2 * valAndLabels.size(), insertedBlock) {
+    : Instruction(type, InstId::Phi, 2 * valAndLabels.size(), insertedBlock) {
   for (int i = 0; i < valAndLabels.size(); i++) {
     setOperand(valAndLabels[i].first, 2 * i);
     setOperand(valAndLabels[i].second, 2 * i + 1);

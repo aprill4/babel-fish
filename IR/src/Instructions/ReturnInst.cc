@@ -8,14 +8,14 @@
 #include <iostream>
 
 ReturnInst::ReturnInst(Context &context, BasicBlock *insertedBlock)
-    : Instruction(Type::getVoidType(context), InstId::ret, 0, insertedBlock) {
+    : Instruction(Type::getVoidType(context), InstId::Ret, 0, insertedBlock) {
   assert(insertedBlock != nullptr);
   insertedBlock->addInstruction(this);
 }
 
 ReturnInst::ReturnInst(Context &context, Value *value,
                        BasicBlock *insertedBlock)
-    : Instruction(Type::getVoidType(context), InstId::ret, 1, insertedBlock) {
+    : Instruction(Type::getVoidType(context), InstId::Ret, 1, insertedBlock) {
   assert(insertedBlock != nullptr);
   insertedBlock->addInstruction(this);
   setOperand(value, 0);

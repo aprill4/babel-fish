@@ -7,7 +7,7 @@
 #include <cassert>
 
 LoadInst::LoadInst(Type *type, Value *ptr, BasicBlock *insertedBlock)
-    : Instruction(type, InstId::load, 1, insertedBlock) {
+    : Instruction(type, InstId::Load, 1, insertedBlock) {
   setOperand(ptr, 0);
   insertedBlock->addInstruction(this);
 }

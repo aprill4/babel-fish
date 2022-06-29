@@ -7,7 +7,7 @@
 
 FcmpInst::FcmpInst(Type *type, FcmpOp fcmpOp, Value *leftValue,
                    Value *rightValue, BasicBlock *insertedBlock)
-    : Instruction(type, InstId::fcmp, 2, insertedBlock), fcmpOp_(fcmpOp) {
+    : Instruction(type, InstId::Fcmp, 2, insertedBlock), fcmpOp_(fcmpOp) {
   setOperand(leftValue, 0);
   setOperand(rightValue, 1);
   insertedBlock->addInstruction(this);
