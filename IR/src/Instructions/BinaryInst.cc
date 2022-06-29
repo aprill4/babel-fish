@@ -88,14 +88,14 @@ std::string BinaryInst::print() {
   char IRtemp[30];
   if (getOperandType(0) == getOperandType(1)) {
     // <result> = add <type> <op1>, <op2>
-    std::string fmt("%%%s = %s %s %s, %s");
+    std::string fmt("%%%s = %s nsw %s %s, %s");
     std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getName().c_str(),
                   getInstructionOpName().c_str(), getOperandTypeName(0).c_str(),
                   print_as_op(getOperand(0)).c_str(),
                   print_as_op(getOperand(1)).c_str());
   } else {
     // <result> = add <type> <op1>, <type> <op2>
-    std::string fmt("%%%s = %s %s %s, %s %s");
+    std::string fmt("%%%s = %s nsw %s %s, %s %s");
     std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getName().c_str(),
                   getInstructionOpName().c_str(), getOperandTypeName(0).c_str(),
                   print_as_op(getOperand(0)).c_str(),

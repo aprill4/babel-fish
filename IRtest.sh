@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -eu
 
+set -eu
+
 if [ -d "./build" ]; then
     echo "directory \"./build\" exists"
     cd build || exit
