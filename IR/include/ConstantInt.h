@@ -5,14 +5,14 @@
 
 class ConstantInt : public Constant {
 public:
-  ConstantInt(Type *type, ssize_t value)
-      : Constant(type, "", 0), value_(value) {}
+  ConstantInt(Context &c, Type *type, ssize_t value)
+      : Constant(c, type, "", 0), value_(value) {}
   ssize_t getValue() { return value_; }
   std::string print() override;
 
 public:
-  static ConstantInt *get(Type *type, ssize_t value) {
-    return new ConstantInt(type, value);
+  static ConstantInt *get(Context &c, Type *type, ssize_t value) {
+    return new ConstantInt(c, type, value);
   }
 
 private:

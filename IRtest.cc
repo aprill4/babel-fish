@@ -92,8 +92,11 @@ int main(){
 
   vector<Type *> args_t = {Type::getInt32Type(c), Type::getInt32Type(c)};
   FunctionType *ft = FunctionType::get(Type::getFloatType(c), args_t);
-  string args_name[] = {"arg0", "arg1"};
-  Function *func = Function::Create(ft, args_name, "mul", m);
+
+  string s1 = "x";
+  string s2 = "y";
+  string args_name[] = {s1, s2};
+  Function *func = Function::Create(c, ft, args_name, "mul", m);
 
   BasicBlock *bb = new BasicBlock(c, "mul", func);
 
@@ -103,8 +106,8 @@ int main(){
   StoreInst::Create(c, func->getArgument(0), a1, bb);
   StoreInst::Create(c, func->getArgument(1), a2, bb);
 
-  auto l1 = LoadInst::Create(a1->getAllocaType(), a1, bb);
-  auto l2 = LoadInst::Create(a2->getAllocaType(), a2, bb);
+  auto l1 = LoadInst::Create(c, a1->getAllocaType(), a1, bb);
+  auto l2 = LoadInst::Create(c, a2->getAllocaType(), a2, bb);
 
   BinaryInst::CreateMul(c, l1, l2, bb);
 

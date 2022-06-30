@@ -2,10 +2,10 @@
 #include "BasicBlock.h"
 #include "Util.h"
 
-PhiInst::PhiInst(Type *type,
+PhiInst::PhiInst(Context &c, Type *type,
                  std::vector<std::pair<Value *, BasicBlock *>> valAndLabels,
                  BasicBlock *insertedBlock)
-    : Instruction(type, InstId::Phi, 2 * valAndLabels.size(), insertedBlock) {
+    : Instruction(c, type, InstId::Phi, 2 * valAndLabels.size(), insertedBlock) {
   for (int i = 0; i < valAndLabels.size(); i++) {
     setOperand(valAndLabels[i].first, 2 * i);
     setOperand(valAndLabels[i].second, 2 * i + 1);
@@ -14,10 +14,10 @@ PhiInst::PhiInst(Type *type,
 }
 
 PhiInst *
-PhiInst::Create(Type *type,
+PhiInst::Create(Context &c, Type *type,
                 std::vector<std::pair<Value *, BasicBlock *>> valAndLabels,
                 BasicBlock *insertedBlock) {
-  return new PhiInst(type, valAndLabels, insertedBlock);
+  return new PhiInst(c, type, valAndLabels, insertedBlock);
 }
 
 std::string PhiInst::print() {

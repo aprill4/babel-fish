@@ -4,6 +4,8 @@
 
 Value::Value(Type *type, const std::string &name) : type_(type), name_(name) {}
 
+Value::Value(Context &c, Type *type, const std::string &name) : type_(type), name_(name+std::to_string(c.counter++)) {}
+
 bool Value::setName(const std::string &name) {
   if (name_ == "") {
     name_ = name;

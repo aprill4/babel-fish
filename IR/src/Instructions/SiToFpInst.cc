@@ -2,16 +2,16 @@
 #include "BasicBlock.h"
 #include "Util.h"
 
-SiToFpInst::SiToFpInst(Type *destType, Value *value, BasicBlock *insertedBlock)
-    : Instruction(destType, InstId::Sitofp, 1, insertedBlock),
+SiToFpInst::SiToFpInst(Context &c, Type *destType, Value *value, BasicBlock *insertedBlock)
+    : Instruction(c, destType, InstId::Sitofp, 1, insertedBlock),
       destType_(destType) {
   setOperand(value, 0);
   insertedBlock->addInstruction(this);
 }
 
-SiToFpInst *SiToFpInst::Create(Type *destType, Value *value,
+SiToFpInst *SiToFpInst::Create(Context &c, Type *destType, Value *value,
                                BasicBlock *insertedBlock) {
-  return new SiToFpInst(destType, value, insertedBlock);
+  return new SiToFpInst(c, destType, value, insertedBlock);
 }
 
 Type *SiToFpInst::getDestType() { return destType_; }

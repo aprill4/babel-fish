@@ -2,16 +2,16 @@
 #include "BasicBlock.h"
 #include "Util.h"
 
-FpToSiInst::FpToSiInst(Type *destType, Value *value, BasicBlock *insertedBlock)
-    : Instruction(destType, InstId::Fptosi, 1, insertedBlock),
+FpToSiInst::FpToSiInst(Context &c, Type *destType, Value *value, BasicBlock *insertedBlock)
+    : Instruction(c, destType, InstId::Fptosi, 1, insertedBlock),
       destType_(destType) {
   setOperand(value, 0);
   insertedBlock->addInstruction(this);
 }
 
-FpToSiInst *FpToSiInst::Create(Type *destType, Value *value,
+FpToSiInst *FpToSiInst::Create(Context &c, Type *destType, Value *value,
                                BasicBlock *insertedBlock) {
-  return new FpToSiInst(destType, value, insertedBlock);
+  return new FpToSiInst(c, destType, value, insertedBlock);
 }
 
 Type *FpToSiInst::getDestType() { return destType_; }

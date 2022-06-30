@@ -5,13 +5,13 @@
 
 class ConstantArray : public Constant {
 public:
-  ConstantArray(ArrayType *type, const std::vector<Constant *> &value);
+  ConstantArray(Context &c, ArrayType *type, const std::vector<Constant *> &value);
   Constant *getElementValue(int idx);
   std::size_t getArraySize() { return value_.size(); }
   std::string print() override;
 
 public:
-  static ConstantArray *get(ArrayType *type,
+  static ConstantArray *get(Context &c, ArrayType *type,
                             const std::vector<Constant *> &value);
 
 private:

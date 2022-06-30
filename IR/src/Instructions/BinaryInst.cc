@@ -5,9 +5,9 @@
 #include "Util.h"
 #include "Value.h"
 
-BinaryInst::BinaryInst(Type *type, InstId instId, Value *leftValue,
+BinaryInst::BinaryInst(Context &c, Type *type, InstId instId, Value *leftValue,
                        Value *rightValue, BasicBlock *insertedBlock)
-    : Instruction(type, instId, 2, insertedBlock) {
+    : Instruction(c, type, instId, 2, insertedBlock) {
   setOperand(leftValue, 0);
   setOperand(rightValue, 1);
   insertedBlock->addInstruction(this);
@@ -16,70 +16,70 @@ BinaryInst::BinaryInst(Type *type, InstId instId, Value *leftValue,
 BinaryInst *BinaryInst::CreateAdd(Context &context, Value *leftValue,
                                   Value *rightValue,
                                   BasicBlock *insertedBlock) {
-  return new BinaryInst(Type::getInt32Type(context), InstId::Add, leftValue,
+  return new BinaryInst(context, Type::getInt32Type(context), InstId::Add, leftValue,
                         rightValue, insertedBlock);
 }
 
 BinaryInst *BinaryInst::CreateSub(Context &context, Value *leftValue,
                                   Value *rightValue,
                                   BasicBlock *insertedBlock) {
-  return new BinaryInst(Type::getInt32Type(context), InstId::Sub, leftValue,
+  return new BinaryInst(context, Type::getInt32Type(context), InstId::Sub, leftValue,
                         rightValue, insertedBlock);
 }
 
 BinaryInst *BinaryInst::CreateMul(Context &context, Value *leftValue,
                                   Value *rightValue,
                                   BasicBlock *insertedBlock) {
-  return new BinaryInst(Type::getInt32Type(context), InstId::Mul, leftValue,
+  return new BinaryInst(context, Type::getInt32Type(context), InstId::Mul, leftValue,
                         rightValue, insertedBlock);
 }
 
 BinaryInst *BinaryInst::CreateSdiv(Context &context, Value *leftValue,
                                    Value *rightValue,
                                    BasicBlock *insertedBlock) {
-  return new BinaryInst(Type::getInt32Type(context), InstId::Sdiv, leftValue,
+  return new BinaryInst(context, Type::getInt32Type(context), InstId::Sdiv, leftValue,
                         rightValue, insertedBlock);
 }
 
 BinaryInst *BinaryInst::CreateFadd(Context &context, Value *leftValue,
                                    Value *rightValue,
                                    BasicBlock *insertedBlock) {
-  return new BinaryInst(Type::getFloatType(context), InstId::Fadd, leftValue,
+  return new BinaryInst(context, Type::getFloatType(context), InstId::Fadd, leftValue,
                         rightValue, insertedBlock);
 }
 
 BinaryInst *BinaryInst::CreateFsub(Context &context, Value *leftValue,
                                    Value *rightValue,
                                    BasicBlock *insertedBlock) {
-  return new BinaryInst(Type::getFloatType(context), InstId::Fsub, leftValue,
+  return new BinaryInst(context, Type::getFloatType(context), InstId::Fsub, leftValue,
                         rightValue, insertedBlock);
 }
 
 BinaryInst *BinaryInst::CreateFmul(Context &context, Value *leftValue,
                                    Value *rightValue,
                                    BasicBlock *insertedBlock) {
-  return new BinaryInst(Type::getFloatType(context), InstId::Fmul, leftValue,
+  return new BinaryInst(context, Type::getFloatType(context), InstId::Fmul, leftValue,
                         rightValue, insertedBlock);
 }
 
 BinaryInst *BinaryInst::CreateFdiv(Context &context, Value *leftValue,
                                    Value *rightValue,
                                    BasicBlock *insertedBlock) {
-  return new BinaryInst(Type::getFloatType(context), InstId::Fdiv, leftValue,
+  return new BinaryInst(context, Type::getFloatType(context), InstId::Fdiv, leftValue,
                         rightValue, insertedBlock);
 }
 
 BinaryInst *BinaryInst::CreateAnd(Context &context, Value *leftValue,
                                    Value *rightValue,
                                    BasicBlock *insertedBlock) {
-  return new BinaryInst(Type::getFloatType(context), InstId::And, leftValue,
+  return new BinaryInst(context, Type::getFloatType(context), InstId::And, leftValue,
                         rightValue, insertedBlock);
 }
 
 BinaryInst *BinaryInst::CreateOr(Context &context, Value *leftValue,
                                    Value *rightValue,
                                    BasicBlock *insertedBlock) {
-  return new BinaryInst(Type::getFloatType(context), InstId::Or, leftValue,
+  return new BinaryInst(context, Type::getFloatType(context), InstId::Or, leftValue,
                         rightValue, insertedBlock);
 }
 

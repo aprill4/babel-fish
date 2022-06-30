@@ -3,19 +3,19 @@
 #include "Module.h"
 #include "Util.h"
 
-GlobalVariable::GlobalVariable(Type *type, const std::string &globalVarName,
+GlobalVariable::GlobalVariable(Context &c, Type *type, const std::string &globalVarName,
                                bool isConst, Constant *initializer,
                                Module *insertedModule)
-    : User(type, globalVarName, 1), initValue_(initializer) {
+    : User(c, type, globalVarName, 1), initValue_(initializer) {
   setOperand(initializer, 0);
   insertedModule->addGlobalVariable(this);
 }
 
-GlobalVariable *GlobalVariable::Create(Type *type,
+GlobalVariable *GlobalVariable::Create(Context &c, Type *type,
                                        const std::string &globalVarName,
                                        bool isConst, Constant *initializer,
                                        Module *insertedModule) {
-  return new GlobalVariable(type, globalVarName, isConst, initializer,
+  return new GlobalVariable(c, type, globalVarName, isConst, initializer,
                             insertedModule);
 }
 std::string GlobalVariable::print() {

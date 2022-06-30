@@ -5,7 +5,7 @@ class Function;
 
 class Argument : public Value {
 public:
-  Argument(Type *type, const std::string &name = "", Function *f = nullptr,
+  Argument(Context &c, Type *type, const std::string &name = "", Function *f = nullptr,
            std::size_t argumentNo = 0);
   Function *getFucntion() { return parent_; }
   std::size_t getArgumentNo() const { return argumentNo_; }

@@ -5,9 +5,9 @@
 #include "Util.h"
 #include "Value.h"
 
-FcmpInst::FcmpInst(Type *type, FcmpOp fcmpOp, Value *leftValue,
+FcmpInst::FcmpInst(Context &c, Type *type, FcmpOp fcmpOp, Value *leftValue,
                    Value *rightValue, BasicBlock *insertedBlock)
-    : Instruction(type, InstId::Fcmp, 2, insertedBlock), fcmpOp_(fcmpOp) {
+    : Instruction(c, type, InstId::Fcmp, 2, insertedBlock), fcmpOp_(fcmpOp) {
   setOperand(leftValue, 0);
   setOperand(rightValue, 1);
   insertedBlock->addInstruction(this);
@@ -15,7 +15,7 @@ FcmpInst::FcmpInst(Type *type, FcmpOp fcmpOp, Value *leftValue,
 
 FcmpInst *FcmpInst::Create(Context &context, FcmpOp fcmpOp, Value *leftValue,
                            Value *rightValue, BasicBlock *insertedBlock) {
-  return new FcmpInst(Type::getInt1Type(context), fcmpOp, leftValue, rightValue,
+  return new FcmpInst(context, Type::getInt1Type(context), fcmpOp, leftValue, rightValue,
                       insertedBlock);
 }
 
