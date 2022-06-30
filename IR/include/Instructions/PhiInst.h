@@ -4,14 +4,14 @@
 
 class PhiInst : public Instruction {
 public:
-  PhiInst(Type *type,
+  PhiInst(Context &c,Type *type,
           std::vector<std::pair<Value *, BasicBlock *>> valAndLabels,
           BasicBlock *insertedBlock);
   std::string print() override;
 
 public:
   static PhiInst *
-  Create(Type *type, std::vector<std::pair<Value *, BasicBlock *>> valAndLabels,
+  Create(Context &c, Type *type, std::vector<std::pair<Value *, BasicBlock *>> valAndLabels,
          BasicBlock *insertedBlock);
 
 private:

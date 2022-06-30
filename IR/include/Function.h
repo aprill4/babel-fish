@@ -9,7 +9,7 @@ class FunctionType;
 
 class Function : public Value {
 public:
-  Function(FunctionType *funcType, const std::string args_name[], const std::string &funcName, Module *parent);
+  Function(Context &c, FunctionType *funcType, const std::string args_name[], const std::string &funcName, Module *parent);
 
   Module *getModule();
   Type *getReturnType();
@@ -24,7 +24,7 @@ public:
   std::string print() override;
 
 public:
-  static Function *Create(FunctionType *funcType, const std::string args_name[], const std::string &funcName,
+  static Function *Create(Context &c, FunctionType *funcType, const std::string args_name[], const std::string &funcName,
                           Module *parent);
 
 private:

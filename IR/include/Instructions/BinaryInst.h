@@ -3,7 +3,7 @@
 
 class BinaryInst : public Instruction {
 public:
-  BinaryInst(Type *type, InstId instId, Value *leftValue, Value *rightValue,
+  BinaryInst(Context &c, Type *type, InstId instId, Value *leftValue, Value *rightValue,
              BasicBlock *insertedBlock);
   std::string print() override;
 

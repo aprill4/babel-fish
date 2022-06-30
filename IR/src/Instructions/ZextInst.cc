@@ -2,16 +2,16 @@
 #include "BasicBlock.h"
 #include "Util.h"
 
-ZextInst::ZextInst(Type *destType, Value *value, BasicBlock *insertedBlock)
-    : Instruction(destType, InstId::Zext, 1, insertedBlock),
+ZextInst::ZextInst(Context &c, Type *destType, Value *value, BasicBlock *insertedBlock)
+    : Instruction(c, destType, InstId::Zext, 1, insertedBlock),
       destType_(destType) {
   setOperand(value, 0);
   insertedBlock->addInstruction(this);
 }
 
-ZextInst *ZextInst::Create(Type *destType, Value *value,
+ZextInst *ZextInst::Create(Context &c, Type *destType, Value *value,
                            BasicBlock *insertedBlock) {
-  return new ZextInst(destType, value, insertedBlock);
+  return new ZextInst(c, destType, value, insertedBlock);
 }
 
 Type *ZextInst::getDestType() { return destType_; }

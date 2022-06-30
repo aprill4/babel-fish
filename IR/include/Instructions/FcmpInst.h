@@ -5,7 +5,7 @@
 class FcmpInst : public Instruction {
 public:
   enum FcmpOp { EQ, NEQ, GT, GTE, LT, LTE };
-  FcmpInst(Type *type, FcmpOp fcmpOp, Value *leftValue, Value *rightValue,
+  FcmpInst(Context &c, Type *type, FcmpOp fcmpOp, Value *leftValue, Value *rightValue,
            BasicBlock *insertedBlock);
   FcmpOp getFcmpOp();
   std::string getFcmpOpName();

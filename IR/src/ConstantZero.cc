@@ -1,5 +1,5 @@
 #include "ConstantZero.h"
 
-ConstantZero *ConstantZero::get(Type *type) { return new ConstantZero(type); }
+ConstantZero *ConstantZero::get(Context &c, Type *type) { return new ConstantZero(c, type); }
 
 std::string ConstantZero::print() { return "zeroinitializer"; }

@@ -6,9 +6,9 @@
 #include "Value.h"
 #include <string>
 
-IcmpInst::IcmpInst(Type *type, IcmpOp icmpOp, Value *leftValue,
+IcmpInst::IcmpInst(Context &c, Type *type, IcmpOp icmpOp, Value *leftValue,
                    Value *rightValue, BasicBlock *insertedBlock)
-    : Instruction(type, InstId::Icmp, 2, insertedBlock), icmpOp_(icmpOp) {
+    : Instruction(c, type, InstId::Icmp, 2, insertedBlock), icmpOp_(icmpOp) {
   setOperand(leftValue, 0);
   setOperand(rightValue, 1);
   insertedBlock->addInstruction(this);
@@ -16,7 +16,7 @@ IcmpInst::IcmpInst(Type *type, IcmpOp icmpOp, Value *leftValue,
 
 IcmpInst *IcmpInst::Create(Context &context, IcmpOp icmpOp, Value *leftValue,
                            Value *rightValue, BasicBlock *insertedBlock) {
-  return new IcmpInst(Type::getInt1Type(context), icmpOp, leftValue, rightValue,
+  return new IcmpInst(context, Type::getInt1Type(context), icmpOp, leftValue, rightValue,
                       insertedBlock);
 }
 

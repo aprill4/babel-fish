@@ -5,6 +5,10 @@ Instruction::Instruction(Type *type, InstId instId, std::size_t operandNum,
                          BasicBlock *parent)
     : User(type, "", operandNum), instId_(instId), parent_(parent) {}
 
+Instruction::Instruction(Context &c, Type *type, InstId instId, std::size_t operandNum,
+                         BasicBlock *parent)
+    : User(c, type, "", operandNum), instId_(instId), parent_(parent) {}
+
 Module *Instruction::getModule() { return parent_->getModule(); }
 
 bool Instruction::isVoid() {

@@ -1,16 +1,16 @@
 #include "ConstantArray.h"
 
-ConstantArray::ConstantArray(ArrayType *type,
+ConstantArray::ConstantArray(Context &c, ArrayType *type,
                              const std::vector<Constant *> &value)
-    : Constant(type, "", 0), value_(value) {
+    : Constant(c, type, "", 0), value_(value) {
   for (int i = 0; i < value.size(); i++) {
     setOperand(value_[i], i);
   }
 }
 
-ConstantArray *ConstantArray::get(ArrayType *type,
+ConstantArray *ConstantArray::get(Context &c, ArrayType *type,
                                   const std::vector<Constant *> &value) {
-  return new ConstantArray(type, value);
+  return new ConstantArray(c, type, value);
 }
 
 Constant *ConstantArray::getElementValue(int idx) { return value_[idx]; }

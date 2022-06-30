@@ -3,12 +3,12 @@
 
 class FpToSiInst : public Instruction {
 public:
-  FpToSiInst(Type *destType, Value *value, BasicBlock *insertedBlock);
+  FpToSiInst(Context &c, Type *destType, Value *value, BasicBlock *insertedBlock);
   Type *getDestType();
   std::string print() override;
 
 public:
-  static FpToSiInst *Create(Type *destType, Value *value,
+  static FpToSiInst *Create(Context &c, Type *destType, Value *value,
                             BasicBlock *insertedBlock);
 
 private:

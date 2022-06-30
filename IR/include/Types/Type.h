@@ -25,7 +25,9 @@ public:
   explicit Type(TypeId typdId);
   ~Type() = default;
   bool operator==(const Type &type);
+
   TypeId getTypeId() { return typeId_; }
+
   bool isVoidType() { return typeId_ == TypeId::VoidTypeId; }
   bool isFloatType() { return typeId_ == TypeId::FloatTypeId; }
   bool isIntegerType() { return typeId_ == TypeId::IntegerTypeId; }

@@ -6,21 +6,21 @@
 #include "Util.h"
 #include <cassert>
 
-Function::Function(FunctionType *funcType, const std::string args_name[], const std::string &funcName,
+Function::Function(Context &c, FunctionType *funcType, const std::string args_name[], const std::string &funcName,
                    Module *parent)
     : Value(funcType, funcName), parent_(parent) {
   assert(parent != nullptr);
   parent_->addFuntion(this);
   for (int i = 0; i < getArgumentsNum(); i++) {
     arguments_.emplace_back(
-        new Argument(funcType->getArgumentType(i), args_name[i], this, i));
+        new Argument(c, funcType->getArgumentType(i), args_name[i], this, i));
   }
 }
 
-Function *Function::Create(FunctionType *funcType, const std::string args_name[], const std::string &funcName,
+Function *Function::Create(Context &c, FunctionType *funcType, const std::string args_name[], const std::string &funcName,
                            Module *parent) {
   assert(parent != nullptr);
-  return new Function(funcType, args_name, funcName, parent);
+  return new Function(c ,funcType, args_name, funcName, parent);
 }
 
 Module *Function::getModule() { return parent_; }
@@ -61,8 +61,8 @@ std::string Function::print() {
   for (int i = 0; i < args_num; i++){
     auto arg = arguments_[i];
     func_ir += arg->getType()->getTypeName();
-    func_ir += " %";
-    func_ir += arg->getName();
+    func_ir += " ";
+    func_ir += print_as_op(arg);
 
     if (args_num-1 > i){
       func_ir += ", ";

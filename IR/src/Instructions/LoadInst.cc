@@ -6,14 +6,14 @@
 #include "Value.h"
 #include <cassert>
 
-LoadInst::LoadInst(Type *type, Value *ptr, BasicBlock *insertedBlock)
-    : Instruction(type, InstId::Load, 1, insertedBlock) {
+LoadInst::LoadInst(Context &c, Type *type, Value *ptr, BasicBlock *insertedBlock)
+    : Instruction(c, type, InstId::Load, 1, insertedBlock) {
   setOperand(ptr, 0);
   insertedBlock->addInstruction(this);
 }
 
-LoadInst *LoadInst::Create(Type *type, Value *ptr, BasicBlock *insertedBlock) {
-  return new LoadInst(type, ptr, insertedBlock);
+LoadInst *LoadInst::Create(Context &c, Type *type, Value *ptr, BasicBlock *insertedBlock) {
+  return new LoadInst(c, type, ptr, insertedBlock);
 }
 
 std::string LoadInst::print() {

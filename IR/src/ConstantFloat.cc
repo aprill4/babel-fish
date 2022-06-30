@@ -2,7 +2,7 @@
 #include "Context.h"
 
 ConstantFloat *ConstantFloat::get(Context &context, double value) {
-  return new ConstantFloat(Type::getFloatType(context), value);
+  return new ConstantFloat(context, Type::getFloatType(context), value);
 }
 
 std::string ConstantFloat::print() {
