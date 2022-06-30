@@ -9,9 +9,9 @@
 
 GetElementPtrInst::GetElementPtrInst(Context &context, Value *ptr,
                                      std::vector<Value *> idxList,
-                                     BasicBlock *insertedBlock)
+                                     BasicBlock *insertedBlock, std::string name)
     : Instruction(context, PointerType::get(context, computeElementType(ptr, idxList)),
-                  InstId::Getelementptr, idxList.size() + 1, insertedBlock) {
+                  InstId::Getelementptr, idxList.size() + 1, insertedBlock, name) {
   setOperand(ptr, 0);
   for (int i = 0; i < idxList.size(); i++) {
     setOperand(idxList[i], i + 1);
@@ -22,10 +22,10 @@ GetElementPtrInst::GetElementPtrInst(Context &context, Value *ptr,
 
 GetElementPtrInst *GetElementPtrInst::Create(Context &context, Value *ptr,
                                              std::vector<Value *> idxList,
-                                             BasicBlock *insertedBlock) {
-  return new GetElementPtrInst(context, ptr, idxList, insertedBlock);
+                                             BasicBlock *insertedBlock, std::string name) {
+  return new GetElementPtrInst(context, ptr, idxList, insertedBlock, name);
 }
-
+ 
 Type *GetElementPtrInst::computeElementType(Value *ptr,
                                             std::vector<Value *> idxList) {
   Type *elementType = ptr->getType()->getPtrElementType();
@@ -55,7 +55,7 @@ std::string GetElementPtrInst::print() {
   // <result> = getelementptr <type>, <type>* <ptrval> [, <type> <idx>]
   std::string fmt("%%%s = getelementptr %s, ");
   assert(getOperandType(0)->isPointerType());
-  std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getName().c_str(),
+  std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getLLVM_Name().c_str(),
                 getOperandType(0)->getPtrElementType()->getTypeName().c_str());
   IR.assign(IRtemp);
   for (int i = 0; i < getOperandNum(); i++) {

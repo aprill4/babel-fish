@@ -4,7 +4,7 @@
 
 Value::Value(Type *type, const std::string &name) : type_(type), name_(name) {}
 
-Value::Value(Context &c, Type *type, const std::string &name) : type_(type), name_(name+std::to_string(c.counter++)) {}
+Value::Value(Context &c, Type *type, const std::string &name) : type_(type), name_(name), no_(c.counter++) {}
 
 bool Value::setName(const std::string &name) {
   if (name_ == "") {
@@ -16,6 +16,11 @@ bool Value::setName(const std::string &name) {
 
 std::string Value::getName() { return name_; }
 
+std::string Value::getLLVM_Name() { 
+  return name_ + std::to_string(no_); }
+
 Type *Value::getType() { return type_; }
+
+size_t Value::getNO() { return no_; }
 
 void Value::addUse(const Use &u) { useList_.emplace_front(u); }

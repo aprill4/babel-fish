@@ -13,6 +13,7 @@
 #include "Instructions/BinaryInst.h"
 #include "Instructions/BranchInst.h"
 #include "Instructions/IcmpInst.h"
+#include "Instructions/SiToFpInst.h"
 
 #include "Types/ArrayType.h"
 #include "Types/FunctionType.h"
@@ -100,16 +101,23 @@ int main(){
 
   BasicBlock *bb = new BasicBlock(c, "mul", func);
 
-  auto a1 = AllocaInst::Create(c, func->getArgument(0)->getType()->getInt32Type(c), bb);
-  auto a2 = AllocaInst::Create(c, func->getArgument(0)->getType()->getInt32Type(c), bb);
+  auto a1 = AllocaInst::Create(c, func->getArgument(0)->getType()->getInt32Type(c), bb, func->getArgument(0)->getName());
+  auto a2 = AllocaInst::Create(c, func->getArgument(1)->getType()->getInt32Type(c), bb, func->getArgument(1)->getName());
+
 
   StoreInst::Create(c, func->getArgument(0), a1, bb);
   StoreInst::Create(c, func->getArgument(1), a2, bb);
 
-  auto l1 = LoadInst::Create(c, a1->getAllocaType(), a1, bb);
-  auto l2 = LoadInst::Create(c, a2->getAllocaType(), a2, bb);
+  auto l1 = LoadInst::Create(c, a1->getAllocaType(), a1, bb, a1->getName());
+  auto l2 = LoadInst::Create(c, a2->getAllocaType(), a2, bb, a2->getName());
 
-  BinaryInst::CreateMul(c, l1, l2, bb);
+  auto v = BinaryInst::CreateMul(c, l1, l2, bb);
+
+  auto res = SiToFpInst::Create(c, Type::getFloatType(c), v, bb);
+
+  IcmpInst::Create(c, IcmpInst::IcmpOp::EQ, l1, l2, bb);
+
+  ReturnInst::Create(c, res, bb);
 
   cout << m->print() << endl;
   return 0;

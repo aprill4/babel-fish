@@ -32,10 +32,13 @@ public:
     Fptosi,
     Sitofp
   };
+
   Instruction(Type *type, InstId instId, std::size_t operandNum, BasicBlock *parent);
+  
+  Instruction(Type *type, InstId instId, std::size_t operandNum, BasicBlock *parent, std::string name);
 
   Instruction(Context &c, Type *type, InstId instId, std::size_t operandNum,
-              BasicBlock *parent);
+              BasicBlock *parent, std::string name);
 
   Module *getModule();
 

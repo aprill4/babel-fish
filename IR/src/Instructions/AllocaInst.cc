@@ -6,16 +6,16 @@
 #include "Value.h"
 
 AllocaInst::AllocaInst(Context &context, Type *allocaType,
-                       BasicBlock *insertedBlock)
+                       BasicBlock *insertedBlock, std::string name)
     : Instruction(context, PointerType::get(context, allocaType), InstId::Alloca, 0,
-                  insertedBlock),
+                  insertedBlock, name),
       allocaType_(allocaType) {
   insertedBlock->addInstruction(this);
 }
 
 AllocaInst *AllocaInst::Create(Context &context, Type *allocaType,
-                               BasicBlock *insertedBlock) {
-  return new AllocaInst(context, allocaType, insertedBlock);
+                               BasicBlock *insertedBlock, std::string name) {
+  return new AllocaInst(context, allocaType, insertedBlock, name);
 }
 
 Type *AllocaInst::getAllocaType() { return allocaType_; }
@@ -25,7 +25,7 @@ std::string AllocaInst::print() {
   char IRtemp[30];
   // <result> = alloca <type>
   std::string fmt("%%%s = alloca %s");
-  std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getName().c_str(),
+  std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getLLVM_Name().c_str(),
                 allocaType_->getTypeName().c_str());
   IR.assign(IRtemp);
   return IR;

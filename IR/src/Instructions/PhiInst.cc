@@ -4,8 +4,8 @@
 
 PhiInst::PhiInst(Context &c, Type *type,
                  std::vector<std::pair<Value *, BasicBlock *>> valAndLabels,
-                 BasicBlock *insertedBlock)
-    : Instruction(c, type, InstId::Phi, 2 * valAndLabels.size(), insertedBlock) {
+                 BasicBlock *insertedBlock, std::string name)
+    : Instruction(c, type, InstId::Phi, 2 * valAndLabels.size(), insertedBlock, name) {
   for (int i = 0; i < valAndLabels.size(); i++) {
     setOperand(valAndLabels[i].first, 2 * i);
     setOperand(valAndLabels[i].second, 2 * i + 1);
@@ -16,8 +16,8 @@ PhiInst::PhiInst(Context &c, Type *type,
 PhiInst *
 PhiInst::Create(Context &c, Type *type,
                 std::vector<std::pair<Value *, BasicBlock *>> valAndLabels,
-                BasicBlock *insertedBlock) {
-  return new PhiInst(c, type, valAndLabels, insertedBlock);
+                BasicBlock *insertedBlock, std::string name) {
+  return new PhiInst(c, type, valAndLabels, insertedBlock, name);
 }
 
 std::string PhiInst::print() {
@@ -25,7 +25,7 @@ std::string PhiInst::print() {
   char IRtemp[30];
   // <result> = phi <ty> [ <val0>, <label0>], ...
   std::string fmt("%%%s = phi %s ");
-  std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getName().c_str(),
+  std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getLLVM_Name().c_str(),
                 getOperandType(0)->getTypeName().c_str());
   IR.assign(IRtemp);
   for (int i = 0; i < getOperandNum() / 2; i++) {

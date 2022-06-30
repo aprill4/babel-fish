@@ -7,17 +7,17 @@
 #include <string>
 
 IcmpInst::IcmpInst(Context &c, Type *type, IcmpOp icmpOp, Value *leftValue,
-                   Value *rightValue, BasicBlock *insertedBlock)
-    : Instruction(c, type, InstId::Icmp, 2, insertedBlock), icmpOp_(icmpOp) {
+                   Value *rightValue, BasicBlock *insertedBlock, std::string name)
+    : Instruction(c, type, InstId::Icmp, 2, insertedBlock, name), icmpOp_(icmpOp) {
   setOperand(leftValue, 0);
   setOperand(rightValue, 1);
   insertedBlock->addInstruction(this);
 }
 
 IcmpInst *IcmpInst::Create(Context &context, IcmpOp icmpOp, Value *leftValue,
-                           Value *rightValue, BasicBlock *insertedBlock) {
+                           Value *rightValue, BasicBlock *insertedBlock, std::string name) {
   return new IcmpInst(context, Type::getInt1Type(context), icmpOp, leftValue, rightValue,
-                      insertedBlock);
+                      insertedBlock, name);
 }
 
 std::string IcmpInst::getIcmpOpName() {
@@ -52,21 +52,21 @@ IcmpInst::IcmpOp IcmpInst::getIcmpOp() { return icmpOp_; }
 
 std::string IcmpInst::print() {
   std::string IR;
-  char IRtemp[30];
-  std::cout << "1111\n";
-  std::cout << getOperandType(0)->getTypeName() << std::endl;
-  std::cout << getOperandType(1)->getTypeName() << std::endl;
+  char IRtemp[256];
+  //std::cout << "1111\n";
+  //std::cout << getOperandType(0)->getTypeName() << std::endl;
+  //std::cout << getOperandType(1)->getTypeName() << std::endl;
   if (getOperandType(0) == getOperandType(1)) {
     // <result> = icmp <cond> <type> <op1>, <op2>
     std::string fmt("%%%s = icmp %s %s %s, %s");
-    std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getName().c_str(),
+    std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getLLVM_Name().c_str(),
                   getIcmpOpName().c_str(), getOperandTypeName(0).c_str(),
                   print_as_op(getOperand(0)).c_str(),
                   print_as_op(getOperand(1)).c_str());
   } else {
     // <result> = icmp <cond> <type> <op1>, <type> <op2>
     std::string fmt("%%%s = icmp %s %s %s, %s %s");
-    std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getName().c_str(),
+    std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getLLVM_Name().c_str(),
                   getIcmpOpName().c_str(), getOperandTypeName(0).c_str(),
                   print_as_op(getOperand(0)).c_str(),
                   getOperandTypeName(1).c_str(),
