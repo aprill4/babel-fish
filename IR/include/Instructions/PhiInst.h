@@ -6,13 +6,13 @@ class PhiInst : public Instruction {
 public:
   PhiInst(Context &c,Type *type,
           std::vector<std::pair<Value *, BasicBlock *>> valAndLabels,
-          BasicBlock *insertedBlock);
+          BasicBlock *insertedBlock, std::string name);
   std::string print() override;
 
 public:
   static PhiInst *
   Create(Context &c, Type *type, std::vector<std::pair<Value *, BasicBlock *>> valAndLabels,
-         BasicBlock *insertedBlock);
+         BasicBlock *insertedBlock, std::string name = "v");
 
 private:
 };

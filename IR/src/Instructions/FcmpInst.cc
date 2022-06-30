@@ -6,17 +6,17 @@
 #include "Value.h"
 
 FcmpInst::FcmpInst(Context &c, Type *type, FcmpOp fcmpOp, Value *leftValue,
-                   Value *rightValue, BasicBlock *insertedBlock)
-    : Instruction(c, type, InstId::Fcmp, 2, insertedBlock), fcmpOp_(fcmpOp) {
+                   Value *rightValue, BasicBlock *insertedBlock, std::string name)
+    : Instruction(c, type, InstId::Fcmp, 2, insertedBlock, name), fcmpOp_(fcmpOp) {
   setOperand(leftValue, 0);
   setOperand(rightValue, 1);
   insertedBlock->addInstruction(this);
 }
 
 FcmpInst *FcmpInst::Create(Context &context, FcmpOp fcmpOp, Value *leftValue,
-                           Value *rightValue, BasicBlock *insertedBlock) {
+                           Value *rightValue, BasicBlock *insertedBlock, std::string name) {
   return new FcmpInst(context, Type::getInt1Type(context), fcmpOp, leftValue, rightValue,
-                      insertedBlock);
+                      insertedBlock, name);
 }
 
 FcmpInst::FcmpOp FcmpInst::getFcmpOp() { return fcmpOp_; }
@@ -54,13 +54,13 @@ std::string FcmpInst::print() {
   char IRtemp[30];
   if (getOperandType(0) == getOperandType(1)) {
     std::string fmt("%%%s = fcmp %s %s %s, %s");
-    std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getName().c_str(),
+    std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getLLVM_Name().c_str(),
                   getFcmpOpName().c_str(), getOperandTypeName(0).c_str(),
                   print_as_op(getOperand(0)).c_str(),
                   print_as_op(getOperand(1)).c_str());
   } else {
     std::string fmt("%%%s = fcmp %s %s %s, %s %s");
-    std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getName().c_str(),
+    std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getLLVM_Name().c_str(),
                   getFcmpOpName().c_str(), getOperandTypeName(0).c_str(),
                   print_as_op(getOperand(0)).c_str(),
                   getOperandTypeName(1).c_str(),

@@ -11,13 +11,13 @@
 inline std::string print_as_op(Value *v) {
   std::string op_ir;
   if (dynamic_cast<GlobalVariable *>(v)) {
-    op_ir += "@" + v->getName();
+    op_ir += "@" + v->getLLVM_Name();
   } else if (dynamic_cast<Function *>(v)) {
     op_ir += "@" + v->getName();
   } else if (dynamic_cast<Constant *>(v)) {
     op_ir += v->print();
   } else {
-    op_ir += "%" + v->getName();
+    op_ir += "%" + v->getLLVM_Name();
   }
   return op_ir;
 }

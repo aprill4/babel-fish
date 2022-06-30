@@ -6,5 +6,5 @@ Argument::Argument(Context &c, Type *type, const std::string &name, Function *fu
     : Value(c, type, name), parent_(func), argumentNo_(argumentNo) {}
 
 std::string Argument::print() {
-    return "";
+   return getLLVM_Name(); 
 }

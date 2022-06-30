@@ -32,7 +32,7 @@ std::string CallInst::print() {
   if (!isVoid()) {
     // <result> = call <return ty> <func name>(<function args>)
     std::string fmt("%%%s = call %s %s");
-    std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getName().c_str(),
+    std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getLLVM_Name().c_str(),
                   getType()->getTypeName().c_str(),
                   print_as_op(getOperand(0)).c_str());
   } else {
