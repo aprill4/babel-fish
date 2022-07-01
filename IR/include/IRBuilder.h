@@ -3,9 +3,8 @@
 
 class IRBuilder {
 public:
-  IRBuilder() {
-    Context &context_ = *new Context();
-    module_ = new Module(context_, "main_module");
+  IRBuilder()
+      : context_(*new Context()), module_(new Module(context_, "main_module")) {
   }
 
 public:
@@ -15,6 +14,6 @@ public:
 
 private:
   Value *tmp_;
-  Context context_;
+  Context &context_;
   Module *module_;
 };
