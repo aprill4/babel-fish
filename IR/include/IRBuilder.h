@@ -8,12 +8,12 @@ public:
   }
 
 public:
-  Module *&getModule() { return module_; }
+  Module *getModule() { return module_; }
   Context &getContext() { return context_; }
-  void setTmpVal(Value *val) { tmp_ = val; }
+  //void setTmpVal(Value *val) { tmp_ = val; }
 
 private:
-  Value *tmp_;
+  //Value *tmp_;
   Context &context_;
   Module *module_;
 };

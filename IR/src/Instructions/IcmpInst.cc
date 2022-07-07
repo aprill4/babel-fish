@@ -53,9 +53,6 @@ IcmpInst::IcmpOp IcmpInst::getIcmpOp() { return icmpOp_; }
 std::string IcmpInst::print() {
   std::string IR;
   char IRtemp[256];
-  //std::cout << "1111\n";
-  //std::cout << getOperandType(0)->getTypeName() << std::endl;
-  //std::cout << getOperandType(1)->getTypeName() << std::endl;
   if (getOperandType(0) == getOperandType(1)) {
     // <result> = icmp <cond> <type> <op1>, <op2>
     std::string fmt("%%%s = icmp %s %s %s, %s");
