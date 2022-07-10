@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "IR/include/Value.h"
 enum class SysType { INT, FLOAT, VOID };
 
 enum class BinaryOp {
@@ -76,6 +77,7 @@ public:
   BinaryExpression(Expression *lhs, BinaryOp op, Expression *rhs)
       : lhs_(lhs), op_(op), rhs_(rhs) {}
   void print();
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Expression *lhs_;
@@ -115,6 +117,7 @@ public:
   FuncCallExpression(Identifier *identifier, ActualArgumentList *actualArgs)
       : identifier_(identifier), actualArgs_(actualArgs) {}
   void print();
+  void generate(IRBuilder *irBuilder) override; 
 
 public:
   Identifier *identifier_;
@@ -140,6 +143,7 @@ class AssignStatement : public Statement {
 public:
   AssignStatement(Expression *lhs, Expression *rhs) : lhs_(lhs), rhs_(rhs) {}
   void print();
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Expression *lhs_;
@@ -151,6 +155,7 @@ public:
   IfElseStatement(Expression *cond, Statement *thenStmt, Statement *elseStmt)
       : cond_(cond), thenStmt_(thenStmt), elseStmt_(elseStmt) {}
   void print();
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Expression *cond_;
@@ -163,6 +168,7 @@ public:
   WhileStatement(Expression *cond, Statement *doStmt)
       : cond_(cond), doStmt_(doStmt) {}
   void print();
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Expression *cond_;
@@ -172,6 +178,7 @@ public:
 class BreakStatement : public Statement {
 public:
   void print();
+  void generate(IRBuilder *irBuilder) override;
 };
 
 class ContinueStatement : public Statement {
@@ -183,6 +190,7 @@ class ReturnStatement : public Statement {
 public:
   ReturnStatement(Expression *value = nullptr) : value_(value) {}
   void print();
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Expression *value_;
@@ -226,6 +234,7 @@ public:
              bool is_const)
       : Declare(type, identifier, is_const), value_(value) {}
   void print();
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Expression *value_;
@@ -249,6 +258,7 @@ public:
                bool is_const)
       : Declare(type, identifier, is_const), value_(value) {}
   void print();
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   ArrayValue *value_;
@@ -265,6 +275,7 @@ class FormalArgumentList : public Node {
 public:
   FormalArgumentList() = default;
   void print();
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   std::vector<FormalArgument *> list_;
@@ -277,6 +288,7 @@ public:
       : returnType_(returnType), identifier_(identifier),
         formalArgs_(formalArgs), body_(body) {}
   void print();
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   SysType returnType_;
@@ -293,7 +305,10 @@ public:
 public:
   Scope *parent;
   std::map<std::string, Declare *> varDeclares_;
+  std::map<Declare *, Value *> DeclIR;
   std::map<std::string, FunctionDefinition *> funcDeclares_;
+  std::map<FunctionDefinition *, Value *> funcIR;
+
 };
 
 class Root : public Node {

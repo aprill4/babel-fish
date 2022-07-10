@@ -25,5 +25,5 @@ private:
   std::string moduleName_;
   std::vector<GlobalVariable *> globalVariableList_;
   std::vector<Function *> functionList_;
-  std::map<std::string, Value *> symbolTable_;
+  //std::map<std::string, Value *> symbolTable_;
 };
