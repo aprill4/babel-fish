@@ -15,5 +15,6 @@ public:
 
 private:
   Type *elementType_;
+  //total number of elements, -1 is reserved for the situation when the first dimension is unknown 
   std::size_t elementNum_;
 };
