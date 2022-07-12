@@ -11,6 +11,153 @@ inline Type *check_sys_type(SysType type, Context &context) {
              : (type == SysType::FLOAT ? context.FloatType : context.VoidType);
 }
 
+Number calc_init_val(Expression* exp, IRBuilder *irBuilder) {
+	Number res{SysType::INT};
+	if(dynamic_cast<Number*>(exp)) res = *exp;
+	else if(dynamic_cast<BinaryExpression*>(exp) != nullptr) {
+		auto bin_exp = dynamic_cast<BinaryExpression*>(exp);
+		auto lhs = calc_init_val(bin_exp->lhs_), rhs = calc_init_val(bin_exp->rhs_);
+		res.type_ = (lhs.type_ == SysType::FLOAT || rhs.type_ == SysType::FLOAT) ? SysType::FLOAT : SysType::INT;
+		if(res.type_ == SysType::FLOAT) {
+			if(lhs.type_ == SysType::INT) {
+				double tmp = lhs.value_.i_val;
+				lhs.value_.f_val = tmp;
+			}
+			if(rhs.type_ == SysType::INT) {
+				double tmp = rhs.value_.i_val;
+				rhs.value_.f_val = tmp;
+			}
+		}
+		switch(bin_exp->op_) {
+			case BinaryOp::ADD:
+				if(res.type_ == SysType::FLOAT)
+					res.value_.f_val = lhs.value_.f_val + rhs.value_.f_val;
+				else
+					res.value_.i_val = lhs.value_.i_val + rhs.value_.i_val; 
+				break;
+			case BinaryOp::SUB:
+				if(res.type_ == SysType::FLOAT)
+					res.value_.f_val = lhs.value_.f_val - rhs.value_.f_val;
+				else
+					res.value_.i_val = lhs.value_.i_val - rhs.value_.i_val; 
+				break;
+			case BinaryOp::MUL:
+				if(res.type_ == SysType::FLOAT)
+					res.value_.f_val = lhs.value_.f_val * rhs.value_.f_val;
+				else
+					res.value_.i_val = lhs.value_.i_val * rhs.value_.i_val; 
+				break;
+			case BinaryOp::DIV:
+				if(res.type_ == SysType::FLOAT)
+					res.value_.f_val = lhs.value_.f_val / rhs.value_.f_val;
+				else
+					res.value_.i_val = lhs.value_.i_val / rhs.value_.i_val; 
+				break;
+			case BinaryOp::MOD:
+				res.value_.i_val = lhs.value_.i_val % rhs.value_.i_val;
+				break;
+			case BinaryOp::LT:
+        if(res.type_ == SysType::FLOAT)
+					res.value_.f_val = lhs.value_.f_val < rhs.value_.f_val;
+				else
+					res.value_.i_val = lhs.value_.i_val < rhs.value_.i_val; 
+        break;
+			case BinaryOp::LTE:
+        if(res.type_ == SysType::FLOAT)
+					res.value_.f_val = lhs.value_.f_val <= rhs.value_.f_val;
+				else
+					res.value_.i_val = lhs.value_.i_val <= rhs.value_.i_val; 
+        break;
+			case BinaryOp::GT:
+        if(res.type_ == SysType::FLOAT)
+					res.value_.f_val = lhs.value_.f_val > rhs.value_.f_val;
+				else
+					res.value_.i_val = lhs.value_.i_val > rhs.value_.i_val; 
+        break;
+			case BinaryOp::GTE:
+        if(res.type_ == SysType::FLOAT)
+					res.value_.f_val = lhs.value_.f_val >= rhs.value_.f_val;
+				else
+					res.value_.i_val = lhs.value_.i_val >= rhs.value_.i_val; 
+        break;
+			case BinaryOp::EQ:
+        if(res.type_ == SysType::FLOAT)
+					res.value_.f_val = lhs.value_.f_val == rhs.value_.f_val;
+				else
+					res.value_.i_val = lhs.value_.i_val == rhs.value_.i_val; 
+        break;
+			case BinaryOp::NEQ:
+        if(res.type_ == SysType::FLOAT)
+					res.value_.f_val = lhs.value_.f_val != rhs.value_.f_val;
+				else
+					res.value_.i_val = lhs.value_.i_val != rhs.value_.i_val; 
+        break;
+			case BinaryOp::AND:
+        if(res.type_ == SysType::FLOAT)
+					res.value_.i_val = lhs.value_.f_val && rhs.value_.f_val;
+				else
+					res.value_.i_val = lhs.value_.i_val && rhs.value_.i_val; 
+        res.type_ = SysType::INT;
+        break;
+			case BinaryOp::OR:
+        if(res.type_ == SysType::FLOAT)
+					res.value_.i_val = lhs.value_.f_val || rhs.value_.f_val;
+				else
+					res.value_.i_val = lhs.value_.i_val || rhs.value_.i_val; 
+        res.type_ = SysType::INT;
+        break;
+		}
+	}
+	else if(dynamic_cast<LValExpression*>(exp)) {
+      auto lvalexp = dynamic_cast<LValExpression*>(exp);
+      auto var = *globalVariableList_.find(dynamic_cast<GlobalVariable*>(irBuilder->getModule().symbolTable_[lvalexp->identifier_->id_]));
+      if(dynamic_cast<ConstantArray*>(var->initValue_)) {
+        int idx = 0;
+        auto arr = dynamic_cast<ConstantArray*>(var->initValue_);
+        res.type_ = dynamic_cast<ConstantZero*>(var->initValue_)->resultType_
+                    == (irBuilder.getContext()).FloatType ? SysType::FLOAT : SysType::INT;
+        int len = arr->dimension_.size(),
+            leng = lvalexp->identifier_->dimension_.size(),
+            acc = 1;
+        vector<Expression*>dimension = lvalexp->identifier_->dimension_;
+        for(int u = leng - 1;u >= 0;u--){
+          idx += acc*(dynamic_cast<Number*>(dimension[u])->value_.i_val);
+          acc *= arr->dimension_[u];
+        }
+        idx++;
+        if(res.type_ == SysType::INT) res.value_.i_val = arr->getElementValue(idx);
+        else res.value_.f_val = arr->getElementValue(idx);
+      }
+      else if(dynamic_cast<ConstantFloat*>(var->initValue_)){
+        res.type_ = SysType::FLOAT;
+        res.value_.f_val = dynamic_cast<ConstantFloat*>(var->initValue_)->value_;
+      }
+      else if(dynamic_cast<ConstantZero*>(var->initValue_)) {
+        res.type_ = dynamic_cast<ConstantZero*>(var->initValue_)->resultType_
+                    == (irBuilder.getContext()).FloatType ? SysType::FLOAT : SysType::INT;
+        res.value_.i_val = 0; 
+      }
+      else {
+        res.type_ = SysType::INT;
+        res.value_.i_val = dynamic_cast<ConstantInt*>(var->initValue_)->value_;
+      }
+  }
+	else if(dynamic_cast<UnaryExpression*>(exp)) {
+		auto unary_exp = dynamic_cast<UnaryExpression*>(exp);
+		res = calc_init_val(unary_exp->rhs_);
+		switch(unary_exp->op_){
+			case UnaryOp::NEGATIVE:
+        if(res.type_ == SysType::INT) res.value_.i_val = - res.value_.i_val;
+        else res.value_.f_val = - res.value_.f_val;
+        break;
+			case UnaryOp::NOT:
+        res.value_.i_val = (res.type_ == SysType::INT ? res.value_.i_val : res.value_.f_val) != 0 ? 0 : 1;
+        res.type_ = SysType::INT;
+		}
+	}
+	return res;
+}
+
 void *find_symbol(Scope *scope, std::string symbol, bool is_var) {
   while (scope)
     if (is_var && scope->varDeclares_.count(symbol))

@@ -3,6 +3,7 @@
 #include <iterator>
 #include <map>
 #include <string>
+#include <set>
 #include <vector>
 
 class GlobalVariable;
@@ -20,10 +21,10 @@ public:
   void addGlobalVariable(GlobalVariable *globalVariable);
   std::string print();
 
-private:
+public:
   Context &context_;
   std::string moduleName_;
-  std::vector<GlobalVariable *> globalVariableList_;
+  std::set<GlobalVariable *> globalVariableList_;
   std::vector<Function *> functionList_;
-  //std::map<std::string, Value *> symbolTable_;
+  std::map<std::string, Value *> symbolTable_;
 };
