@@ -19,8 +19,8 @@ void yyerror(const char *s) {
 %union {
       SysType type;
       std::string *string;
-      long long token;
-      double f_val;
+      std::int32_t token;
+      float f_val;
       Root* root;
       DeclareStatement* declare_statement;
       FunctionDefinition* function_definition;
