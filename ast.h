@@ -1,10 +1,10 @@
 #pragma once
+#include "IR/include/Value.h"
 #include <iostream>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
-#include "IR/include/Value.h"
 enum class SysType { INT, FLOAT, VOID };
 
 enum class BinaryOp {
@@ -49,16 +49,18 @@ public:
 class Number : public Expression {
 public:
   Number(SysType type) : type_(type) {}
-  Number(SysType type, long long i_val) : Number(type) { value_.i_val = i_val; }
-  Number(SysType type, double f_val) : Number(type) { value_.f_val = f_val; }
+  Number(SysType type, std::int32_t i_val) : Number(type) {
+    value_.i_val = i_val;
+  }
+  Number(SysType type, float f_val) : Number(type) { value_.f_val = f_val; }
   void print() override;
   void generate(IRBuilder *irBuilder) override;
 
 public:
   SysType type_;
   union {
-    long long i_val;
-    double f_val;
+    std::int32_t i_val;
+    float f_val;
   } value_;
 };
 
@@ -117,7 +119,7 @@ public:
   FuncCallExpression(Identifier *identifier, ActualArgumentList *actualArgs)
       : identifier_(identifier), actualArgs_(actualArgs) {}
   void print();
-  void generate(IRBuilder *irBuilder) override; 
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Identifier *identifier_;
@@ -308,7 +310,6 @@ public:
   std::map<Declare *, Value *> DeclIR;
   std::map<std::string, FunctionDefinition *> funcDeclares_;
   std::map<FunctionDefinition *, Value *> funcIR;
-
 };
 
 class Root : public Node {

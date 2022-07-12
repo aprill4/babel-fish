@@ -86,8 +86,8 @@ TOKEN_IDENTIFIER ({LETTER}|_)({DIGIT}|{LETTER}|_)*
 "float"             return TOKEN(FLOAT);
 
 {TOKEN_IDENTIFIER}  SAVE_TOKEN; return IDENTIFIER;
-{TOKEN_INTEGER}     yylval.token = static_cast<long long>(strtol(yytext, NULL, 0)); return INTEGER;
-{TOKEN_FLOATPOINT}	yylval.f_val = static_cast<double>(strtod(yytext, NULL)); return FLOATPOINT;
+{TOKEN_INTEGER}     yylval.token = static_cast<std::int32_t>(strtol(yytext, NULL, 0)); return INTEGER;
+{TOKEN_FLOATPOINT}	yylval.f_val = static_cast<float>(strtod(yytext, NULL)); return FLOATPOINT;
 
 "="                 return TOKEN(ASSIGN);
 "=="                return TOKEN(EQ);
