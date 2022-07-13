@@ -491,16 +491,14 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
   
   if(irBuilder->getScope()->parent == nullptr) {
     vector<Constant*>vals;
-    if(value_) {
-    //a[2][2][2]={{{1,2},{3,4}},{{5,6},{7,8}}}
-    parse_nest_array(vals, value_, type_ == SysType::INT, irBuilder);
-    GlobalVariable::Create(context, type, identifier_->id_, isConst_,
-                           ConstantArray::get(context, arrType, vals, dimensions),
-                           irBuilder->getModule());
-  }
+    if(value_)  //a[2][2][2]={{{1,2},{3,4}},{{5,6},{7,8}}}
+      parse_nest_array(vals, value_, type_ == SysType::INT, irBuilder);
   else 
     for(int u = 0; u < total; u++) 
       vals.emplace_back(ConstantZero::get(context, type));
+  GlobalVariable::Create(context, type, identifier_->id_, isConst_,
+                           ConstantArray::get(context, arrType, vals, dimensions),
+                           irBuilder->getModule());
   }
   else {
 
