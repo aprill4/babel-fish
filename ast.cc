@@ -14,9 +14,9 @@ inline Type *check_sys_type(SysType type, Context &context) {
 Number calc_init_val(Expression* exp, IRBuilder *irBuilder) {
 	Number res{SysType::INT};
 	if(dynamic_cast<Number*>(exp)) res = *exp;
-	else if(dynamic_cast<BinaryExpression*>(exp) != nullptr) {
+	else if(dynamic_cast<BinaryExpression*>(exp)) {
 		auto bin_exp = dynamic_cast<BinaryExpression*>(exp);
-		auto lhs = calc_init_val(bin_exp->lhs_), rhs = calc_init_val(bin_exp->rhs_);
+		auto lhs = calc_init_val(bin_exp->lhs_, irBuilder), rhs = calc_init_val(bin_exp->rhs_, irBuilder);
 		res.type_ = (lhs.type_ == SysType::FLOAT || rhs.type_ == SysType::FLOAT) ? SysType::FLOAT : SysType::INT;
 		if(res.type_ == SysType::FLOAT) {
 			if(lhs.type_ == SysType::INT) {
@@ -144,7 +144,7 @@ Number calc_init_val(Expression* exp, IRBuilder *irBuilder) {
   }
 	else if(dynamic_cast<UnaryExpression*>(exp)) {
 		auto unary_exp = dynamic_cast<UnaryExpression*>(exp);
-		res = calc_init_val(unary_exp->rhs_);
+		res = calc_init_val(unary_exp->rhs_, irBuilder);
 		switch(unary_exp->op_){
 			case UnaryOp::NEGATIVE:
         if(res.type_ == SysType::INT) res.value_.i_val = - res.value_.i_val;
@@ -156,6 +156,24 @@ Number calc_init_val(Expression* exp, IRBuilder *irBuilder) {
 		}
 	}
 	return res;
+}
+
+void parse_nest_array(vector<Constant *>&ans, ArrayValue *cur, bool isInt, IRBuilder *irBuilder){
+  Context context = irBuilder->getContext();
+  if(cur->valueList_[0]->isNumber_) {
+    for(auto&val:cur->valueList_)
+      if(isInt)
+        ans.emplace_back(ConstantInt::get(context, 
+                                          context.Int32Type, 
+                                          calc_init_val(val->value_, irBuilder).value_.i_val));
+      else
+        ans.emplace_back(ConstantFloat::get(context, 
+                                            context.FloatType, 
+                                            calc_init_val(val->value_, irBuilder).value_.f_val));
+  }
+  else 
+    for(auto&arr:cur->valueList_)
+      parse_nest_array(ans, arr, isInt, irBuilder);
 }
 
 void *find_symbol(Scope *scope, std::string symbol, bool is_var) {
@@ -425,66 +443,103 @@ void Root::generate(IRBuilder *irBuilder) {
 }
 
 void VarDeclare::generate(IRBuilder *irBuilder) {
+  Context context = irBuilder->context();
   Constant *constant = nullptr;
-  if (value_ != nullptr) {
+  if (value_) {
     if (value_->type_ == SysType::INT)
       constant =
-          new ConstantInt(irBuilder->getModule(),
-                          (irBuilder->getContext()).Int32Type, value_->value_);
+          new ConstantInt(context,
+                          context.Int32Type, calc_init_val(value_, irBuilder).value_.i_val);
     else
-      constant = new ConstantFloat(irBuilder->getContext(),
-                                   (irBuilder->getContext()).FloatType,
-                                   value_->value_);
+      constant = new ConstantFloat(context,
+                                   context.FloatType,
+                                   calc_init_val(value_, irBuilder).f_val);
   }
+
+  Type *type = type_ == SysType::INT ? context.Int32Type
+                              : context.FloatType;
 
   if (irBuilder->getScope()->parent == nullptr)
     GlobalVariable::Create(
-        irBuilder->getContext(),
-        type_ == SysType::INT ? (irBuilder->getContext()).Int32Type
-                              : (irBuilder->getContext()).FloatType,
-        identifier_->id_, isConst_, constant, irBuilder->getModule());
-  else
-    AllocaInst::Create(irBuilder->getContext(),
-                       type_ == SysType::INT
-                           ? (irBuilder->getContext()).Int32Type
-                           : (irBuilder->getContext()).FloatType,
-                       irBuilder->getBasicBlock(), "");
+        context,
+        type,
+        identifier_->id_, isConst_,
+        constant == nullptr ? new ConstantZero(context,type) : constant,
+        irBuilder->getModule());
+  else {
+    auto lhs = AllocaInst::Create(context,type,
+                       context, "");
+    if(value_) {
+      value_->generate(irBuilder);
+      StoreInst::Create(context, irBuilder->getTmpVal(), lhs, irBuilder->getBasicBlock());
+    }
+  }
 }
 
 void ArrayDeclare::generate(IRBuilder *irBuilder) {
-  Constant *constant = nullptr;
-  if (value_ != nullptr) {
-    if (value_->type_ == SysType::INT)
-      constant =
-          new ConstantInt(irBuilder->getModule(),
-                          (irBuilder->getContext()).Int32Type, value_->value_);
-    else
-      constant = new ConstantFloat(irBuilder->getContext(),
-                                   (irBuilder->getContext()).FloatType,
-                                   value_->value_);
+  Context context = irBuilder->getContext();
+  Type *type = type_ == SysType::INT ? context.Int32Type
+                              : context.FloatType;
+  size_t total = 1;
+  vector<int>dimensions{};
+  for(auto num:identifier_->dimension_) {
+    int dimension = calc_init_val(num, irBuilder).value_.i_val;
+    total *= dimension;
+    dimensions.emplace_back(dimension);
+  } 
+  ArrayType *arrType = ArrayType::get(context, type, total);
+  
+  if(irBuilder->getScope()->parent == nullptr) {
+    vector<Constant*>vals;
+    if(value_) {
+    //a[2][2][2]={{{1,2},{3,4}},{{5,6},{7,8}}}
+    parse_nest_array(vals, value_, type_ == SysType::INT, irBuilder);
+    GlobalVariable::Create(context, type, identifier_->id_, isConst_,
+                           ConstantArray::get(context, arrType, vals, dimensions),
+                           irBuilder->getModule());
+  }
+  else 
+    for(int u = 0; u < total; u++) 
+      vals.emplace_back(ConstantZero::get(context, type));
+  }
+  else {
+
   }
 }
 
 void FunctionDefinition::generate(IRBuilder *irBuilder) {
+  Context context = irBuilder->getContext();
   vector<Type *> argsType;
-  for (auto arg : formalArgs_->list_)
+  string args_name[formalArgs_->list_.size()];
+  int idx = 0;
+  for (auto arg : formalArgs_->list_) {
     if ((arg->identifier_->dimension).size()) {
       size_t total_element = 1;
       if ((arg->identifier_->dimension)[0])
         for (auto &num : arg->identifier_->dimension)
-          total_element *= num->value_;
+          total_element *= calc_init_val(num->value_, irBuilder).value_.i_val;
       else
         total_element = -1;
       argsType.emplace_back(ArrayType::get(
-          irBuilder->getContext(),
-          check_sys_type(arg->type_, irBuilder->getContext()), total_element));
+          context,
+          check_sys_type(arg->type_, context), total_element));
     } else
       argsType.emplace_back(
-          check_sys_type(arg->type_, irBuilder->getContext()));
-
-  Function::Create(
-      irBuilder->getContext(),
-      FunctionType::get(check_sys_type(resultType_, irBuilder->getContext()),
+          check_sys_type(arg->type_, context));
+    args_name[idx] = arg->identifier_->id_;
+    idx++;
+  } 
+  irBuilder->setFunction(
+      Function::Create(
+      context,
+      FunctionType::get(check_sys_type(resultType_, context),
                         argsType),
-      {}, identifier_->id_, irBuilder->getModule());
+      args_name, identifier_->id_, irBuilder->getModule())); 
+  irBuilder->setBasicBlock(
+      BasicBlock::Create(
+      context, 
+      identifier_->id_, 
+      irBuilder->getFunction())
+  );
+  
 }

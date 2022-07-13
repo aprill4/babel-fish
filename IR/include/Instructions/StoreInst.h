@@ -10,5 +10,6 @@ public:
 public:
   static StoreInst *Create(Context &context, Value *value, Value *ptr,
                            BasicBlock *insertedBlock);
+  // value,ptr means the rhs and lhs of the assignment respectively
 private:
 };
