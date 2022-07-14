@@ -1,11 +1,12 @@
 #pragma once
 #include "IR.h"
 
+class Scope;
 class IRBuilder {
 public:
   IRBuilder()
-      : context_(*new Context()), module_(new Module(context_, "main_module")), scope_(nullptr),basicblock_(nullptr) {
-  }
+      : context_(*new Context()), module_(new Module(context_, "main_module")),
+        scope_(nullptr), basicblock_(nullptr) {}
 
 public:
   Module *getModule() { return module_; }

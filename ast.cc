@@ -13,7 +13,7 @@ inline Type *check_sys_type(SysType type, Context &context) {
 
 Number calc_init_val(Expression* exp, IRBuilder *irBuilder) {
 	Number res{SysType::INT};
-	if(dynamic_cast<Number*>(exp)) res = *exp;
+	if(dynamic_cast<Number*>(exp)) res = *dynamic_cast<Number*>(exp);
 	else if(dynamic_cast<BinaryExpression*>(exp)) {
 		auto bin_exp = dynamic_cast<BinaryExpression*>(exp);
 		auto lhs = calc_init_val(bin_exp->lhs_, irBuilder), rhs = calc_init_val(bin_exp->rhs_, irBuilder);
@@ -110,12 +110,12 @@ Number calc_init_val(Expression* exp, IRBuilder *irBuilder) {
 	}
 	else if(dynamic_cast<LValExpression*>(exp)) {
       auto lvalexp = dynamic_cast<LValExpression*>(exp);
-      auto var = *globalVariableList_.find(dynamic_cast<GlobalVariable*>(irBuilder->getModule().symbolTable_[lvalexp->identifier_->id_]));
-      if(dynamic_cast<ConstantArray*>(var->initValue_)) {
+      auto var = *irBuilder->getModule()->globalVariableList_.find(dynamic_cast<GlobalVariable*>(irBuilder->getModule()->symbolTable_[lvalexp->identifier_->id_]));
+      if(dynamic_cast<ConstantArray*>(var->getInitValue())) {
         int idx = 0;
-        auto arr = dynamic_cast<ConstantArray*>(var->initValue_);
-        res.type_ = dynamic_cast<ConstantZero*>(var->initValue_)->resultType_
-                    == (irBuilder.getContext()).FloatType ? SysType::FLOAT : SysType::INT;
+        auto arr = dynamic_cast<ConstantArray*>(var->getInitValue());
+        res.type_ = dynamic_cast<ConstantZero*>(var->getInitValue())->getType()
+                    == (irBuilder->getContext()).FloatType ? SysType::FLOAT : SysType::INT;
         int len = arr->dimension_.size(),
             leng = lvalexp->identifier_->dimension_.size(),
             acc = 1;
@@ -125,21 +125,21 @@ Number calc_init_val(Expression* exp, IRBuilder *irBuilder) {
           acc *= arr->dimension_[u];
         }
         idx++;
-        if(res.type_ == SysType::INT) res.value_.i_val = arr->getElementValue(idx);
-        else res.value_.f_val = arr->getElementValue(idx);
+        if(res.type_ == SysType::INT) res.value_.i_val = dynamic_cast<ConstantInt*>(arr->getElementValue(idx))->getValue();
+        else res.value_.f_val = dynamic_cast<ConstantFloat*>(arr->getElementValue(idx))->getValue();
       }
-      else if(dynamic_cast<ConstantFloat*>(var->initValue_)){
+      else if(dynamic_cast<ConstantFloat*>(var->getInitValue())){
         res.type_ = SysType::FLOAT;
-        res.value_.f_val = dynamic_cast<ConstantFloat*>(var->initValue_)->value_;
+        res.value_.f_val = dynamic_cast<ConstantFloat*>(var->getInitValue())->getValue();
       }
-      else if(dynamic_cast<ConstantZero*>(var->initValue_)) {
-        res.type_ = dynamic_cast<ConstantZero*>(var->initValue_)->resultType_
-                    == (irBuilder.getContext()).FloatType ? SysType::FLOAT : SysType::INT;
+      else if(dynamic_cast<ConstantZero*>(var->getInitValue())) {
+        res.type_ = dynamic_cast<ConstantZero*>(var->getInitValue())->getType()
+                    == (irBuilder->getContext()).FloatType ? SysType::FLOAT : SysType::INT;
         res.value_.i_val = 0; 
       }
       else {
         res.type_ = SysType::INT;
-        res.value_.i_val = dynamic_cast<ConstantInt*>(var->initValue_)->value_;
+        res.value_.i_val = dynamic_cast<ConstantInt*>(var->getInitValue())->getValue();
       }
   }
 	else if(dynamic_cast<UnaryExpression*>(exp)) {
@@ -153,6 +153,8 @@ Number calc_init_val(Expression* exp, IRBuilder *irBuilder) {
 			case UnaryOp::NOT:
         res.value_.i_val = (res.type_ == SysType::INT ? res.value_.i_val : res.value_.f_val) != 0 ? 0 : 1;
         res.type_ = SysType::INT;
+      default:
+        break;
 		}
 	}
 	return res;
@@ -167,8 +169,7 @@ void parse_nest_array(vector<Constant *>&ans, ArrayValue *cur, bool isInt, IRBui
                                           context.Int32Type, 
                                           calc_init_val(val->value_, irBuilder).value_.i_val));
       else
-        ans.emplace_back(ConstantFloat::get(context, 
-                                            context.FloatType, 
+        ans.emplace_back(ConstantFloat::get(context,
                                             calc_init_val(val->value_, irBuilder).value_.f_val));
   }
   else 
@@ -443,17 +444,17 @@ void Root::generate(IRBuilder *irBuilder) {
 }
 
 void VarDeclare::generate(IRBuilder *irBuilder) {
-  Context context = irBuilder->context();
+  Context& context = irBuilder->getContext();
   Constant *constant = nullptr;
   if (value_) {
-    if (value_->type_ == SysType::INT)
+    if (type_ == SysType::INT)
       constant =
           new ConstantInt(context,
                           context.Int32Type, calc_init_val(value_, irBuilder).value_.i_val);
     else
       constant = new ConstantFloat(context,
                                    context.FloatType,
-                                   calc_init_val(value_, irBuilder).f_val);
+                                   calc_init_val(value_, irBuilder).value_.f_val);
   }
 
   Type *type = type_ == SysType::INT ? context.Int32Type
@@ -468,7 +469,7 @@ void VarDeclare::generate(IRBuilder *irBuilder) {
         irBuilder->getModule());
   else {
     auto lhs = AllocaInst::Create(context,type,
-                       context, "");
+                       irBuilder->getBasicBlock(), "");
     if(value_) {
       value_->generate(irBuilder);
       StoreInst::Create(context, irBuilder->getTmpVal(), lhs, irBuilder->getBasicBlock());
@@ -477,7 +478,7 @@ void VarDeclare::generate(IRBuilder *irBuilder) {
 }
 
 void ArrayDeclare::generate(IRBuilder *irBuilder) {
-  Context context = irBuilder->getContext();
+  Context& context = irBuilder->getContext();
   Type *type = type_ == SysType::INT ? context.Int32Type
                               : context.FloatType;
   size_t total = 1;
@@ -493,9 +494,9 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
     vector<Constant*>vals;
     if(value_)  //a[2][2][2]={{{1,2},{3,4}},{{5,6},{7,8}}}
       parse_nest_array(vals, value_, type_ == SysType::INT, irBuilder);
-  else 
-    for(int u = 0; u < total; u++) 
-      vals.emplace_back(ConstantZero::get(context, type));
+    else 
+      for(int u = 0; u < total; u++) 
+        vals.emplace_back(ConstantZero::get(context, type));
   GlobalVariable::Create(context, type, identifier_->id_, isConst_,
                            ConstantArray::get(context, arrType, vals, dimensions),
                            irBuilder->getModule());
@@ -511,11 +512,11 @@ void FunctionDefinition::generate(IRBuilder *irBuilder) {
   string args_name[formalArgs_->list_.size()];
   int idx = 0;
   for (auto arg : formalArgs_->list_) {
-    if ((arg->identifier_->dimension).size()) {
+    if ((arg->identifier_->dimension_).size()) {
       size_t total_element = 1;
-      if ((arg->identifier_->dimension)[0])
-        for (auto &num : arg->identifier_->dimension)
-          total_element *= calc_init_val(num->value_, irBuilder).value_.i_val;
+      if ((arg->identifier_->dimension_)[0])
+        for (auto &num : arg->identifier_->dimension_)
+          total_element *= calc_init_val(num, irBuilder).value_.i_val;
       else
         total_element = -1;
       argsType.emplace_back(ArrayType::get(
@@ -530,7 +531,7 @@ void FunctionDefinition::generate(IRBuilder *irBuilder) {
   irBuilder->setFunction(
       Function::Create(
       context,
-      FunctionType::get(check_sys_type(resultType_, context),
+      FunctionType::get(check_sys_type(returnType_, context),
                         argsType),
       args_name, identifier_->id_, irBuilder->getModule())); 
   irBuilder->setBasicBlock(

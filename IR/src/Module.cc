@@ -14,7 +14,7 @@ Module::Module(Context &context, const std::string &moduleName)
 void Module::addFuntion(Function *func) { functionList_.emplace_back(func); }
 
 void Module::addGlobalVariable(GlobalVariable *globalVariable) {
-  globalVariableList_.emplace_back(globalVariable);
+  globalVariableList_.emplace(globalVariable);
 }
 
 std::string Module::print() {

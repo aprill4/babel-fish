@@ -9,6 +9,5 @@ int main(void) {
   root->print();
   Context &c = *new Context();
   Module *m = new Module(c, "main_module");
-  
   return 0;
 }

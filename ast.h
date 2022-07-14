@@ -67,7 +67,7 @@ public:
 class Identifier : public Node {
 public:
   Identifier(const std::string *id) : id_(*id) {}
-  void print();
+  void print() override;
 
 public:
   std::string id_;
@@ -78,7 +78,7 @@ class BinaryExpression : public Expression {
 public:
   BinaryExpression(Expression *lhs, BinaryOp op, Expression *rhs)
       : lhs_(lhs), op_(op), rhs_(rhs) {}
-  void print();
+  void print() override;
   void generate(IRBuilder *irBuilder) override;
 
 public:
@@ -90,7 +90,7 @@ public:
 class LValExpression : public Expression {
 public:
   LValExpression(Identifier *identifier) : identifier_(identifier) {}
-  void print();
+  void print() override;
 
 public:
   Identifier *identifier_;
@@ -99,7 +99,7 @@ public:
 class UnaryExpression : public Expression {
 public:
   UnaryExpression(UnaryOp op, Expression *rhs) : op_(op), rhs_(rhs) {}
-  void print();
+  void print() override;
 
 public:
   UnaryOp op_;
@@ -108,7 +108,7 @@ public:
 
 class ActualArgumentList : public Node {
 public:
-  void print();
+  void print() override;
 
 public:
   std::vector<Expression *> list_;
@@ -118,7 +118,7 @@ class FuncCallExpression : public Expression {
 public:
   FuncCallExpression(Identifier *identifier, ActualArgumentList *actualArgs)
       : identifier_(identifier), actualArgs_(actualArgs) {}
-  void print();
+  void print() override;
   void generate(IRBuilder *irBuilder) override;
 
 public:
@@ -133,8 +133,8 @@ public:
 
 class Block : public Statement {
 public:
-  void print();
-  StmtType statement_type() { return StmtType::BLOCK; }
+  void print() override;
+  StmtType statement_type() override { return StmtType::BLOCK; }
 
 public:
   Scope *scope_;
@@ -144,7 +144,7 @@ public:
 class AssignStatement : public Statement {
 public:
   AssignStatement(Expression *lhs, Expression *rhs) : lhs_(lhs), rhs_(rhs) {}
-  void print();
+  void print() override;
   void generate(IRBuilder *irBuilder) override;
 
 public:
@@ -156,7 +156,7 @@ class IfElseStatement : public Statement {
 public:
   IfElseStatement(Expression *cond, Statement *thenStmt, Statement *elseStmt)
       : cond_(cond), thenStmt_(thenStmt), elseStmt_(elseStmt) {}
-  void print();
+  void print() override;
   void generate(IRBuilder *irBuilder) override;
 
 public:
@@ -169,7 +169,7 @@ class WhileStatement : public Statement {
 public:
   WhileStatement(Expression *cond, Statement *doStmt)
       : cond_(cond), doStmt_(doStmt) {}
-  void print();
+  void print() override;
   void generate(IRBuilder *irBuilder) override;
 
 public:
@@ -179,19 +179,19 @@ public:
 
 class BreakStatement : public Statement {
 public:
-  void print();
+  void print() override;
   void generate(IRBuilder *irBuilder) override;
 };
 
 class ContinueStatement : public Statement {
 public:
-  void print();
+  void print() override;
 };
 
 class ReturnStatement : public Statement {
 public:
   ReturnStatement(Expression *value = nullptr) : value_(value) {}
-  void print();
+  void print() override;
   void generate(IRBuilder *irBuilder) override;
 
 public:
@@ -201,7 +201,7 @@ public:
 class EvalStatement : public Statement {
 public:
   EvalStatement(Expression *value) : value_(value) {}
-  void print();
+  void print() override;
 
 public:
   Expression *value_;
@@ -222,8 +222,8 @@ class DeclareStatement : public Statement {
 public:
   DeclareStatement(SysType type) : type_(type) {}
   SysType getType() { return type_; }
-  virtual StmtType statement_type() { return StmtType::DECL; }
-  void print();
+  virtual StmtType statement_type() override { return StmtType::DECL; }
+  void print() override;
 
 public:
   SysType type_;
@@ -235,7 +235,7 @@ public:
   VarDeclare(SysType type, Identifier *identifier, Expression *value,
              bool is_const)
       : Declare(type, identifier, is_const), value_(value) {}
-  void print();
+  void print() override;
   void generate(IRBuilder *irBuilder) override;
 
 public:
@@ -246,7 +246,7 @@ class ArrayValue : public Expression {
 public:
   ArrayValue(bool is_number, Expression *value)
       : isNumber_(is_number), value_(value) {}
-  void print();
+  void print() override;
 
 public:
   bool isNumber_;
@@ -259,7 +259,7 @@ public:
   ArrayDeclare(SysType type, Identifier *identifier, ArrayValue *value,
                bool is_const)
       : Declare(type, identifier, is_const), value_(value) {}
-  void print();
+  void print() override;
   void generate(IRBuilder *irBuilder) override;
 
 public:
@@ -270,13 +270,13 @@ class FormalArgument : public Declare {
 public:
   FormalArgument(SysType type, Identifier *identifier)
       : Declare(type, identifier, false) {}
-  void print();
+  void print() override;
 };
 
 class FormalArgumentList : public Node {
 public:
   FormalArgumentList() = default;
-  void print();
+  void print() override;
   void generate(IRBuilder *irBuilder) override;
 
 public:
@@ -289,7 +289,7 @@ public:
                      FormalArgumentList *formalArgs, Block *body)
       : returnType_(returnType), identifier_(identifier),
         formalArgs_(formalArgs), body_(body) {}
-  void print();
+  void print() override;
   void generate(IRBuilder *irBuilder) override;
 
 public:
