@@ -1,7 +1,7 @@
 #include "ConstantFloat.h"
 #include "Context.h"
 
-ConstantFloat *ConstantFloat::get(Context &context, double value) {
+ConstantFloat *ConstantFloat::get(Context &context, float value) {
   return new ConstantFloat(context, Type::getFloatType(context), value);
 }
 
