@@ -79,7 +79,7 @@ public:
   BinaryExpression(Expression *lhs, BinaryOp op, Expression *rhs)
       : lhs_(lhs), op_(op), rhs_(rhs) {}
   void print() override;
-  void generate(IRBuilder *irBuilder) override;
+  void generate(IRBuilder *irBuilder) override {};
 
 public:
   Expression *lhs_;
@@ -119,7 +119,7 @@ public:
   FuncCallExpression(Identifier *identifier, ActualArgumentList *actualArgs)
       : identifier_(identifier), actualArgs_(actualArgs) {}
   void print() override;
-  void generate(IRBuilder *irBuilder) override;
+  void generate(IRBuilder *irBuilder) override {};
 
 public:
   Identifier *identifier_;
@@ -145,7 +145,7 @@ class AssignStatement : public Statement {
 public:
   AssignStatement(Expression *lhs, Expression *rhs) : lhs_(lhs), rhs_(rhs) {}
   void print() override;
-  void generate(IRBuilder *irBuilder) override;
+  void generate(IRBuilder *irBuilder) override {};
 
 public:
   Expression *lhs_;
@@ -157,7 +157,7 @@ public:
   IfElseStatement(Expression *cond, Statement *thenStmt, Statement *elseStmt)
       : cond_(cond), thenStmt_(thenStmt), elseStmt_(elseStmt) {}
   void print() override;
-  void generate(IRBuilder *irBuilder) override;
+  void generate(IRBuilder *irBuilder) override {};
 
 public:
   Expression *cond_;
@@ -170,7 +170,7 @@ public:
   WhileStatement(Expression *cond, Statement *doStmt)
       : cond_(cond), doStmt_(doStmt) {}
   void print() override;
-  void generate(IRBuilder *irBuilder) override;
+  void generate(IRBuilder *irBuilder) override {};
 
 public:
   Expression *cond_;
@@ -180,7 +180,7 @@ public:
 class BreakStatement : public Statement {
 public:
   void print() override;
-  void generate(IRBuilder *irBuilder) override;
+  void generate(IRBuilder *irBuilder) override {};
 };
 
 class ContinueStatement : public Statement {
@@ -192,7 +192,7 @@ class ReturnStatement : public Statement {
 public:
   ReturnStatement(Expression *value = nullptr) : value_(value) {}
   void print() override;
-  void generate(IRBuilder *irBuilder) override;
+  void generate(IRBuilder *irBuilder) override {};
 
 public:
   Expression *value_;
@@ -277,7 +277,7 @@ class FormalArgumentList : public Node {
 public:
   FormalArgumentList() = default;
   void print() override;
-  void generate(IRBuilder *irBuilder) override;
+  void generate(IRBuilder *irBuilder) override {};
 
 public:
   std::vector<FormalArgument *> list_;
