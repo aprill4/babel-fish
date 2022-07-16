@@ -16,5 +16,6 @@ public:
 
 public:
   std::vector<Constant *> value_;
-  std::vector<int> dimension_; //e.g. const int a[1][2][3] ,dimensions_ = {1, 2, 3}
+  //to locate the element from indice(format: e.g. const int a[1][2][3] ,dimensions_ = {1, 2, 3})
+  std::vector<int> dimension_;
 };
