@@ -120,11 +120,13 @@ Number calc_init_val(Expression* exp, IRBuilder *irBuilder) {
             leng = lvalexp->identifier_->dimension_.size(),
             acc = 1;
         vector<Expression*>dimension = lvalexp->identifier_->dimension_;
+        //calculate the location of the multi-dimensions element
         for(int u = leng - 1;u >= 0;u--){
           idx += acc*(dynamic_cast<Number*>(dimension[u])->value_.i_val);
           acc *= arr->dimension_[u];
         }
         idx++;
+
         if(res.type_ == SysType::INT) res.value_.i_val = dynamic_cast<ConstantInt*>(arr->getElementValue(idx))->getValue();
         else res.value_.f_val = dynamic_cast<ConstantFloat*>(arr->getElementValue(idx))->getValue();
       }
@@ -445,36 +447,39 @@ void Root::generate(IRBuilder *irBuilder) {
 
 void VarDeclare::generate(IRBuilder *irBuilder) {
   Context& context = irBuilder->getContext();
-  Constant *constant = nullptr;
-  if (value_) {
-    if (type_ == SysType::INT)
-      constant =
-          new ConstantInt(context,
-                          context.Int32Type, calc_init_val(value_, irBuilder).value_.i_val);
-    else
-      constant = new ConstantFloat(context,
-                                   context.FloatType,
-                                   calc_init_val(value_, irBuilder).value_.f_val);
+
+  Type *type = type_ == SysType::INT ? context.Int32Type : context.FloatType;
+
+  Value *value = nullptr;  
+
+  if (irBuilder->getScope()->parent == nullptr) {
+    Constant *constant = nullptr;
+    if (value_) {
+      if (type_ == SysType::INT)
+        constant = new ConstantInt(context,
+                                   context.Int32Type,
+                                   calc_init_val(value_, irBuilder).value_.i_val);
+      else
+        constant = new ConstantFloat(context,
+                                     context.FloatType,
+                                     calc_init_val(value_, irBuilder).value_.f_val);
+    }
+    value = GlobalVariable::Create(
+            context,
+            type,
+            identifier_->id_, isConst_,
+            constant == nullptr ? new ConstantZero(context,type) : constant,
+            irBuilder->getModule());
   }
-
-  Type *type = type_ == SysType::INT ? context.Int32Type
-                              : context.FloatType;
-
-  if (irBuilder->getScope()->parent == nullptr)
-    GlobalVariable::Create(
-        context,
-        type,
-        identifier_->id_, isConst_,
-        constant == nullptr ? new ConstantZero(context,type) : constant,
-        irBuilder->getModule());
   else {
-    auto lhs = AllocaInst::Create(context,type,
+    value = AllocaInst::Create(context,type,
                        irBuilder->getBasicBlock(), "");
     if(value_) {
       value_->generate(irBuilder);
-      StoreInst::Create(context, irBuilder->getTmpVal(), lhs, irBuilder->getBasicBlock());
+      StoreInst::Create(context, irBuilder->getTmpVal(), value, irBuilder->getBasicBlock());
     }
   }
+  irBuilder->getScope()->DeclIR[this] = value;
 }
 
 void ArrayDeclare::generate(IRBuilder *irBuilder) {
@@ -483,12 +488,22 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
                               : context.FloatType;
   size_t total = 1;
   vector<int>dimensions{};
-  for(auto num:identifier_->dimension_) {
-    int dimension = calc_init_val(num, irBuilder).value_.i_val;
-    total *= dimension;
-    dimensions.emplace_back(dimension);
-  } 
-  ArrayType *arrType = ArrayType::get(context, type, total);
+  int len = identifier_->dimension_.size();
+  
+  for(int u = 0; u < len; u++) {
+    dimensions.emplace_back(calc_init_val(identifier_->dimension_[u], irBuilder).value_.i_val);
+    total *= dimensions.back();
+  }
+  ArrayType *former, *latter;
+  for(int u = len - 1; u >= 0; u--) 
+    if(u == len - 1) {
+      latter = ArrayType::get(context, type, dimensions[u]);
+    }
+    else {
+      former = ArrayType::get(context, latter, dimensions[u]);
+      latter = former;
+    }
+  ArrayType *arrType = latter;
   
   if(irBuilder->getScope()->parent == nullptr) {
     vector<Constant*>vals;
@@ -497,12 +512,13 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
     else 
       for(int u = 0; u < total; u++) 
         vals.emplace_back(ConstantZero::get(context, type));
-  GlobalVariable::Create(context, type, identifier_->id_, isConst_,
-                           ConstantArray::get(context, arrType, vals, dimensions),
-                           irBuilder->getModule());
+    GlobalVariable::Create(context, type, identifier_->id_, isConst_,
+                         ConstantArray::get(context, arrType, vals, dimensions),
+                         irBuilder->getModule());
   }
   else {
-
+    AllocaInst::Create(context, arrType, irBuilder->getBasicBlock());
+    
   }
 }
 
