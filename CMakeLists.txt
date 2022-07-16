@@ -18,4 +18,11 @@ add_subdirectory(IR)
 
 add_executable(IRtest.out IRtest.cc)
 
+set_source_files_properties(lex.yy.c PROPERTIES LANGUAGE CXX)
+set_source_files_properties(syntax_analyzer.tab.c PROPERTIES LANGUAGE CXX)
+
+add_executable(check.out ast.h syntax_analyzer.tab.h lex.yy.c syntax_analyzer.tab.c ast.cc check.cc)
+
+target_link_libraries(check.out PUBLIC IR)
+
 target_link_libraries(IRtest.out PUBLIC IR)

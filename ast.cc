@@ -1,9 +1,10 @@
 #include "ast.h"
 #include "IRBuilder.h"
-// #include "syntax_analyzer.tab.h"
-// Node::Node() : line_(yylloc.first_line), column_(yylloc.first_column) {}
-
+#include "syntax_analyzer.tab.h"
 using namespace std;
+
+Node::Node() : line_(yylloc.first_line), column_(yylloc.first_column) {}
+
 
 inline Type *check_sys_type(SysType type, Context &context) {
   return type == SysType::INT
