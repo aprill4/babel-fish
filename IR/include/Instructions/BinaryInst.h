@@ -16,6 +16,8 @@ public:
                                Value *rightValue, BasicBlock *insertedBlock, std::string name = "v");
   static BinaryInst *CreateSdiv(Context &context, Value *leftValue,
                                 Value *rightValue, BasicBlock *insertedBlock, std::string name = "v");
+  static BinaryInst *CreateMod(Context &context, Value *leftValue,
+                                Value *rightValue, BasicBlock *insertedBlock, std::string name = "v");
   static BinaryInst *CreateFadd(Context &context, Value *leftValue,
                                 Value *rightValue, BasicBlock *insertedBlock, std::string name = "v");
   static BinaryInst *CreateFsub(Context &context, Value *leftValue,

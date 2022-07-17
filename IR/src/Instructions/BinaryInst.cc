@@ -41,6 +41,13 @@ BinaryInst *BinaryInst::CreateSdiv(Context &context, Value *leftValue,
                         rightValue, insertedBlock, name);
 }
 
+BinaryInst *BinaryInst::CreateMod(Context &context, Value *leftValue,
+                                   Value *rightValue,
+                                   BasicBlock *insertedBlock, std::string name) {
+  return new BinaryInst(context, Type::getInt32Type(context), InstId::Mod, leftValue,
+                        rightValue, insertedBlock, name);
+}
+
 BinaryInst *BinaryInst::CreateFadd(Context &context, Value *leftValue,
                                    Value *rightValue,
                                    BasicBlock *insertedBlock, std::string name) {
