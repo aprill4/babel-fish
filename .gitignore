@@ -3,3 +3,5 @@ build
 *.sy
 *.json
 *.out
+*.yy.c
+*.tab.*

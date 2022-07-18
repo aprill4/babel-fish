@@ -17,5 +17,3 @@ else
 fi
 
 cp check.out ../check.out
-cd .. 
-rm -f lex.yy.c syntax_analyzer.tab.c syntax_analyzer.tab.h
