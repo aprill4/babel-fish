@@ -326,4 +326,5 @@ public:
   Scope *scope_;
 };
 
+//return the value if the variant is in global, return the ptr that point to the value otherwise
 Value *find_symbol(Scope *scope, std::string symbol, bool is_var);
