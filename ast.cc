@@ -1,5 +1,6 @@
 #include "ast.h"
 #include "IRBuilder.h"
+#include <variant>
 #include "syntax_analyzer.tab.h"
 using namespace std;
 
@@ -58,13 +59,14 @@ void parse_nest_array(vector<Constant *>&ans, ArrayValue *cur, bool isInt, IRBui
 }
 
 Value *find_symbol(Scope *scope, std::string symbol, bool is_var) {
-  while (scope)
+  while (scope){
     if (is_var && scope->varDeclares_.count(symbol))
       return scope->DeclIR[scope->varDeclares_[symbol]];
     else if (!is_var && scope->funcDeclares_.count(symbol))
       return scope->funcIR[scope->funcDeclares_[symbol]];
     else
       scope = scope->parent;
+  }
   return nullptr;
 }
 
@@ -726,4 +728,35 @@ void LValExpression::generate(IRBuilder *irBuilder) {
   }
 }
 
+void AssignStatement::generate(IRBuilder *irBuilder) {
+  auto scope = irBuilder->getScope();
+  auto irVal = find_symbol(scope, static_cast<LValExpression*>(lhs_)->identifier_->id_ , true);
+  rhs_->generate(irBuilder);
+  StoreInst::Create(irBuilder->getContext(), irBuilder->getTmpVal(), irVal, irBuilder->getBasicBlock());
+}
+
+void IfElseStatement::generate(IRBuilder *irBuilder) {
+  auto scope = irBuilder->getScope();
+  if (elseStmt_) {
+    
+  } else {
+    auto cond_bb = BasicBlock::Create(irBuilder->getContext(), "if_cond_entry", irBuilder->getFunction());
+    auto then_bb = BasicBlock::Create(irBuilder->getContext(), "if_then_entry", irBuilder->getFunction());
+    // BranchInst::Create()
+  }
+}
+
+void ReturnStatement::generate(IRBuilder *irBuilder) {
+  auto scope = irBuilder->getScope();
+  if (value_) {
+    value_->generate(irBuilder);
+    ReturnInst::Create(irBuilder->getContext(), irBuilder->getTmpVal(), irBuilder->getBasicBlock());
+  }else {
+    ReturnInst::Create(irBuilder->getContext(), irBuilder->getBasicBlock());
+  }
+}
+
+void EvalStatement::generate(IRBuilder *irBuilder) {
+  value_->generate(irBuilder);
+}
 
