@@ -147,7 +147,7 @@ class AssignStatement : public Statement {
 public:
   AssignStatement(Expression *lhs, Expression *rhs) : lhs_(lhs), rhs_(rhs) {}
   void print() override;
-  void generate(IRBuilder *irBuilder) override {};
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Expression *lhs_;
@@ -159,7 +159,7 @@ public:
   IfElseStatement(Expression *cond, Statement *thenStmt, Statement *elseStmt)
       : cond_(cond), thenStmt_(thenStmt), elseStmt_(elseStmt) {}
   void print() override;
-  void generate(IRBuilder *irBuilder) override {};
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Expression *cond_;
@@ -194,7 +194,7 @@ class ReturnStatement : public Statement {
 public:
   ReturnStatement(Expression *value = nullptr) : value_(value) {}
   void print() override;
-  void generate(IRBuilder *irBuilder) override {};
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Expression *value_;
@@ -204,6 +204,7 @@ class EvalStatement : public Statement {
 public:
   EvalStatement(Expression *value) : value_(value) {}
   void print() override;
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Expression *value_;
