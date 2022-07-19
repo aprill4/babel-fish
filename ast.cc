@@ -39,23 +39,30 @@ bool force_trans(IRBuilder *irBuilder, Value* &lhs, Value* &rhs) {
   return is_float;
 }
 
-void parse_nest_array(vector<Constant *>&ans, ArrayValue *cur, bool isInt, IRBuilder *irBuilder){
-  Context context = irBuilder->getContext();
-  if(cur->valueList_[0]->isNumber_) {
-    for(auto&val:cur->valueList_){
-      val->generate(irBuilder);
-      if(isInt)
-        ans.emplace_back(ConstantInt::get(context, 
-                                          context.Int32Type, 
-                                          dynamic_cast<ConstantInt*>(irBuilder->getTmpVal())->getValue()));
-      else
-        ans.emplace_back(ConstantFloat::get(context,
-                                            dynamic_cast<ConstantFloat*>(irBuilder->getTmpVal())->getValue()));
+void parse_nest_array(vector<Constant *>&ans, ArrayValue *cur, int idx, vector<int>&nums, bool isInt, IRBuilder *irBuilder){
+  int remain = (idx == nums.size()-1) ? 1 : nums[idx+1], 
+      expect = nums[idx], 
+      cnt = 0,
+      original = ans.size();
+  Context &context = irBuilder->getContext();
+
+  for(auto&val : cur->valueList_) {
+    if(val->isNumber_) {
+      val->value_->generate(irBuilder);
+      ans.emplace_back(dynamic_cast<Constant*>(irBuilder->getTmpVal()));
+      if(++cnt == remain) cnt=0;
+    }
+    else {
+      if(cnt) {
+        ans.resize(ans.size() + remain - cnt, ConstantZero::get(context, isInt ? context.Int32Type : context.FloatType));
+        cnt = 0;
+      }
+      parse_nest_array(ans, val, idx + 1, nums, isInt, irBuilder);
     }
   }
-  else 
-    for(auto&arr:cur->valueList_)
-      parse_nest_array(ans, arr, isInt, irBuilder);
+
+  if(ans.size()-original<expect) 
+    ans.resize(expect + original, ConstantZero::get(context, isInt ? context.Int32Type : context.FloatType));
 }
 
 Value *find_symbol(Scope *scope, std::string symbol, bool is_var) {
@@ -351,11 +358,12 @@ void VarDeclare::generate(IRBuilder *irBuilder) {
                                      context.FloatType,
                                      dynamic_cast<ConstantFloat*>(val)->getValue());
     }
-    value = GlobalVariable::Create(
+    value = constant == nullptr ? new ConstantZero(context,type) : constant;
+    GlobalVariable::Create(
             context,
             type,
             identifier_->id_, isConst_,
-            constant == nullptr ? new ConstantZero(context,type) : constant,
+            dynamic_cast<Constant*>(value),
             irBuilder->getModule());
   }
   else {
@@ -378,13 +386,8 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
   int len = identifier_->dimension_.size();
   
   for(int u = 0; u < len; u++) {
-    int dimension;
-    if(irBuilder->getScope()->parent == nullptr) 
-      ;//dimension = calc_init_val(identifier_->dimension_[u], irBuilder).value_.i_val
-    else {
-
-    }
-    dimensions.emplace_back(dimension);
+    identifier_->dimension_[u]->generate(irBuilder);
+    dimensions.emplace_back(dynamic_cast<ConstantInt*>(irBuilder->getTmpVal()));
     total *= dimensions.back();
   }
   ArrayType *former, *latter;
@@ -400,7 +403,7 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
   
   if(irBuilder->getScope()->parent == nullptr) {
     vector<Constant*>vals;
-    if(value_)  //a[2][2][2]={{{1,2},{3,4}},{{5,6},{7,8}}}
+    if(value_)  //a[2][2][3]={{{1,2},{}},{{5,6}},}
       parse_nest_array(vals, value_, type_ == SysType::INT, irBuilder);
     else 
       for(int u = 0; u < total; u++) 
@@ -760,3 +763,7 @@ void EvalStatement::generate(IRBuilder *irBuilder) {
   value_->generate(irBuilder);
 }
 
+void FuncCallExpression::generate(IRBuilder *irBuilder) {
+  auto func = dynamic_cast<Function*>(irBuilder->getModule()->symbolTable_[identifier_->id_]);
+  func->getFunctionType();
+} 
