@@ -121,7 +121,7 @@ public:
   FuncCallExpression(Identifier *identifier, ActualArgumentList *actualArgs)
       : identifier_(identifier), actualArgs_(actualArgs) {}
   void print() override;
-  void generate(IRBuilder *irBuilder) override {};
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Identifier *identifier_;

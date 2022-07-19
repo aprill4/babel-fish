@@ -4,4 +4,5 @@ build
 *.json
 *.out
 *.yy.c
-*.tab.*
+*.cache
+*tab*
