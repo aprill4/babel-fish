@@ -79,7 +79,7 @@ public:
   BinaryExpression(Expression *lhs, BinaryOp op, Expression *rhs)
       : lhs_(lhs), op_(op), rhs_(rhs) {}
   void print() override;
-  void generate(IRBuilder *irBuilder) override {};
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Expression *lhs_;
@@ -91,7 +91,7 @@ class LValExpression : public Expression {
 public:
   LValExpression(Identifier *identifier) : identifier_(identifier) {}
   void print() override;
-  void generate(IRBuilder *irBuilder) override {};
+  void generate(IRBuilder *irBuilder) override ;
 
 public:
   Identifier *identifier_;
@@ -101,7 +101,7 @@ class UnaryExpression : public Expression {
 public:
   UnaryExpression(UnaryOp op, Expression *rhs) : op_(op), rhs_(rhs) {}
   void print() override;
-  void generate(IRBuilder *irBuilder) override {};
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   UnaryOp op_;
