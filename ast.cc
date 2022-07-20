@@ -327,9 +327,7 @@ void Root::generate(IRBuilder *irBuilder) {
   irBuilder->setScope(scope_);
 
   for (auto &decl : this->declareStatement_) {
-    for (auto &declare_item : decl->declares_) {
-      declare_item->generate(irBuilder);
-    }
+    decl->generate(irBuilder);
   }
 
   for (auto &funcDef : this->functionDefinitions_) {
@@ -763,32 +761,132 @@ void LValExpression::generate(IRBuilder *irBuilder) {
   }
 }
 
+void Block::generate(IRBuilder *irBuilder) {
+  irBuilder->setScope(scope_);
+  auto bb =  BasicBlock::Create(irBuilder->getContext(), "block", irBuilder->getFunction());
+  for (auto& stateItem : statements_) {
+    irBuilder->setBasicBlock(bb);
+    stateItem->generate(irBuilder);
+  }
+}
+
+void DeclareStatement::generate(IRBuilder *irBuilder) {
+  for (auto &declare_item : declares_) {
+    declare_item->generate(irBuilder);
+  }
+}
+
 void AssignStatement::generate(IRBuilder *irBuilder) {
-  auto scope = irBuilder->getScope();
-  auto irVal = find_symbol(scope, static_cast<LValExpression*>(lhs_)->identifier_->id_ , true);
+  lhs_->generate(irBuilder);
+  auto lval = irBuilder->getTmpVal();
   rhs_->generate(irBuilder);
-  StoreInst::Create(irBuilder->getContext(), irBuilder->getTmpVal(), irVal, irBuilder->getBasicBlock());
+  auto rval = irBuilder->getTmpVal();
+  // to_do: lval and rval's type diff
+  StoreInst::Create(irBuilder->getContext(), rval, lval, irBuilder->getBasicBlock());
 }
 
 void IfElseStatement::generate(IRBuilder *irBuilder) {
-  auto scope = irBuilder->getScope();
-  if (elseStmt_) {
-    
+  Context &c = irBuilder->getContext();
+  cond_->generate(irBuilder);
+  auto tmpVal = irBuilder->getTmpVal();
+  auto true_bb =
+      BasicBlock::Create(c, "if_true_entry", irBuilder->getFunction());
+  auto false_bb =
+      BasicBlock::Create(c, "if_false_entry", irBuilder->getFunction());
+  auto next_bb = BasicBlock::Create(c, "next_entry", irBuilder->getFunction());
+  Value *condVal;
+  if (tmpVal->getType()->isIntegerType()) {
+    condVal = IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
+                               ConstantInt::get(c, Type::getInt1Type(c), 0),
+                               irBuilder->getBasicBlock());
   } else {
-    auto cond_bb = BasicBlock::Create(irBuilder->getContext(), "if_cond_entry", irBuilder->getFunction());
-    auto then_bb = BasicBlock::Create(irBuilder->getContext(), "if_then_entry", irBuilder->getFunction());
-    // BranchInst::Create()
+    condVal =
+        IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
+                         ConstantFloat::get(c, 0), irBuilder->getBasicBlock());
   }
+  if (elseStmt_) {
+    BranchInst::Create(c, condVal, true_bb, false_bb,
+                       irBuilder->getBasicBlock());
+  } else {
+    BranchInst::Create(c, condVal, true_bb, next_bb,
+                       irBuilder->getBasicBlock());
+  }
+  irBuilder->setBasicBlock(true_bb);
+  thenStmt_->generate(irBuilder);
+  if (!irBuilder->getBasicBlock()->hasTerminator()) {
+    BranchInst::Create(c, next_bb, irBuilder->getBasicBlock());
+  }
+  if (elseStmt_) {
+    irBuilder->setBasicBlock(false_bb);
+    elseStmt_->generate(irBuilder);
+    if (!irBuilder->getBasicBlock()->hasTerminator()) {
+      BranchInst::Create(c, next_bb, irBuilder->getBasicBlock());
+    }
+  } else {
+    false_bb->eraseFromParent();
+  }
+  irBuilder->setBasicBlock(next_bb);
+}
+
+void WhileStatement::generate(IRBuilder *irBuilder) {
+  Context& c = irBuilder->getContext();
+  cond_->generate(irBuilder);
+  auto tmpVal = irBuilder->getTmpVal();
+  auto while_bb = BasicBlock::Create(c, "while_entry", irBuilder->getFunction());
+  auto next_bb = BasicBlock::Create(c, "next_entry", irBuilder->getFunction());
+  Value* condVal;
+  if (tmpVal->getType()->isIntegerType()) {
+    condVal = IcmpInst::Create(
+        c, IcmpInst::IcmpOp::NEQ, tmpVal,
+        ConstantInt::get(c, Type::getInt1Type(c), 0),
+        irBuilder->getBasicBlock());
+  } else {
+    condVal = IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
+                               ConstantFloat::get(c, 0),
+                               irBuilder->getBasicBlock());
+  }
+  BranchInst::Create(c, condVal, while_bb, next_bb, irBuilder->getBasicBlock());    
+  irBuilder->setBasicBlock(while_bb);
+  irBuilder->setWhileBlock(while_bb);
+  irBuilder->setNextBlock(next_bb);
+  doStmt_->generate(irBuilder);
+  if (!irBuilder->getBasicBlock()->hasTerminator()) {
+    BranchInst::Create(c, next_bb, irBuilder->getBasicBlock());    
+  }
+  irBuilder->setBasicBlock(next_bb);
 }
 
 void ReturnStatement::generate(IRBuilder *irBuilder) {
-  auto scope = irBuilder->getScope();
+  Context &c = irBuilder->getContext();
+  Value *retVal;
   if (value_) {
+    auto ret_type = irBuilder->getFunction()->getReturnType();
     value_->generate(irBuilder);
-    ReturnInst::Create(irBuilder->getContext(), irBuilder->getTmpVal(), irBuilder->getBasicBlock());
-  }else {
-    ReturnInst::Create(irBuilder->getContext(), irBuilder->getBasicBlock());
+    if (ret_type != irBuilder->getTmpVal()->getType()) {
+      if (ret_type->isIntegerType()) {
+        retVal =
+            FpToSiInst::Create(c, Type::getInt32Type(c), irBuilder->getTmpVal(),
+                               irBuilder->getBasicBlock());
+      } else {
+        retVal =
+            SiToFpInst::Create(c, Type::getFloatType(c), irBuilder->getTmpVal(),
+                               irBuilder->getBasicBlock());
+      }
+    }else {
+      retVal = irBuilder->getTmpVal();
+    }
+    ReturnInst::Create(c, retVal, irBuilder->getBasicBlock());
+  } else {
+    ReturnInst::Create(c, irBuilder->getBasicBlock());
   }
+}
+
+void BreakStatement::generate(IRBuilder *irBuilder) {
+  BranchInst::Create(irBuilder->getContext(),irBuilder->getNextBlock(),irBuilder->getBasicBlock());
+}
+
+void ContinueStatement::generate(IRBuilder *irBuilder) {
+  BranchInst::Create(irBuilder->getContext(),irBuilder->getWhileBlock(),irBuilder->getBasicBlock());
 }
 
 void EvalStatement::generate(IRBuilder *irBuilder) {

@@ -137,6 +137,7 @@ class Block : public Statement {
 public:
   void print() override;
   StmtType statement_type() override { return StmtType::BLOCK; }
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Scope *scope_;
@@ -172,7 +173,7 @@ public:
   WhileStatement(Expression *cond, Statement *doStmt)
       : cond_(cond), doStmt_(doStmt) {}
   void print() override;
-  void generate(IRBuilder *irBuilder) override {};
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Expression *cond_;
@@ -182,12 +183,13 @@ public:
 class BreakStatement : public Statement {
 public:
   void print() override;
-  void generate(IRBuilder *irBuilder) override {};
+  void generate(IRBuilder *irBuilder) override;
 };
 
 class ContinueStatement : public Statement {
 public:
   void print() override;
+  void generate(IRBuilder *irBuilder) override;
 };
 
 class ReturnStatement : public Statement {
@@ -226,6 +228,7 @@ public:
   DeclareStatement(SysType type) : type_(type) {}
   SysType getType() { return type_; }
   virtual StmtType statement_type() override { return StmtType::DECL; }
+  void generate(IRBuilder *irBuilder) override;
   void print() override;
 
 public:
