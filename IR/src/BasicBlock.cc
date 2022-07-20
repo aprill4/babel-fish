@@ -17,6 +17,18 @@ BasicBlock *BasicBlock::Create(Context &context, const std::string &name,
   return new BasicBlock(context, name, parent);
 }
 
+bool BasicBlock::hasTerminator(){
+  if (instructionList_.empty()|| !instructionList_.back()->isTerminator()) {
+    return false;
+  }
+  return true;
+}
+
+void BasicBlock::eraseFromParent(){
+  parent_->remove(this);
+}
+
+
 Module *BasicBlock::getModule() { return parent_->getModule(); }
 
 void BasicBlock::addInstruction(Instruction *instruction) {

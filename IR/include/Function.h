@@ -18,7 +18,7 @@ public:
   FunctionType *getFunctionType();
 
   void addBasicBlock(BasicBlock *bb);
-
+  void remove(BasicBlock* bb);
   Argument *getArgument(size_t idx);
 
   std::string print() override;

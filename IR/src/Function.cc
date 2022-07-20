@@ -37,6 +37,10 @@ FunctionType *Function::getFunctionType() {
 
 void Function::addBasicBlock(BasicBlock *bb) { basicBlocks_.emplace_back(bb); }
 
+void Function::remove(BasicBlock* bb){
+  basicBlocks_.remove(bb);
+}
+
 
 Argument *Function::getArgument(size_t idx) { 
   assert(idx < getArgumentsNum() && "argument idx is out of range");

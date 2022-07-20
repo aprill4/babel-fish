@@ -14,7 +14,8 @@ public:
   void addInstruction(Instruction *instruction);
   void addPredecessor(BasicBlock* pre);
   void addSuccessor(BasicBlock* suc);
-
+  bool hasTerminator();
+  void eraseFromParent();
 public:
   static BasicBlock *Create(Context &context, const std::string &name,
                             Function *parent);
