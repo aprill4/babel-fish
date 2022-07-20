@@ -378,18 +378,24 @@ void VarDeclare::generate(IRBuilder *irBuilder) {
 }
 
 void ArrayDeclare::generate(IRBuilder *irBuilder) {
+  Value *value;
   Context& context = irBuilder->getContext();
   Type *type = type_ == SysType::INT ? context.Int32Type
                               : context.FloatType;
   size_t total = 1;
-  vector<int>dimensions{};
+
+  //nums are the suffix product of dimensions
+  // e.g. a[1][2][3] => nums = {6, 6, 3};
+  vector<int>dimensions{}, nums{}; 
   int len = identifier_->dimension_.size();
   
   for(int u = 0; u < len; u++) {
     identifier_->dimension_[u]->generate(irBuilder);
-    dimensions.emplace_back(dynamic_cast<ConstantInt*>(irBuilder->getTmpVal()));
+    dimensions.emplace_back(dynamic_cast<ConstantInt*>(irBuilder->getTmpVal())->getValue());
     total *= dimensions.back();
   }
+  nums = dimensions;
+
   ArrayType *former, *latter;
   for(int u = len - 1; u >= 0; u--) 
     if(u == len - 1) {
@@ -398,24 +404,42 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
     else {
       former = ArrayType::get(context, latter, dimensions[u]);
       latter = former;
+      nums[u] *= nums[u+1];
     }
   ArrayType *arrType = latter;
-  
+
+  vector<Constant*>vals;
+  if(value_)  
+    parse_nest_array(vals, value_, 0, nums, type_ == SysType::INT, irBuilder);
+  else 
+    vals.resize(total, ConstantZero::get(context, type));
+
   if(irBuilder->getScope()->parent == nullptr) {
-    vector<Constant*>vals;
-    if(value_)  //a[2][2][3]={{{1,2},{}},{{5,6}},}
-      parse_nest_array(vals, value_, type_ == SysType::INT, irBuilder);
-    else 
-      for(int u = 0; u < total; u++) 
-        vals.emplace_back(ConstantZero::get(context, type));
-    GlobalVariable::Create(context, type, identifier_->id_, isConst_,
-                         ConstantArray::get(context, arrType, vals, dimensions),
-                         irBuilder->getModule());
+    value = GlobalVariable::Create(context, type, identifier_->id_, isConst_,
+                                   ConstantArray::get(context, arrType, vals, dimensions),
+                                   irBuilder->getModule());
   }
   else {
-    AllocaInst::Create(context, arrType, irBuilder->getBasicBlock());
-    
+    BasicBlock *bb = irBuilder->getBasicBlock();
+    auto arr = AllocaInst::Create(context, arrType, irBuilder->getBasicBlock());
+    vector<Value*>idxList(len, ConstantZero::get(context, context.Int32Type));
+    for(int u = 0; u < total; u++) {
+      value = GetElementPtrInst::Create(context, arr, idxList, bb);
+      StoreInst::Create(context, vals[u], value, bb);
+      bool incr = true;
+      for(int u = len - 1; u >= 0 && incr ; u--) {
+        int curr = dynamic_cast<ConstantInt*>(idxList[u])->getValue();
+        if(curr + 1 == dimensions[u]) 
+          curr = 0;
+        else {
+          curr++;
+          incr = false;
+        }
+        dynamic_cast<ConstantInt*>(idxList[u])->setValue(curr);
+      }
+    }
   }
+  irBuilder->getScope()->DeclIR[this] = value;
 }
 
 void FunctionDefinition::generate(IRBuilder *irBuilder) {
@@ -424,22 +448,15 @@ void FunctionDefinition::generate(IRBuilder *irBuilder) {
   string args_name[formalArgs_->list_.size()];
   int idx = 0;
   for (auto arg : formalArgs_->list_) {
-    if ((arg->identifier_->dimension_).size()) {
-      size_t total_element = 1;
-      if ((arg->identifier_->dimension_)[0])
-        for (auto &num : arg->identifier_->dimension_)
-          ;//total_element *= calc_init_val(num, irBuilder).value_.i_val;
-      else
-        total_element = -1;
+    if ((arg->identifier_->dimension_).empty())
+        argsType.emplace_back(check_sys_type(arg->type_, context));
+    else 
       argsType.emplace_back(ArrayType::get(
           context,
-          check_sys_type(arg->type_, context), total_element));
-    } else
-      argsType.emplace_back(
-          check_sys_type(arg->type_, context));
+          check_sys_type(arg->type_, context), -1));
     args_name[idx] = arg->identifier_->id_;
     idx++;
-  } 
+  }
   irBuilder->setFunction(
       Function::Create(
       context,
@@ -452,7 +469,22 @@ void FunctionDefinition::generate(IRBuilder *irBuilder) {
       identifier_->id_, 
       irBuilder->getFunction())
   );
-  
+  irBuilder->setScope(body_->scope_);
+  for(int u = 0, len = formalArgs_->list_.size(); u< len; u++){
+    Value *ptr;
+    if(argsType[u]->isArrayType())
+      ptr = AllocaInst::Create(context,
+                               static_cast<ArrayType*>(argsType[u])->getElementType(), 
+                               irBuilder->getBasicBlock());
+    else 
+      ptr = AllocaInst::Create(context,
+                               argsType[u]->isFloatType() ? context.FloatType : context.Int32Type,
+                               irBuilder->getBasicBlock());
+    irBuilder->getScope()->DeclIR[formalArgs_->list_[u]] = ptr;
+  }
+  body_->generate(irBuilder);
+  //TODO : RET TYPE
+  irBuilder->setScope(irBuilder->getScope()->parent);
 }
 
 void BinaryExpression::generate(IRBuilder *irBuilder) {
@@ -764,6 +796,24 @@ void EvalStatement::generate(IRBuilder *irBuilder) {
 }
 
 void FuncCallExpression::generate(IRBuilder *irBuilder) {
+  Context &context = irBuilder->getContext();
   auto func = dynamic_cast<Function*>(irBuilder->getModule()->symbolTable_[identifier_->id_]);
-  func->getFunctionType();
+  auto funcType = static_cast<FunctionType*>(func->getFunctionType());
+  vector<Value*>funcArgs;
+  for(int u = 0, len = funcType->getArgumentsNum(); u < len; u++) {
+    actualArgs_->list_[u]->generate(irBuilder);
+    auto val = irBuilder->getTmpVal();
+    if(dynamic_cast<ConstantInt*>(val) && funcType->getArgumentType(u) == context.FloatType)
+      //SiToFpInst::Create(context, context.FloatType, val, irBuilder->getBasicBlock()); godbolt transform number without explicit instructions
+      funcArgs.emplace_back(ConstantFloat::get(context, static_cast<float>(dynamic_cast<ConstantInt*>(val)->getValue())));
+    else if(dynamic_cast<ConstantFloat*>(val) && funcType->getArgumentType(u) != context.FloatType) 
+      funcArgs.emplace_back(ConstantInt::get(context, 
+                                             funcType->getArgumentType(u),
+                                             static_cast<int>(dynamic_cast<ConstantFloat*>(val)->getValue())));
+    else funcArgs.emplace_back(val);
+  }
+  CallInst::Create(dynamic_cast<Function*>(irBuilder->getModule()->symbolTable_[identifier_->id_]),
+                   funcArgs, 
+                   irBuilder->getBasicBlock());
+  //return value will be set by ReturnStatement::generate
 } 
