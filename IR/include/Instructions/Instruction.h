@@ -14,6 +14,7 @@ public:
     Sub,
     Mul,
     Sdiv,
+    Mod,
     Fadd,
     Fsub,
     Fmul,
@@ -56,6 +57,7 @@ public:
   bool isSub();
   bool isMul();
   bool isDiv();
+  bool isMod();
 
   bool isFadd();
   bool isFsub();

@@ -32,6 +32,7 @@ bool Instruction::isAdd() { return instId_ == InstId::Add; }
 bool Instruction::isSub() { return instId_ == InstId::Sub; }
 bool Instruction::isMul() { return instId_ == InstId::Mul; }
 bool Instruction::isDiv() { return instId_ == InstId::Sdiv; }
+bool Instruction::isMod() { return instId_ == InstId::Mod; }
 
 bool Instruction::isAnd() { return instId_ == InstId::And; }
 bool Instruction::isOr() { return instId_ == InstId::Or; }
@@ -51,8 +52,8 @@ bool Instruction::isGep() { return instId_ == InstId::Getelementptr; }
 bool Instruction::isZext() { return instId_ == InstId::Zext; }
 
 bool Instruction::isBinary() {
-  return (isAdd() || isSub() || isMul() || isDiv() || isFadd() || isFsub() ||
-          isFmul() || isFdiv()) &&
+  return (isAdd() || isSub() || isMul() || isDiv() || isMod() || isFadd() || isFsub() ||
+          isFmul() || isFdiv() || isAnd() || isOr() || isIcmp() || isFcmp()) &&
          (getOperandNum() == 2);
 }
 
@@ -78,6 +79,9 @@ std::string Instruction::getInstructionOpName() {
     break;
   case InstId::Sdiv:
     instName = "sdiv";
+    break;
+  case InstId::Mod:
+    instName = "mod";
     break;
   case InstId::Fadd:
     instName = "fadd";

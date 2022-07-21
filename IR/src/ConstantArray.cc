@@ -3,7 +3,7 @@
 ConstantArray::ConstantArray(Context &c, ArrayType *type,
                              const std::vector<Constant *> &value,
                              const std::vector<int> &dimension)
-    : Constant(c, type, "", 0), value_(value), dimension_(dimension) {
+    : Constant(c, type, "", value.size()), value_(value), dimension_(dimension) {
   for (int i = 0; i < value.size(); i++) {
     setOperand(value_[i], i);
   }
@@ -25,5 +25,6 @@ std::string ConstantArray::print() {
     const_ir += getElementValue(i)->print();
     const_ir += ", ";
   }
+  const_ir += "]";
   return const_ir;
 }
