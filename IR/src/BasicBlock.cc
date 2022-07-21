@@ -47,8 +47,17 @@ void BasicBlock::addDominator(BasicBlock *dom) {
   dominators_.emplace(dom);
 }
 
-void BasicBlock::newDominator(std::set<BasicBlock *> &doms) {
+void BasicBlock::setDominators(std::set<BasicBlock *> &doms) {
   dominators_ = doms;
+}
+
+
+std::set<BasicBlock *>& BasicBlock::getDominators() {
+  return dominators_;
+}
+
+std::list<BasicBlock *>& BasicBlock::getPredecessors() {
+  return predecessorBlocks_;
 }
 
 std::string BasicBlock::print() {
