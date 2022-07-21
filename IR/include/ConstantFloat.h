@@ -8,7 +8,7 @@ class ConstantFloat : public Constant {
 public:
   ConstantFloat(Context &c, Type *type, float value)
       : Constant(c, type, "", 0), value_(value) {}
-  double getValue() { return value_; }
+  float getValue() { return value_; }
   std::string print() override;
 
 public:

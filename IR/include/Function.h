@@ -20,6 +20,7 @@ public:
   void addBasicBlock(BasicBlock *bb);
   std::list<BasicBlock *>& getBasicBlocks();
 
+  void remove(BasicBlock* bb);
   Argument *getArgument(size_t idx);
 
   std::string print() override;

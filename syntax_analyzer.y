@@ -251,7 +251,7 @@ UnaryExp: PrimaryExp { $$ = $1; }
       ;
 
 FuncDef: BType Ident LEFT_PARENTHESES RIGHT_PARENTHESES Block { 
-            $$ = new FunctionDefinition($1, $2, nullptr, $5);  
+            $$ = new FunctionDefinition($1, $2, new FormalArgumentList(), $5);  
       }
       | BType Ident LEFT_PARENTHESES FuncFParams RIGHT_PARENTHESES Block { 
             $$ = new FunctionDefinition($1, $2, $4, $6); 
@@ -259,7 +259,7 @@ FuncDef: BType Ident LEFT_PARENTHESES RIGHT_PARENTHESES Block {
                 $$->body_->scope_->varDeclares_[arg->identifier_->id_] = arg;
       }
       | VOID Ident LEFT_PARENTHESES RIGHT_PARENTHESES Block { 
-            $$ = new FunctionDefinition(SysType::VOID, $2, nullptr, $5); 
+            $$ = new FunctionDefinition(SysType::VOID, $2, new FormalArgumentList(), $5); 
       }
       | VOID Ident LEFT_PARENTHESES FuncFParams RIGHT_PARENTHESES Block { 
             $$ = new FunctionDefinition(SysType::VOID, $2, $4, $6); 

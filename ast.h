@@ -79,7 +79,7 @@ public:
   BinaryExpression(Expression *lhs, BinaryOp op, Expression *rhs)
       : lhs_(lhs), op_(op), rhs_(rhs) {}
   void print() override;
-  void generate(IRBuilder *irBuilder) override {};
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Expression *lhs_;
@@ -91,6 +91,7 @@ class LValExpression : public Expression {
 public:
   LValExpression(Identifier *identifier) : identifier_(identifier) {}
   void print() override;
+  void generate(IRBuilder *irBuilder) override ;
 
 public:
   Identifier *identifier_;
@@ -100,6 +101,7 @@ class UnaryExpression : public Expression {
 public:
   UnaryExpression(UnaryOp op, Expression *rhs) : op_(op), rhs_(rhs) {}
   void print() override;
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   UnaryOp op_;
@@ -119,7 +121,7 @@ public:
   FuncCallExpression(Identifier *identifier, ActualArgumentList *actualArgs)
       : identifier_(identifier), actualArgs_(actualArgs) {}
   void print() override;
-  void generate(IRBuilder *irBuilder) override {};
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Identifier *identifier_;
@@ -135,6 +137,7 @@ class Block : public Statement {
 public:
   void print() override;
   StmtType statement_type() override { return StmtType::BLOCK; }
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Scope *scope_;
@@ -145,7 +148,7 @@ class AssignStatement : public Statement {
 public:
   AssignStatement(Expression *lhs, Expression *rhs) : lhs_(lhs), rhs_(rhs) {}
   void print() override;
-  void generate(IRBuilder *irBuilder) override {};
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Expression *lhs_;
@@ -157,7 +160,7 @@ public:
   IfElseStatement(Expression *cond, Statement *thenStmt, Statement *elseStmt)
       : cond_(cond), thenStmt_(thenStmt), elseStmt_(elseStmt) {}
   void print() override;
-  void generate(IRBuilder *irBuilder) override {};
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Expression *cond_;
@@ -170,7 +173,7 @@ public:
   WhileStatement(Expression *cond, Statement *doStmt)
       : cond_(cond), doStmt_(doStmt) {}
   void print() override;
-  void generate(IRBuilder *irBuilder) override {};
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Expression *cond_;
@@ -180,19 +183,20 @@ public:
 class BreakStatement : public Statement {
 public:
   void print() override;
-  void generate(IRBuilder *irBuilder) override {};
+  void generate(IRBuilder *irBuilder) override;
 };
 
 class ContinueStatement : public Statement {
 public:
   void print() override;
+  void generate(IRBuilder *irBuilder) override;
 };
 
 class ReturnStatement : public Statement {
 public:
   ReturnStatement(Expression *value = nullptr) : value_(value) {}
   void print() override;
-  void generate(IRBuilder *irBuilder) override {};
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Expression *value_;
@@ -202,6 +206,7 @@ class EvalStatement : public Statement {
 public:
   EvalStatement(Expression *value) : value_(value) {}
   void print() override;
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Expression *value_;
@@ -223,6 +228,7 @@ public:
   DeclareStatement(SysType type) : type_(type) {}
   SysType getType() { return type_; }
   virtual StmtType statement_type() override { return StmtType::DECL; }
+  void generate(IRBuilder *irBuilder) override;
   void print() override;
 
 public:
@@ -324,4 +330,5 @@ public:
   Scope *scope_;
 };
 
-void *find_symbol(Scope *scope, std::string symbol, bool is_var);
+//return the value if the variant is in global, return the ptr that point to the value otherwise
+Value *find_symbol(Scope *scope, std::string symbol, bool is_var);

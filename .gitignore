@@ -4,3 +4,6 @@ build
 *.json
 *.out
 dominator_tree.cc
+*.yy.c
+*.cache
+*tab*
