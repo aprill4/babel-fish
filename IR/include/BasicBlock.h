@@ -1,6 +1,7 @@
 #pragma once
 #include "Type.h"
 #include "Value.h"
+#include <set>
 
 class Instruction;
 class Module;
