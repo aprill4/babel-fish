@@ -6,6 +6,7 @@
 
 #include <set>
 #include <algorithm>
+#include <iostream>
 using namespace std;
 
 int main(){
@@ -21,11 +22,11 @@ int main(){
     BasicBlock *d = new BasicBlock(context, "D", func);
     BasicBlock *e = new BasicBlock(context, "E", func);
 
-    a->addSuccessor(b);
-    a->addSuccessor(c);
-    b->addSuccessor(e);
-    c->addSuccessor(d);
-    d->addSuccessor(e);
+    b->addPredecessor(a);
+    c->addPredecessor(a);
+    d->addPredecessor(c);
+    e->addPredecessor(b);
+    e->addPredecessor(d);
 
     bool isEntry = true;
     for (auto bb: func->getBasicBlocks()) {
@@ -44,6 +45,7 @@ int main(){
     while (changed) {
         changed = 0;
         for (auto bb: func->getBasicBlocks()) {
+            //cout << "\n" << bb->getName() << "\n";
             if (isEntry) {
                 isEntry = 0;
                 continue;
@@ -54,6 +56,7 @@ int main(){
 
             for (auto pre: bb->getPredecessors())
             {
+                //cout << pre->getName() << ", " << pre->getDominators().size() << "\n";
                 set<BasicBlock *> intersection;
                 auto pre_dom = pre->getDominators();
                 set_intersection(new_dom.begin(), new_dom.end(), pre_dom.begin(), pre_dom.end(), inserter(intersection, intersection.begin()));
@@ -61,6 +64,11 @@ int main(){
             }
 
             new_dom.insert(bb);
+            /*
+            for (auto dom: new_dom) {
+                cout << dom->getName() << " ";
+            }
+            */
 
             if (new_dom != dom) {
                 bb->setDominators(new_dom);
@@ -68,5 +76,15 @@ int main(){
             }
         }
     }
+    ///*
+    cout << "dom\n";
+    for (auto bb: func->getBasicBlocks()) {
+        cout << bb->getName() << ": ";
+        for (auto dom: bb->getDominators()) {
+            cout << dom->getName() << " ";
+        }
+        cout << endl;
+    }
+    //*/
     return 0;
 }
