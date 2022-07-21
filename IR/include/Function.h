@@ -18,6 +18,7 @@ public:
   FunctionType *getFunctionType();
 
   void addBasicBlock(BasicBlock *bb);
+  std::list<BasicBlock *>& getBasicBlocks();
 
   Argument *getArgument(size_t idx);
 
