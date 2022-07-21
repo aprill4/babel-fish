@@ -39,6 +39,7 @@ FunctionType *Function::getFunctionType() {
 void Function::addBasicBlock(BasicBlock *bb) { basicBlocks_.emplace_back(bb); }
 
 std::list<BasicBlock *>& Function::getBasicBlocks() {return basicBlocks_;}
+
 void Function::remove(BasicBlock* bb){
   basicBlocks_.remove(bb);
 }
