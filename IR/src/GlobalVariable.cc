@@ -15,7 +15,7 @@ GlobalVariable *GlobalVariable::Create(Context &c, Type *type,
                                        const std::string &globalVarName,
                                        bool isConst, Constant *initializer,
                                        Module *insertedModule) {
-  return new GlobalVariable(c, type, globalVarName, isConst, initializer,
+  return new GlobalVariable(c, Type::getPtrType(c, type), globalVarName, isConst, initializer,
                             insertedModule);
 }
 std::string GlobalVariable::print() {
