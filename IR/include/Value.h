@@ -2,6 +2,7 @@
 #include <list>
 #include <memory>
 #include <string>
+#include <set>
 #include "Use.h"
 #include "Context.h"
 

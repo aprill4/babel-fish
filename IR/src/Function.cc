@@ -11,6 +11,7 @@ Function::Function(Context &c, FunctionType *funcType, const std::string args_na
     : Value(funcType, funcName), parent_(parent) {
   assert(parent != nullptr);
   parent_->addFuntion(this);
+  parent_->symbolTable_[funcName] = this;
   for (int i = 0; i < getArgumentsNum(); i++) {
     arguments_.emplace_back(
         new Argument(c, funcType->getArgumentType(i), args_name[i], this, i));
