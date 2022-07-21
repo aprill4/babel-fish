@@ -357,7 +357,7 @@ void VarDeclare::generate(IRBuilder *irBuilder) {
                                      dynamic_cast<ConstantFloat*>(val)->getValue());
     }
     value = constant == nullptr ? new ConstantZero(context,type) : constant;
-    GlobalVariable::Create(
+    value = GlobalVariable::Create(
             context,
             type,
             identifier_->id_, isConst_,
@@ -381,7 +381,6 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
   Type *type = type_ == SysType::INT ? context.Int32Type
                               : context.FloatType;
   size_t total = 1;
-
   //nums are the suffix product of dimensions
   // e.g. a[1][2][3] => nums = {6, 6, 3};
   vector<int>dimensions{}, nums{}; 
@@ -426,7 +425,10 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
       StoreInst::Create(context, vals[u], value, bb);
       bool incr = true;
       for(int u = len - 1; u >= 0 && incr ; u--) {
+        cout << "c\n";
+        cout << u << endl;
         int curr = dynamic_cast<ConstantInt*>(idxList[u])->getValue();
+        cout << "d\n";
         if(curr + 1 == dimensions[u]) 
           curr = 0;
         else {
@@ -435,13 +437,14 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
         }
         dynamic_cast<ConstantInt*>(idxList[u])->setValue(curr);
       }
+      cout << "e\n";
     }
   }
   irBuilder->getScope()->DeclIR[this] = value;
 }
 
 void FunctionDefinition::generate(IRBuilder *irBuilder) {
-  Context context = irBuilder->getContext();
+  Context& context = irBuilder->getContext();
   vector<Type *> argsType;
   string args_name[formalArgs_->list_.size()];
   int idx = 0;
@@ -714,12 +717,11 @@ void UnaryExpression::generate(IRBuilder *irBuilder) {
 void LValExpression::generate(IRBuilder *irBuilder) {
   Context &context = irBuilder->getContext();
   Scope *scope = irBuilder->getScope();
-
   if(irBuilder->getScope()->parent) {
     Value *ptr = find_symbol(scope, identifier_->id_, true), *res;
     if(identifier_->dimension_.empty()){
-      auto res = LoadInst::Create(context, 
-                                  ptr->getType(), 
+      res = LoadInst::Create(context, 
+                                  ptr->getType()->getPtrElementType(), 
                                   ptr, 
                                   irBuilder->getBasicBlock());
     }

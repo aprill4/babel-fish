@@ -9,9 +9,13 @@ int main(void) {
   root->print();
   IRBuilder * irBuilder = new IRBuilder();
   root->generate(irBuilder);
-  for (auto& glob : irBuilder->getModule()->globalVariableList_) {
-    cout << glob->print() << endl;
-  }
+  cout << irBuilder->getModule()->print() << endl;
+  // for (auto& glob : irBuilder->getModule()->globalVariableList_) {
+  //   cout << glob->print() << endl;
+  // }
+  // for (auto& glob : irBuilder->getModule()->globalVariableList_) {
+  //   cout << glob->print() << endl;
+  // }
   // Context &c = *new Context();
   // Module *m = new Module(c, "main_module");
   return 0;
