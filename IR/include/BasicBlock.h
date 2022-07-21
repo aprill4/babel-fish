@@ -17,7 +17,10 @@ public:
   void addSuccessor(BasicBlock* suc);
 
   void addDominator(BasicBlock *dom);
-  void newDominator(std::set<BasicBlock *> &doms);
+  void setDominators(std::set<BasicBlock *> &doms);
+  std::set<BasicBlock *>& getDominators();
+
+  std::list<BasicBlock *>& getPredecessors();
 
   bool hasTerminator();
   void eraseFromParent();
