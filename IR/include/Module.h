@@ -26,5 +26,5 @@ public:
   std::string moduleName_;
   std::set<GlobalVariable *> globalVariableList_;
   std::vector<Function *> functionList_;
-  std::map<std::string, Value *> symbolTable_;
+  std::map<std::string, Value *> symbolTable_; // we could replace above two STL with this map
 };

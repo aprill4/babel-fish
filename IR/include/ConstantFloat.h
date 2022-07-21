@@ -9,6 +9,7 @@ public:
   ConstantFloat(Context &c, Type *type, float value)
       : Constant(c, type, "", 0), value_(value) {}
   float getValue() { return value_; }
+  void setValue(float value) { value_ = value; }
   std::string print() override;
 
 public:
