@@ -17,6 +17,7 @@ include_directories(${PROJECT_SOURCE_DIR}/IR/include/Instructions)
 add_subdirectory(IR)
 
 add_executable(IRtest.out IRtest.cc)
+add_executable(dominator_tree.out dominator_tree.cc)
 
 set_source_files_properties(lex.yy.c PROPERTIES LANGUAGE CXX)
 set_source_files_properties(syntax_analyzer.tab.c PROPERTIES LANGUAGE CXX)
@@ -26,3 +27,5 @@ add_executable(check.out ast.h syntax_analyzer.tab.h lex.yy.c syntax_analyzer.ta
 target_link_libraries(check.out PUBLIC IR)
 
 target_link_libraries(IRtest.out PUBLIC IR)
+target_link_libraries(dominator_tree.out PUBLIC IR)
+
