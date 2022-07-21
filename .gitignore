@@ -3,3 +3,4 @@ build
 *.sy
 *.json
 *.out
+dominator_tree.cc

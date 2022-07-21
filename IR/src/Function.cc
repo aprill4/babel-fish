@@ -37,6 +37,7 @@ FunctionType *Function::getFunctionType() {
 
 void Function::addBasicBlock(BasicBlock *bb) { basicBlocks_.emplace_back(bb); }
 
+std::list<BasicBlock *>& Function::getBasicBlocks() {return basicBlocks_;}
 
 Argument *Function::getArgument(size_t idx) { 
   assert(idx < getArgumentsNum() && "argument idx is out of range");

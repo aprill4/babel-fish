@@ -31,6 +31,14 @@ void BasicBlock::addSuccessor(BasicBlock* suc) {
   successorBlocks_.emplace_back(suc);
 }
 
+void BasicBlock::addDominator(BasicBlock *dom) {
+  dominators_.emplace(dom);
+}
+
+void BasicBlock::newDominator(std::set<BasicBlock *> &doms) {
+  dominators_ = doms;
+}
+
 std::string BasicBlock::print() {
   std::string bb_ir;
   bb_ir += getName();
