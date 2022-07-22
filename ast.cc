@@ -510,90 +510,72 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
 				if(is_float) {
           if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateFadd(context, lhs, rhs, irBuilder->getBasicBlock());
-          else {
-            auto tmp = dynamic_cast<ConstantFloat*>(lhs);
-            tmp->setValue(tmp->getValue() + dynamic_cast<ConstantFloat*>(rhs)->getValue());
-            res = tmp;
-          }
+          else 
+            res = ConstantFloat::get(context, 
+                  dynamic_cast<ConstantFloat*>(lhs)->getValue() + dynamic_cast<ConstantFloat*>(rhs)->getValue());
         }
 				else {
           if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateAdd(context, lhs, rhs, irBuilder->getBasicBlock());
-          else {
-            auto tmp = dynamic_cast<ConstantInt*>(lhs);
-            tmp->setValue(tmp->getValue() + dynamic_cast<ConstantInt*>(rhs)->getValue());
-            res = tmp;
-          }
+          else 
+            res = ConstantInt::get(context, context.Int32Type,
+                  dynamic_cast<ConstantInt*>(lhs)->getValue() + dynamic_cast<ConstantInt*>(rhs)->getValue());
         }
 				break;
 			case BinaryOp::SUB:
 				if(is_float) {
           if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateFsub(context, lhs, rhs, irBuilder->getBasicBlock());
-          else {
-            auto tmp = dynamic_cast<ConstantFloat*>(lhs);
-            tmp->setValue(tmp->getValue() - dynamic_cast<ConstantFloat*>(rhs)->getValue());
-            res = tmp;
-          }
+          else 
+            res = ConstantFloat::get(context, 
+                  dynamic_cast<ConstantFloat*>(lhs)->getValue() - dynamic_cast<ConstantFloat*>(rhs)->getValue());
         }
 				else {
           if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateSub(context, lhs, rhs, irBuilder->getBasicBlock());
-          else {
-            auto tmp = dynamic_cast<ConstantInt*>(lhs);
-            tmp->setValue(tmp->getValue() - dynamic_cast<ConstantInt*>(rhs)->getValue());
-            res = tmp;
-          }
+          else 
+            res = ConstantInt::get(context, context.Int32Type,
+                  dynamic_cast<ConstantInt*>(lhs)->getValue() - dynamic_cast<ConstantInt*>(rhs)->getValue());
         }
 				break;
 			case BinaryOp::MUL:
 				if(is_float) {
           if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateFmul(context, lhs, rhs, irBuilder->getBasicBlock());
-          else {
-            auto tmp = dynamic_cast<ConstantFloat*>(lhs);
-            tmp->setValue(tmp->getValue() * dynamic_cast<ConstantFloat*>(rhs)->getValue());
-            res = tmp;
-          }
+          else 
+            res = ConstantFloat::get(context, 
+                  dynamic_cast<ConstantFloat*>(lhs)->getValue() * dynamic_cast<ConstantFloat*>(rhs)->getValue());
         }
 				else {
           if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateMul(context, lhs, rhs, irBuilder->getBasicBlock());
-          else {
-            auto tmp = dynamic_cast<ConstantInt*>(lhs);
-            tmp->setValue(tmp->getValue() * dynamic_cast<ConstantInt*>(rhs)->getValue());
-            res = tmp;
-          }
+          else 
+            res = ConstantInt::get(context, context.Int32Type,
+                  dynamic_cast<ConstantInt*>(lhs)->getValue() * dynamic_cast<ConstantInt*>(rhs)->getValue());
         }
 				break;
 			case BinaryOp::DIV:
 				if(is_float) {
           if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateFdiv(context, lhs, rhs, irBuilder->getBasicBlock());
-          else {
-            auto tmp = dynamic_cast<ConstantFloat*>(lhs);
-            tmp->setValue(tmp->getValue() / dynamic_cast<ConstantFloat*>(rhs)->getValue());
-            res = tmp;
-          }
+          else 
+            res = ConstantFloat::get(context, 
+                  dynamic_cast<ConstantFloat*>(lhs)->getValue() / dynamic_cast<ConstantFloat*>(rhs)->getValue());
         }
 				else {
           if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateSdiv(context, lhs, rhs, irBuilder->getBasicBlock());
-          else {
-            auto tmp = dynamic_cast<ConstantInt*>(lhs);
-            tmp->setValue(tmp->getValue() / dynamic_cast<ConstantInt*>(rhs)->getValue());
-            res = tmp;
-          }
+          else 
+            res = ConstantInt::get(context, context.Int32Type,
+                  dynamic_cast<ConstantInt*>(lhs)->getValue() / dynamic_cast<ConstantInt*>(rhs)->getValue());
         }
 				break;
 			case BinaryOp::MOD:
          if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateMod(context, lhs, rhs, irBuilder->getBasicBlock());
-          else {
-            auto tmp = dynamic_cast<ConstantInt*>(lhs);
-            tmp->setValue(tmp->getValue() % dynamic_cast<ConstantInt*>(rhs)->getValue());
-            res = tmp;
-          }
+          else 
+            res = ConstantInt::get(context, context.Int32Type,
+                  dynamic_cast<ConstantInt*>(lhs)->getValue() % dynamic_cast<ConstantInt*>(rhs)->getValue());
 				break;
 			case BinaryOp::LT:
         if(is_float) {
@@ -723,20 +705,14 @@ void UnaryExpression::generate(IRBuilder *irBuilder) {
         if(rhs->getType()->isFloatType()) {
           if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateFsub(context, ConstantFloat::get(context, 0), rhs, irBuilder->getBasicBlock());
-          else {
-            auto tmp = dynamic_cast<ConstantFloat*>(rhs);
-            tmp->setValue(-(tmp->getValue()));
-            res = tmp;
-          }
+          else 
+            res = ConstantFloat::get(context, -dynamic_cast<ConstantFloat*>(rhs)->getValue());
         }
 				else {
           if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateSub(context, ConstantInt::get(context, context.Int32Type, 0), rhs, irBuilder->getBasicBlock());
-          else {
-            auto tmp = dynamic_cast<ConstantInt*>(rhs);
-            tmp->setValue(-(tmp->getValue()));
-            res = tmp;
-          }
+          else 
+            res = ConstantInt::get(context, context.Int32Type, -dynamic_cast<ConstantInt*>(rhs)->getValue());
         }
         break;
 			case UnaryOp::NOT:
@@ -753,11 +729,8 @@ void UnaryExpression::generate(IRBuilder *irBuilder) {
                                  zero, 
                                  irBuilder->getBasicBlock());
         }
-        else {
-          auto tmp = dynamic_cast<ConstantInt*>(rhs);
-          tmp->setValue(!(tmp->getValue()));
-          res = tmp;  
-        }
+        else
+          res = ConstantInt::get(context, context.Int1Type, !(dynamic_cast<ConstantInt*>(rhs)->getValue()));
         break;
       default:
         break;
