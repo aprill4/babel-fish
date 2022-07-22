@@ -22,7 +22,7 @@ PhiInst::Create(Context &c, Type *type,
 
 std::string PhiInst::print() {
   std::string IR;
-  char IRtemp[30];
+  char IRtemp[100];
   // <result> = phi <ty> [ <val0>, <label0>], ...
   std::string fmt("%%%s = phi %s ");
   std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getLLVM_Name().c_str(),

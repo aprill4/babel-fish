@@ -18,7 +18,7 @@ Type *FpToSiInst::getDestType() { return destType_; }
 
 std::string FpToSiInst::print() {
   std::string IR;
-  char IRtemp[30];
+  char IRtemp[100];
   // <result> = fptosi <type> <value> to <type2>
   std::string fmt("%%%s = fptosi %s %s to %s");
   std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getLLVM_Name().c_str(),

@@ -51,7 +51,7 @@ Type *GetElementPtrInst::getElementType() { return elementType_; }
 
 std::string GetElementPtrInst::print() {
   std::string IR;
-  char IRtemp[50];
+  char IRtemp[100];
   // <result> = getelementptr <type>, <type>* <ptrval> [, <type> <idx>]
   std::string fmt("%%%s = getelementptr %s, ");
   assert(getOperandType(0)->isPointerType());

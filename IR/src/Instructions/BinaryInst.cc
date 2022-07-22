@@ -92,7 +92,7 @@ BinaryInst *BinaryInst::CreateOr(Context &context, Value *leftValue,
 
 std::string BinaryInst::print() {
   std::string IR;
-  char IRtemp[30];
+  char IRtemp[100];
   if (getOperandType(0) == getOperandType(1)) {
     // <result> = add <type> <op1>, <op2>
     std::string fmt("%%%s = %s nsw %s %s, %s");

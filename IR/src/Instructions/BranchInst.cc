@@ -37,7 +37,7 @@ bool BranchInst::isCondBr() { return getOperandNum() == 3; }
 
 std::string BranchInst::print() {
   std::string IR;
-  char IRtemp[30];
+  char IRtemp[100];
   if (isCondBr()) {
     // br i1 <cond>, label <iftrue>, label <iffalse>
     std::string fmt("br i1 %s, label %s, label %s");
