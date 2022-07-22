@@ -25,7 +25,7 @@ enum class BinaryOp {
 
 enum class UnaryOp { POSITIVE, NEGATIVE, NOT };
 
-enum class StmtType { BLOCK, DECL, OTHER };
+enum class StmtType { BLOCK, DECL, IFELSE, WHILE, OTHER };
 
 class IRBuilder;
 
@@ -161,6 +161,7 @@ public:
       : cond_(cond), thenStmt_(thenStmt), elseStmt_(elseStmt) {}
   void print() override;
   void generate(IRBuilder *irBuilder) override;
+  StmtType statement_type() override { return StmtType::IFELSE; }
 
 public:
   Expression *cond_;
@@ -174,6 +175,7 @@ public:
       : cond_(cond), doStmt_(doStmt) {}
   void print() override;
   void generate(IRBuilder *irBuilder) override;
+  StmtType statement_type() override { return StmtType::WHILE; }
 
 public:
   Expression *cond_;
