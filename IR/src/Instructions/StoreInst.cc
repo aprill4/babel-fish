@@ -19,7 +19,7 @@ StoreInst *StoreInst::Create(Context &context, Value *value, Value *ptr,
 
 std::string StoreInst::print() {
   std::string IR;
-  char IRtemp[30];
+  char IRtemp[100];
   // store <type> <value>, <type>* <pointer>
   std::string fmt("store %s %s, %s %s");
   std::snprintf(

@@ -337,32 +337,38 @@ void Root::generate(IRBuilder *irBuilder) {
 
 void VarDeclare::generate(IRBuilder *irBuilder) {
   Context& context = irBuilder->getContext();
-
   Type *type = type_ == SysType::INT ? context.Int32Type : context.FloatType;
-
   Value *value = nullptr;  
-
   if (irBuilder->getScope()->parent == nullptr) {
     Constant *constant = nullptr;
     if (value_) {
       value_->generate(irBuilder);
       auto val = irBuilder->getTmpVal();
-      if (type_ == SysType::INT)
-        constant = new ConstantInt(context,
-                                   context.Int32Type,
-                                   dynamic_cast<ConstantInt*>(val)->getValue());
-      else
-        constant = new ConstantFloat(context,
-                                     context.FloatType,
-                                     dynamic_cast<ConstantFloat*>(val)->getValue());
+      if (!val->getType()->isPointerType()) {
+        if (type_ == SysType::INT)
+          constant = new ConstantInt(context,
+                                    context.Int32Type,
+                                    dynamic_cast<ConstantInt*>(val)->getValue());
+        else
+          constant = new ConstantFloat(context,
+                                      context.FloatType,
+                                      dynamic_cast<ConstantFloat*>(val)->getValue());
+        value = constant == nullptr ? new ConstantZero(context,type) : constant;
+        value = GlobalVariable::Create(
+                context,
+                type,
+                identifier_->id_, isConst_,
+                dynamic_cast<Constant*>(value),
+                irBuilder->getModule());
+      } else {
+        value = GlobalVariable::Create(
+                context,
+                type,
+                identifier_->id_, isConst_,
+                dynamic_cast<GlobalVariable*>(val)->getInitValue(),
+                irBuilder->getModule());
+      }
     }
-    value = constant == nullptr ? new ConstantZero(context,type) : constant;
-    value = GlobalVariable::Create(
-            context,
-            type,
-            identifier_->id_, isConst_,
-            dynamic_cast<Constant*>(value),
-            irBuilder->getModule());
   }
   else {
     value = AllocaInst::Create(context,type,
@@ -418,7 +424,7 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
   else {
     BasicBlock *bb = irBuilder->getBasicBlock();
     auto arr = AllocaInst::Create(context, arrType, irBuilder->getBasicBlock());
-    vector<Value*>idxList(len, ConstantZero::get(context, context.Int32Type));
+    vector<Value*>idxList(len, ConstantInt::get(context, context.Int32Type,0));
     // TODO : call the memset function in C
     for(int u = 0; u < total; u++) {
       value = GetElementPtrInst::Create(context, arr, idxList, bb);
@@ -488,9 +494,15 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
   Context &context = irBuilder->getContext();
   Value *lhs,*rhs,*res;
   lhs_->generate(irBuilder);
-  lhs = irBuilder->getTmpVal(); 
+  lhs = irBuilder->getTmpVal();
+  if (lhs->getType()->isPointerType()) {
+    lhs = dynamic_cast<GlobalVariable*>(lhs)->getInitValue();
+  }
   rhs_->generate(irBuilder);
   rhs =irBuilder->getTmpVal(); 
+  if (rhs->getType()->isPointerType()) {
+    rhs = dynamic_cast<GlobalVariable*>(rhs)->getInitValue();
+  }
   bool is_float = force_trans(irBuilder, lhs, rhs);
   
   switch(op_) {
@@ -703,7 +715,9 @@ void UnaryExpression::generate(IRBuilder *irBuilder) {
   Context &context = irBuilder->getContext();
   rhs_->generate(irBuilder);
   Value *rhs = irBuilder->getTmpVal(), *res;
-
+  if (rhs->getType()->isPointerType()) {
+    rhs = dynamic_cast<GlobalVariable*>(rhs)->getInitValue();
+  }
   switch(op_){
 			case UnaryOp::NEGATIVE:
         if(rhs->getType()->isFloatType()) {
