@@ -309,6 +309,21 @@ Block: LEFT_BRACES RIGHT_BRACES { $$ = new Block(); }
                         $$->scope_->varDeclares_[declare->identifier_->id_] = declare;
                 else if(stmt->statement_type() == StmtType::BLOCK)
                   dynamic_cast<Block*>(stmt)->scope_->parent = $$->scope_;
+                else if(stmt->statement_type() == StmtType::IFELSE){
+                  auto ifelse_stmt = dynamic_cast<IfElseStatement*>(stmt);
+                  if (ifelse_stmt->thenStmt_ && ifelse_stmt->thenStmt_->statement_type() == StmtType::BLOCK) {
+                        dynamic_cast<Block*>(ifelse_stmt->thenStmt_)->scope_->parent = $$->scope_;
+                  }
+                  if (ifelse_stmt->elseStmt_ && ifelse_stmt->elseStmt_->statement_type() == StmtType::BLOCK) {
+                        dynamic_cast<Block*>(ifelse_stmt->elseStmt_)->scope_->parent = $$->scope_;
+                  }
+                }
+                else if(stmt->statement_type() == StmtType::WHILE){
+                  auto ifelse_stmt = dynamic_cast<WhileStatement*>(stmt);
+                  if (ifelse_stmt->doStmt_ && ifelse_stmt->doStmt_->statement_type() == StmtType::BLOCK) {
+                        dynamic_cast<Block*>(ifelse_stmt->doStmt_)->scope_->parent = $$->scope_;
+                  }
+                }
                 else continue;
       }
      ;

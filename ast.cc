@@ -788,9 +788,9 @@ void LValExpression::generate(IRBuilder *irBuilder) {
 
 void Block::generate(IRBuilder *irBuilder) {
   irBuilder->setScope(scope_);
-  auto bb =  BasicBlock::Create(irBuilder->getContext(), "block", irBuilder->getFunction());
+  // auto bb =  BasicBlock::Create(irBuilder->getContext(), "block", irBuilder->getFunction());
+  // irBuilder->setBasicBlock(bb);
   for (auto& stateItem : statements_) {
-    irBuilder->setBasicBlock(bb);
     stateItem->generate(irBuilder);
   }
 }
@@ -876,7 +876,7 @@ void WhileStatement::generate(IRBuilder *irBuilder) {
   irBuilder->setNextBlock(next_bb);
   doStmt_->generate(irBuilder);
   if (!irBuilder->getBasicBlock()->hasTerminator()) {
-    BranchInst::Create(c, next_bb, irBuilder->getBasicBlock());    
+    BranchInst::Create(c, condVal, while_bb, next_bb, irBuilder->getBasicBlock());    
   }
   irBuilder->setBasicBlock(next_bb);
 }
