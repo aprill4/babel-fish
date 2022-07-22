@@ -51,7 +51,7 @@ std::string FcmpInst::getFcmpOpName() {
 
 std::string FcmpInst::print() {
   std::string IR;
-  char IRtemp[30];
+  char IRtemp[100];
   if (getOperandType(0) == getOperandType(1)) {
     std::string fmt("%%%s = fcmp %s %s %s, %s");
     std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getLLVM_Name().c_str(),

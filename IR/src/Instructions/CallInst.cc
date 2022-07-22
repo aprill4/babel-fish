@@ -28,7 +28,7 @@ FunctionType *CallInst::getFunctionType() {
 
 std::string CallInst::print() {
   std::string IR;
-  char IRtemp[30];
+  char IRtemp[100];
   if (!isVoid()) {
     // <result> = call <return ty> <func name>(<function args>)
     std::string fmt("%%%s = call %s %s");

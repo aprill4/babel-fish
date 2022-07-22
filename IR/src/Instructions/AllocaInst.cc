@@ -22,7 +22,7 @@ Type *AllocaInst::getAllocaType() { return allocaType_; }
 
 std::string AllocaInst::print() {
   std::string IR;
-  char IRtemp[30];
+  char IRtemp[100];
   // <result> = alloca <type>
   std::string fmt("%%%s = alloca %s");
   std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getLLVM_Name().c_str(),

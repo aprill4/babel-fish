@@ -36,7 +36,7 @@ bool ReturnInst::isRetVoid() { return getOperandNum() == 0; }
 
 std::string ReturnInst::print() {
   std::string IR;
-  char IRtemp[30];
+  char IRtemp[100];
   if (!isRetVoid()) {
     // ret <type> <value>
     std::string fmt("ret %s %s");

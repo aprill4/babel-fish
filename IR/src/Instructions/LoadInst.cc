@@ -18,7 +18,7 @@ LoadInst *LoadInst::Create(Context &c, Type *type, Value *ptr, BasicBlock *inser
 
 std::string LoadInst::print() {
   std::string IR;
-  char IRtemp[30];
+  char IRtemp[100];
   // <result> = load <type>, <type>* <pointer>
   std::string fmt("%%%s = load %s, %s %s");
   assert(getOperandType(0)->isPointerType());

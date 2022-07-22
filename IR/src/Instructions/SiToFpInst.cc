@@ -18,7 +18,7 @@ Type *SiToFpInst::getDestType() { return destType_; }
 
 std::string SiToFpInst::print() {
   std::string IR;
-  char IRtemp[30];
+  char IRtemp[100];
   // <result> = sitofp <type> <value> to <type2>
   std::string fmt("%%%s = sitofp %s %s to %s");
   std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getLLVM_Name().c_str(),
