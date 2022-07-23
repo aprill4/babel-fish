@@ -6,7 +6,7 @@
 
 BasicBlock::BasicBlock(Context &context, const std::string &name,
                        Function *parent)
-    : Value(Type::getLabelType(context), name), parent_(parent) {
+    : Value(context, Type::getLabelType(context), name), parent_(parent) {
   assert(parent_ != nullptr);
   parent_->addBasicBlock(this);
 }
@@ -63,7 +63,7 @@ std::list<BasicBlock *>& BasicBlock::getPredecessors() {
 
 std::string BasicBlock::print() {
   std::string bb_ir;
-  bb_ir += getName();
+  bb_ir += getLLVM_Name();
   bb_ir += ":";
   bb_ir += "\n";
   for (auto instr : instructionList_) {
