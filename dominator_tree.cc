@@ -22,11 +22,11 @@ int main(){
     BasicBlock *d = new BasicBlock(context, "D", func);
     BasicBlock *e = new BasicBlock(context, "E", func);
 
-    b->addPredecessor(a);
-    c->addPredecessor(a);
-    d->addPredecessor(c);
-    e->addPredecessor(b);
-    e->addPredecessor(d);
+    a->addSuccessor(b);
+    a->addSuccessor(c);
+    c->addSuccessor(d);
+    b->addSuccessor(e);
+    d->addSuccessor(e);
 
     bool isEntry = true;
     for (auto bb: func->getBasicBlocks()) {
@@ -64,11 +64,6 @@ int main(){
             }
 
             new_dom.insert(bb);
-            /*
-            for (auto dom: new_dom) {
-                cout << dom->getName() << " ";
-            }
-            */
 
             if (new_dom != dom) {
                 bb->setDominators(new_dom);
