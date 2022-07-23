@@ -9,9 +9,11 @@
 
 GetElementPtrInst::GetElementPtrInst(Context &context, Value *ptr,
                                      std::vector<Value *> idxList,
-                                     BasicBlock *insertedBlock, std::string name)
-    : Instruction(context, PointerType::get(context, computeElementType(ptr, idxList)),
-                  InstId::Getelementptr, idxList.size() + 1, insertedBlock, name) {
+                                     BasicBlock *insertedBlock,
+                                     std::string name)
+    : Instruction(
+          context, PointerType::get(context, computeElementType(ptr, idxList)),
+          InstId::Getelementptr, idxList.size() + 1, insertedBlock, name) {
   setOperand(ptr, 0);
   for (int i = 0; i < idxList.size(); i++) {
     setOperand(idxList[i], i + 1);
@@ -22,31 +24,24 @@ GetElementPtrInst::GetElementPtrInst(Context &context, Value *ptr,
 
 GetElementPtrInst *GetElementPtrInst::Create(Context &context, Value *ptr,
                                              std::vector<Value *> idxList,
-                                             BasicBlock *insertedBlock, std::string name) {
+                                             BasicBlock *insertedBlock,
+                                             std::string name) {
   return new GetElementPtrInst(context, ptr, idxList, insertedBlock, name);
 }
- 
+
 Type *GetElementPtrInst::computeElementType(Value *ptr,
                                             std::vector<Value *> idxList) {
   Type *elementType = ptr->getType()->getPtrElementType();
   assert("GetElementPtrInst ptr is wrong type" &&
-         (elementType->isArrayType() || elementType->isPointerType() ||elementType->isIntegerType() ||
+         (elementType->isArrayType() || elementType->isIntegerType() ||
           elementType->isFloatType()));
   if (elementType->isArrayType()) {
     ArrayType *arr_ty = static_cast<ArrayType *>(elementType);
-    for (int i = 1; i < idxList.size(); i++) {
+    for (int i = 0; i < idxList.size(); i++) {
       elementType = arr_ty->getElementType();
-      if (i < idxList.size() - 1) {
-        assert(elementType->isArrayType() && "Index error!");
-      }
       if (elementType->isArrayType()) {
         arr_ty = static_cast<ArrayType *>(elementType);
       }
-    }
-  }
-  else if (elementType->isPointerType()) {  
-    for (int i = 1; i< idxList.size() ;i++ ) {
-      elementType = elementType->getPtrElementType();
     }
   }
   return elementType;
