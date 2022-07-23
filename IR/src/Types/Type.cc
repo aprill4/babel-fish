@@ -61,7 +61,11 @@ std::string Type::getTypeName() {
     break;
   case TypeId::ArrayTypeId:
     typeName += "[";
-    typeName += std::to_string(static_cast<ArrayType *>(this)->getElementNum());
+    if (static_cast<ArrayType *>(this)->getElementNum() != -1){
+      typeName += std::to_string(static_cast<ArrayType *>(this)->getElementNum());
+    } else {
+      typeName += "■";
+    }
     typeName += " x ";
     typeName += static_cast<ArrayType *>(this)->getElementType()->getTypeName();
     typeName += "]";

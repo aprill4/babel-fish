@@ -30,7 +30,7 @@ Type *GetElementPtrInst::computeElementType(Value *ptr,
                                             std::vector<Value *> idxList) {
   Type *elementType = ptr->getType()->getPtrElementType();
   assert("GetElementPtrInst ptr is wrong type" &&
-         (elementType->isArrayType() || elementType->isIntegerType() ||
+         (elementType->isArrayType() || elementType->isPointerType() ||elementType->isIntegerType() ||
           elementType->isFloatType()));
   if (elementType->isArrayType()) {
     ArrayType *arr_ty = static_cast<ArrayType *>(elementType);
@@ -42,6 +42,11 @@ Type *GetElementPtrInst::computeElementType(Value *ptr,
       if (elementType->isArrayType()) {
         arr_ty = static_cast<ArrayType *>(elementType);
       }
+    }
+  }
+  else if (elementType->isPointerType()) {  
+    for (int i = 1; i< idxList.size() ;i++ ) {
+      elementType = elementType->getPtrElementType();
     }
   }
   return elementType;
