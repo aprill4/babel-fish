@@ -37,11 +37,11 @@ void BasicBlock::addInstruction(Instruction *instruction) {
 
 void BasicBlock::addPredecessor(BasicBlock* pre) {
  predecessorBlocks_.emplace_back(pre);
- pre->addSuccessor(this);
 }
 
 void BasicBlock::addSuccessor(BasicBlock* suc) {
  successorBlocks_.emplace_back(suc);
+ suc->addPredecessor(this);
 }
 
 void BasicBlock::addDominator(BasicBlock *dom) {
