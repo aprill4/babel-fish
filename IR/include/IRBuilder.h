@@ -1,5 +1,6 @@
 #pragma once
 #include "IR.h"
+#include <deque>
 
 class Scope;
 class IRBuilder {
@@ -13,17 +14,31 @@ public:
   Context &getContext() { return context_; }
   Scope *getScope() { return scope_; }
   BasicBlock *getBasicBlock() { return basicblock_; }
-  BasicBlock *getWhileBlock() { return whileBlock_; }
-  BasicBlock *getNextBlock() { return nextBlock_; }
+  BasicBlock *getWhileBlock() {
+    if (loop_.size() <= 1) {
+      return loop_.back().first;
+    } else {
+      return (loop_.end() - 2)->first;
+    }
+  }
+  BasicBlock *getNextBlock() {
+    if (loop_.size() <= 1) {
+      return loop_.back().second;
+    } else {
+      return (loop_.end() - 2)->second;
+    }
+  }
   Value *getTmpVal() { return val_; }
   Function *getFunction() { return func_; }
 
   void setScope(Scope *scope) { scope_ = scope; }
   void setBasicBlock(BasicBlock *basicblock) { basicblock_ = basicblock; }
-  void setWhileBlock(BasicBlock *whileBlock) { whileBlock_ = whileBlock; }
-  void setNextBlock(BasicBlock *nextBlock) { nextBlock_ = nextBlock; }
   void setTmpVal(Value *val) { val_ = val; }
   void setFunction(Function *func) { func_ = func; }
+  void setLoopBlock(BasicBlock *whileBlock, BasicBlock *nextBlock) {
+    loop_.emplace_back(whileBlock, nextBlock);
+  }
+  void popLoopBlock() { loop_.pop_back(); }
 
 private:
   Value *val_;
@@ -31,7 +46,6 @@ private:
   Module *module_;
   Scope *scope_;
   BasicBlock *basicblock_;
-  BasicBlock *whileBlock_;
-  BasicBlock *nextBlock_;
+  std::deque<std::pair<BasicBlock *, BasicBlock *>> loop_;
   Function *func_;
 };

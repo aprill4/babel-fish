@@ -345,14 +345,15 @@ void VarDeclare::generate(IRBuilder *irBuilder) {
       value_->generate(irBuilder);
       auto val = irBuilder->getTmpVal();
       if (!val->getType()->isPointerType()) {
+        auto init_val = val->getType()->isIntegerType() ? dynamic_cast<ConstantInt*>(val)->getValue(): dynamic_cast<ConstantFloat*>(val)->getValue();
         if (type_ == SysType::INT)
           constant = new ConstantInt(context,
                                     context.Int32Type,
-                                    dynamic_cast<ConstantInt*>(val)->getValue());
+                                    init_val);
         else
           constant = new ConstantFloat(context,
                                       context.FloatType,
-                                      dynamic_cast<ConstantFloat*>(val)->getValue());
+                                      init_val);
         value = constant == nullptr ? new ConstantZero(context,type) : constant;
         value = GlobalVariable::Create(
                 context,
@@ -767,7 +768,12 @@ void LValExpression::generate(IRBuilder *irBuilder) {
       irBuilder->setTmpVal(target);
     }
     else {
-      auto arr = dynamic_cast<ConstantArray*>(scope->DeclIR[scope->varDeclares_[identifier_->id_]]);
+      auto tmp = scope->DeclIR[scope->varDeclares_[identifier_->id_]];
+      ConstantArray * arr;
+      if (tmp->getType()->isPointerType()) {
+        arr = dynamic_cast<ConstantArray*>(dynamic_cast<GlobalVariable*>(tmp)->getInitValue());
+      }
+      else arr = dynamic_cast<ConstantArray*>(tmp);
       vector<int>indice;
       for(auto&idx : identifier_->dimension_) {
         idx->generate(irBuilder);
@@ -788,9 +794,11 @@ void LValExpression::generate(IRBuilder *irBuilder) {
 
 void Block::generate(IRBuilder *irBuilder) {
   irBuilder->setScope(scope_);
+  // auto bb = irBuilder->getBasicBlock();
   // auto bb =  BasicBlock::Create(irBuilder->getContext(), "block", irBuilder->getFunction());
   // irBuilder->setBasicBlock(bb);
   for (auto& stateItem : statements_) {
+    // irBuilder->setBasicBlock(bb);
     stateItem->generate(irBuilder);
   }
 }
@@ -872,9 +880,9 @@ void WhileStatement::generate(IRBuilder *irBuilder) {
   }
   BranchInst::Create(c, condVal, while_bb, next_bb, irBuilder->getBasicBlock());    
   irBuilder->setBasicBlock(while_bb);
-  irBuilder->setWhileBlock(while_bb);
-  irBuilder->setNextBlock(next_bb);
-  doStmt_->generate(irBuilder);
+  irBuilder->setLoopBlock(while_bb, next_bb);
+  doStmt_->generate(irBuilder); 
+  irBuilder->popLoopBlock();
   if (!irBuilder->getBasicBlock()->hasTerminator()) {
     BranchInst::Create(c, condVal, while_bb, next_bb, irBuilder->getBasicBlock());    
   }
