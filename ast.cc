@@ -119,8 +119,10 @@ void LValExpression::print() { identifier_->print(); }
 
 void UnaryExpression::print() {
   string uop[3] = {"+", "-", "!"};
+  cout << "{ ";
   cout << uop[static_cast<int>(op_)];
   rhs_->print();
+  cout << "} ";
 }
 
 void ActualArgumentList::print() {
@@ -323,9 +325,27 @@ void Number::generate(IRBuilder *irBuilder) {
   }
 }
 
-void Root::generate(IRBuilder *irBuilder) {
-  irBuilder->setScope(scope_);
+void addPut(IRBuilder *irBuilder, string name,Scope* scope_,Type * returnType,std::vector<Type *>argsType){
+  Context& c = irBuilder->getContext();
+  auto funty = FunctionType::get(returnType,argsType);
+  string parms[1] = {"i"};
+  auto fl = new FormalArgumentList();
+  string *s = new string("i");
+  auto id = new Identifier(s);
+  fl->list_.emplace_back(new FormalArgument(SysType::INT,id));
+  string *s2 = new string(name);
+  auto id2 = new Identifier(s);
+  FunctionDefinition* fde = new FunctionDefinition(SysType::VOID,id2,fl, nullptr);
+  scope_->funcIR[fde] = Function::Create(c, funty, parms, name, irBuilder->getModule());
+}
 
+void Root::generate(IRBuilder *irBuilder) {
+  Context&c = irBuilder->getContext();
+  irBuilder->setScope(scope_);
+  addPut(irBuilder, "putint" , scope_, Type::getVoidType(c),{Type::getInt32Type(c)});
+  addPut(irBuilder, "putch" , scope_, Type::getVoidType(c),{Type::getInt32Type(c)});
+  addPut(irBuilder, "getint" , scope_, Type::getInt32Type(c),{});
+  addPut(irBuilder, "getch" , scope_, Type::getInt32Type(c),{});
   for (auto &decl : this->declareStatement_) {
     decl->generate(irBuilder);
   }
@@ -371,7 +391,14 @@ void VarDeclare::generate(IRBuilder *irBuilder) {
                 dynamic_cast<GlobalVariable*>(val)->getInitValue(),
                 irBuilder->getModule());
       }
-    }
+    } else {
+      value = GlobalVariable::Create(
+              context,
+              type,
+              identifier_->id_, isConst_,
+              new ConstantZero(context, type),
+              irBuilder->getModule());    
+    } 
   }
   else {
     value = AllocaInst::Create(context,type,
@@ -468,13 +495,17 @@ void FunctionDefinition::generate(IRBuilder *irBuilder) {
         }
       }
       if (dimension.size() != 0) {
+        // argsType.emplace_back( PointerType::get(context, 
+        //     ArrayType::get(context, check_sys_type(arg->type_, context),
+        //                    dimension)));
         argsType.emplace_back(
             ArrayType::get(context, check_sys_type(arg->type_, context),
                            dimension));
       } else {
-        argsType.emplace_back(ArrayType::get(
-              context, check_sys_type(arg->type_, context),
-              -1)); //-1 mean the actual dimensions is trivial to the program
+        argsType.emplace_back(PointerType::get(context, check_sys_type(arg->type_, context)));
+        // argsType.emplace_back(ArrayType::get(
+        //       context, check_sys_type(arg->type_, context),
+        //       -1)); //-1 mean the actual dimensions is trivial to the program
       }
     }
     args_name[idx] = arg->identifier_->id_;
@@ -515,12 +546,12 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
   Value *lhs,*rhs,*res;
   lhs_->generate(irBuilder);
   lhs = irBuilder->getTmpVal();
-  if (lhs->getType()->isPointerType()) {
+  if (dynamic_cast<GlobalVariable*>(lhs)) {
     lhs = dynamic_cast<GlobalVariable*>(lhs)->getInitValue();
   }
   rhs_->generate(irBuilder);
   rhs =irBuilder->getTmpVal(); 
-  if (rhs->getType()->isPointerType()) {
+  if (dynamic_cast<GlobalVariable*>(rhs)) {
     rhs = dynamic_cast<GlobalVariable*>(rhs)->getInitValue();
   }
   bool is_float = force_trans(irBuilder, lhs, rhs);
@@ -717,9 +748,10 @@ void UnaryExpression::generate(IRBuilder *irBuilder) {
   Context &context = irBuilder->getContext();
   rhs_->generate(irBuilder);
   Value *rhs = irBuilder->getTmpVal(), *res;
-  if (rhs->getType()->isPointerType()) {
+  if (dynamic_cast<GlobalVariable*>(rhs)) {
     rhs = dynamic_cast<GlobalVariable*>(rhs)->getInitValue();
   }
+  cout << rhs->getType()->getTypeName() << endl;
   switch(op_){
 			case UnaryOp::NEGATIVE:
         if(rhs->getType()->isFloatType()) {
@@ -728,7 +760,7 @@ void UnaryExpression::generate(IRBuilder *irBuilder) {
           else 
             res = ConstantFloat::get(context, -dynamic_cast<ConstantFloat*>(rhs)->getValue());
         }
-				else {
+        else {
           if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateSub(context, ConstantInt::get(context, context.Int32Type, 0), rhs, irBuilder->getBasicBlock());
           else 
@@ -752,10 +784,12 @@ void UnaryExpression::generate(IRBuilder *irBuilder) {
         else
           res = ConstantInt::get(context, context.Int1Type, !(dynamic_cast<ConstantInt*>(rhs)->getValue()));
         break;
+      case UnaryOp::POSITIVE:
+        res = rhs;
+        break;
       default:
         break;
 	}
-  
   irBuilder->setTmpVal(res);
 }
 
@@ -833,6 +867,7 @@ void AssignStatement::generate(IRBuilder *irBuilder) {
 
 void IfElseStatement::generate(IRBuilder *irBuilder) {
   Context &c = irBuilder->getContext();
+  irBuilder->setScope(scope_);
   cond_->generate(irBuilder);
   auto tmpVal = irBuilder->getTmpVal();
   auto true_bb =
@@ -877,6 +912,7 @@ void IfElseStatement::generate(IRBuilder *irBuilder) {
 void WhileStatement::generate(IRBuilder *irBuilder) {
   Context& c = irBuilder->getContext();
   cond_->generate(irBuilder);
+  irBuilder->setScope(scope_);
   auto tmpVal = irBuilder->getTmpVal();
   auto while_bb = BasicBlock::Create(c, "while_entry", irBuilder->getFunction());
   auto next_bb = BasicBlock::Create(c, "next_entry", irBuilder->getFunction());

@@ -299,30 +299,27 @@ FuncRParams: AddExp { $$ = new ActualArgumentList(); $$->list_.emplace_back($1);
       | FuncRParams COMMA AddExp { $$ = $1; $$->list_.emplace_back($3); }
       ;
 
-Block: LEFT_BRACES RIGHT_BRACES { $$ = new Block(); }
+Block: LEFT_BRACES RIGHT_BRACES { $$ = new Block();
+            if($$->scope_ == nullptr) $$->scope_ = new Scope();
+      }
      | LEFT_BRACES BlockItems RIGHT_BRACES { 
             $$ = $2; 
             if($$->scope_ == nullptr) $$->scope_ = new Scope();
             for(auto&stmt : $2->statements_)
-                if(stmt->statement_type() == StmtType::DECL)
+                if(stmt->statement_type() == StmtType::DECL) {
                   for(auto&declare : dynamic_cast<DeclareStatement*>(stmt)->declares_)
                         $$->scope_->varDeclares_[declare->identifier_->id_] = declare;
-                else if(stmt->statement_type() == StmtType::BLOCK)
-                  dynamic_cast<Block*>(stmt)->scope_->parent = $$->scope_;
-                else if(stmt->statement_type() == StmtType::IFELSE){
-                  auto ifelse_stmt = dynamic_cast<IfElseStatement*>(stmt);
-                  if (ifelse_stmt->thenStmt_ && ifelse_stmt->thenStmt_->statement_type() == StmtType::BLOCK) {
-                        dynamic_cast<Block*>(ifelse_stmt->thenStmt_)->scope_->parent = $$->scope_;
-                  }
-                  if (ifelse_stmt->elseStmt_ && ifelse_stmt->elseStmt_->statement_type() == StmtType::BLOCK) {
-                        dynamic_cast<Block*>(ifelse_stmt->elseStmt_)->scope_->parent = $$->scope_;
-                  }
                 }
-                else if(stmt->statement_type() == StmtType::WHILE){
-                  auto ifelse_stmt = dynamic_cast<WhileStatement*>(stmt);
-                  if (ifelse_stmt->doStmt_ && ifelse_stmt->doStmt_->statement_type() == StmtType::BLOCK) {
-                        dynamic_cast<Block*>(ifelse_stmt->doStmt_)->scope_->parent = $$->scope_;
-                  }
+                else if(stmt->statement_type() == StmtType::BLOCK) {
+                  dynamic_cast<Block*>(stmt)->scope_->parent = $$->scope_;
+                }
+                else if(stmt->statement_type() == StmtType::IFELSE) {
+                  auto ifelse_stmt = dynamic_cast<IfElseStatement*>(stmt);
+                  ifelse_stmt->scope_->parent = $$->scope_;
+                }
+                else if(stmt->statement_type() == StmtType::WHILE) {
+                  auto while_stmt = dynamic_cast<WhileStatement*>(stmt);
+                  while_stmt->scope_->parent = $$->scope_;
                 }
                 else continue;
       }
@@ -348,9 +345,39 @@ Stmt: LVal ASSIGN AddExp SEMICOLON { $$ = new AssignStatement($1, $3); }
       | SEMICOLON { $$ = nullptr; }
       | AddExp SEMICOLON { $$ = new EvalStatement($1); }
       | Block { $$ = $1; }
-      | IF LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt { $$ = new IfElseStatement($3, $5, nullptr); }
-      | IF LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt ELSE Stmt { $$ = new IfElseStatement($3, $5, $7); }
-      | WHILE LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt { $$ = new WhileStatement($3, $5);}
+      | IF LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt { 
+            $$ = new IfElseStatement($3, $5, nullptr); 
+            if ($5->statement_type() == StmtType::BLOCK)
+               dynamic_cast<Block*>($5)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
+            else if ($5->statement_type() == StmtType::IFELSE)
+               dynamic_cast<IfElseStatement*>($5)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
+            else if ($5->statement_type() == StmtType::WHILE)
+               dynamic_cast<WhileStatement*>($5)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
+      }
+      | IF LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt ELSE Stmt { 
+            $$ = new IfElseStatement($3, $5, $7); 
+            if ($5->statement_type() == StmtType::BLOCK)
+               dynamic_cast<Block*>($5)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
+            else if ($5->statement_type() == StmtType::IFELSE)
+               dynamic_cast<IfElseStatement*>($5)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
+            else if ($5->statement_type() == StmtType::WHILE)
+               dynamic_cast<WhileStatement*>($5)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
+            if ($7->statement_type() == StmtType::BLOCK)
+               dynamic_cast<Block*>($7)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
+            else if ($7->statement_type() == StmtType::IFELSE)
+               dynamic_cast<IfElseStatement*>($7)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
+            else if ($7->statement_type() == StmtType::WHILE)
+               dynamic_cast<WhileStatement*>($7)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
+      }
+      | WHILE LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt { 
+            $$ = new WhileStatement($3, $5); 
+            if ($5->statement_type() == StmtType::BLOCK)
+               dynamic_cast<Block*>($5)->scope_->parent = dynamic_cast<WhileStatement*>($$)->scope_;   
+            else if ($5->statement_type() == StmtType::IFELSE)
+               dynamic_cast<IfElseStatement*>($5)->scope_->parent = dynamic_cast<WhileStatement*>($$)->scope_;   
+            else if ($5->statement_type() == StmtType::WHILE)
+               dynamic_cast<WhileStatement*>($5)->scope_->parent = dynamic_cast<WhileStatement*>($$)->scope_;   
+      }
       | BREAK SEMICOLON { $$ = new BreakStatement(); }
       | CONTINUE SEMICOLON { $$ = new ContinueStatement(); }
       | RETURN SEMICOLON { $$ = new ReturnStatement(); }

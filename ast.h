@@ -28,6 +28,8 @@ enum class UnaryOp { POSITIVE, NEGATIVE, NOT };
 enum class StmtType { BLOCK, DECL, IFELSE, WHILE, OTHER };
 
 class IRBuilder;
+class FunctionDefinition;
+class Declare;
 
 class Node {
 public:
@@ -91,7 +93,7 @@ class LValExpression : public Expression {
 public:
   LValExpression(Identifier *identifier) : identifier_(identifier) {}
   void print() override;
-  void generate(IRBuilder *irBuilder) override ;
+  void generate(IRBuilder *irBuilder) override;
 
 public:
   Identifier *identifier_;
@@ -128,6 +130,19 @@ public:
   ActualArgumentList *actualArgs_;
 };
 
+class Scope {
+public:
+  Scope() { parent = nullptr; }
+  void print();
+
+public:
+  Scope *parent;
+  std::map<std::string, Declare *> varDeclares_;
+  std::map<Declare *, Value *> DeclIR;
+  std::map<std::string, FunctionDefinition *> funcDeclares_;
+  std::map<FunctionDefinition *, Value *> funcIR;
+};
+
 class Statement : public Node {
 public:
   virtual StmtType statement_type() { return StmtType::OTHER; }
@@ -158,12 +173,15 @@ public:
 class IfElseStatement : public Statement {
 public:
   IfElseStatement(Expression *cond, Statement *thenStmt, Statement *elseStmt)
-      : cond_(cond), thenStmt_(thenStmt), elseStmt_(elseStmt) {}
+      : cond_(cond), thenStmt_(thenStmt), elseStmt_(elseStmt) {
+    scope_ = new Scope();
+  }
   void print() override;
   void generate(IRBuilder *irBuilder) override;
   StmtType statement_type() override { return StmtType::IFELSE; }
 
 public:
+  Scope *scope_;
   Expression *cond_;
   Statement *thenStmt_;
   Statement *elseStmt_;
@@ -172,12 +190,15 @@ public:
 class WhileStatement : public Statement {
 public:
   WhileStatement(Expression *cond, Statement *doStmt)
-      : cond_(cond), doStmt_(doStmt) {}
+      : cond_(cond), doStmt_(doStmt) {
+    scope_ = new Scope();
+  }
   void print() override;
   void generate(IRBuilder *irBuilder) override;
   StmtType statement_type() override { return StmtType::WHILE; }
 
 public:
+  Scope *scope_;
   Expression *cond_;
   Statement *doStmt_;
 };
@@ -285,7 +306,7 @@ class FormalArgumentList : public Node {
 public:
   FormalArgumentList() = default;
   void print() override;
-  void generate(IRBuilder *irBuilder) override {};
+  void generate(IRBuilder *irBuilder) override{};
 
 public:
   std::vector<FormalArgument *> list_;
@@ -307,19 +328,6 @@ public:
   Block *body_;
 };
 
-class Scope {
-public:
-  Scope() { parent = nullptr; }
-  void print();
-
-public:
-  Scope *parent;
-  std::map<std::string, Declare *> varDeclares_;
-  std::map<Declare *, Value *> DeclIR;
-  std::map<std::string, FunctionDefinition *> funcDeclares_;
-  std::map<FunctionDefinition *, Value *> funcIR;
-};
-
 class Root : public Node {
 public:
   Root() = default;
@@ -332,5 +340,6 @@ public:
   Scope *scope_;
 };
 
-//return the value if the variant is in global, return the ptr that point to the value otherwise
+// return the value if the variant is in global, return the ptr that point to
+// the value otherwise
 Value *find_symbol(Scope *scope, std::string symbol, bool is_var);
