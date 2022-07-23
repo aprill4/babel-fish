@@ -344,16 +344,18 @@ void VarDeclare::generate(IRBuilder *irBuilder) {
     if (value_) {
       value_->generate(irBuilder);
       auto val = irBuilder->getTmpVal();
-      if (!val->getType()->isPointerType()) {
+      if (val->getType()->isIntegerType() || val->getType()->isFloatType()) {
         auto init_val = val->getType()->isIntegerType() ? dynamic_cast<ConstantInt*>(val)->getValue(): dynamic_cast<ConstantFloat*>(val)->getValue();
-        if (type_ == SysType::INT)
+        if (type_ == SysType::INT) {
           constant = new ConstantInt(context,
                                     context.Int32Type,
                                     init_val);
-        else
+        }
+        else {
           constant = new ConstantFloat(context,
                                       context.FloatType,
                                       init_val);
+        }
         value = constant == nullptr ? new ConstantZero(context,type) : constant;
         value = GlobalVariable::Create(
                 context,
@@ -390,7 +392,7 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
   size_t total = 1;
   //nums are the suffix product of dimensions
   // e.g. a[1][2][3] => nums = {6, 6, 3};
-  vector<int>dimensions{}, nums{}; 
+  vector<int> dimensions{}, nums{}; 
   int len = identifier_->dimension_.size();
   for(int u = 0; u < len; u++) {
     identifier_->dimension_[u]->generate(irBuilder);
@@ -400,7 +402,7 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
   nums = dimensions;
 
   ArrayType *former, *latter;
-  for(int u = len - 1; u >= 0; u--) 
+  for(int u = len - 1; u >= 0; u--) {
     if(u == len - 1) {
       latter = ArrayType::get(context, type, dimensions[u]);
     }
@@ -409,8 +411,8 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
       latter = former;
       nums[u] *= nums[u+1];
     }
+  }
   ArrayType *arrType = latter;
-
   vector<Constant*>vals;
   if(value_)  
     parse_nest_array(vals, value_, 0, nums, type_ == SysType::INT, irBuilder);
@@ -418,18 +420,19 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
     vals.resize(total, ConstantZero::get(context, type));
 
   if(irBuilder->getScope()->parent == nullptr) {
-    value = GlobalVariable::Create(context, type, identifier_->id_, isConst_,
+    value = GlobalVariable::Create(context, arrType, identifier_->id_, isConst_,
                                    ConstantArray::get(context, arrType, vals, dimensions),
                                    irBuilder->getModule());
   }
   else {
     BasicBlock *bb = irBuilder->getBasicBlock();
-    auto arr = AllocaInst::Create(context, arrType, irBuilder->getBasicBlock());
-    vector<Value*>idxList(len, ConstantInt::get(context, context.Int32Type,0));
+    value = AllocaInst::Create(context, arrType, irBuilder->getBasicBlock());
+    vector<Value*> idxList(len, ConstantInt::get(context, context.Int32Type,0));
     // TODO : call the memset function in C
+    Value* tmp;
     for(int u = 0; u < total; u++) {
-      value = GetElementPtrInst::Create(context, arr, idxList, bb);
-      StoreInst::Create(context, vals[u], value, bb);
+      tmp = GetElementPtrInst::Create(context, value, idxList, bb);
+      StoreInst::Create(context, vals[u], tmp, bb);
       bool incr = true;
       // whether need to adjust the order e.g. the idxList a[1][2][3] = {3,2,1} to avoid minus operation
       for(int u = len - 1; u >= 0 && incr ; u--) {
@@ -453,12 +456,27 @@ void FunctionDefinition::generate(IRBuilder *irBuilder) {
   string args_name[formalArgs_->list_.size()];
   int idx = 0;
   for (auto arg : formalArgs_->list_) {
-    if ((arg->identifier_->dimension_).empty())
+    if ((arg->identifier_->dimension_).empty()) {
         argsType.emplace_back(check_sys_type(arg->type_, context));
-    else 
-      argsType.emplace_back(ArrayType::get(
-          context,
-          check_sys_type(arg->type_, context), -1)); //-1 mean the actual dimensions is trivial to the program
+    } else {
+      vector<int> dimension;
+      for (auto i : arg->identifier_->dimension_) {
+        if (i) {
+          i->generate(irBuilder);
+          dimension.emplace_back(
+              dynamic_cast<ConstantInt *>(irBuilder->getTmpVal())->getValue());
+        }
+      }
+      if (dimension.size() != 0) {
+        argsType.emplace_back(
+            ArrayType::get(context, check_sys_type(arg->type_, context),
+                           dimension));
+      } else {
+        argsType.emplace_back(ArrayType::get(
+              context, check_sys_type(arg->type_, context),
+              -1)); //-1 mean the actual dimensions is trivial to the program
+      }
+    }
     args_name[idx] = arg->identifier_->id_;
     idx++;
   }
@@ -477,14 +495,15 @@ void FunctionDefinition::generate(IRBuilder *irBuilder) {
   irBuilder->setScope(body_->scope_);
   for(int u = 0, len = formalArgs_->list_.size(); u< len; u++){
     Value *ptr;
-    if(argsType[u]->isArrayType())
-      ptr = AllocaInst::Create(context,
-                               PointerType::get(context, static_cast<ArrayType*>(argsType[u])->getElementType()), 
+    if(argsType[u]->isArrayType()){
+      ptr = AllocaInst::Create(context, static_cast<ArrayType*>(argsType[u]), 
                                irBuilder->getBasicBlock());
-    else 
+    }
+    else {
       ptr = AllocaInst::Create(context,
                                argsType[u]->isFloatType() ? context.FloatType : context.Int32Type,
                                irBuilder->getBasicBlock());
+    } 
     irBuilder->getScope()->DeclIR[formalArgs_->list_[u]] = ptr;
   }
   body_->generate(irBuilder);
@@ -744,7 +763,7 @@ void LValExpression::generate(IRBuilder *irBuilder) {
   Context &context = irBuilder->getContext();
   Scope *scope = irBuilder->getScope();
   if(irBuilder->getScope()->parent) {
-    Value *ptr = find_symbol(scope, identifier_->id_, true), *res;
+    Value *ptr = find_symbol(scope, identifier_->id_, true);
     if(!(identifier_->dimension_.empty())){
       vector<Value *> idxList;
       for(auto&idx : identifier_->dimension_) {
@@ -756,11 +775,7 @@ void LValExpression::generate(IRBuilder *irBuilder) {
                                       idxList,
                                       irBuilder->getBasicBlock());
     }
-    res = LoadInst::Create(context, 
-                           ptr->getType()->getPtrElementType(), 
-                           ptr, 
-                           irBuilder->getBasicBlock());
-    irBuilder->setTmpVal(res);
+    irBuilder->setTmpVal(ptr);
   }
   else {
     if(identifier_->dimension_.empty()) {
@@ -794,11 +809,7 @@ void LValExpression::generate(IRBuilder *irBuilder) {
 
 void Block::generate(IRBuilder *irBuilder) {
   irBuilder->setScope(scope_);
-  // auto bb = irBuilder->getBasicBlock();
-  // auto bb =  BasicBlock::Create(irBuilder->getContext(), "block", irBuilder->getFunction());
-  // irBuilder->setBasicBlock(bb);
   for (auto& stateItem : statements_) {
-    // irBuilder->setBasicBlock(bb);
     stateItem->generate(irBuilder);
   }
 }
@@ -814,7 +825,9 @@ void AssignStatement::generate(IRBuilder *irBuilder) {
   auto lval = irBuilder->getTmpVal();
   rhs_->generate(irBuilder);
   auto rval = irBuilder->getTmpVal();
-  // to_do: lval and rval's type diff
+  if (rval->getType()->isPointerType()) {
+    rval = LoadInst::Create(irBuilder->getContext(), rval->getType()->getPtrElementType(), rval, irBuilder->getBasicBlock());
+  }
   StoreInst::Create(irBuilder->getContext(), rval, lval, irBuilder->getBasicBlock());
 }
 
