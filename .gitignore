@@ -1,6 +1,6 @@
 test
 build
-*.sy
+# *.sy
 *.json
 *.out
 *.yy.c
