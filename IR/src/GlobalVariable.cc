@@ -6,7 +6,7 @@
 GlobalVariable::GlobalVariable(Context &c, Type *type, const std::string &globalVarName,
                                bool isConst, Constant *initializer,
                                Module *insertedModule)
-    : User(c, type, globalVarName, 1), initValue_(initializer) {
+    : User(c, type, globalVarName, 1), initValue_(initializer),isConst_(isConst) {
   setOperand(initializer, 0);
   insertedModule->symbolTable_[globalVarName] = this;
   insertedModule->addGlobalVariable(this);

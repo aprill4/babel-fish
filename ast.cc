@@ -337,7 +337,14 @@ void addPut(IRBuilder *irBuilder, string name,Scope* scope_,Type * returnType,st
   string *s2 = new string(name);
   auto id2 = new Identifier(s);
   FunctionDefinition* fde = new FunctionDefinition(SysType::VOID,id2,fl, nullptr);
-  scope_->funcIR[fde] = Function::Create(c, funty, parms, name, irBuilder->getModule());
+  auto x =   Function::Create(c, funty, parms, name, irBuilder->getModule());
+  scope_->funcIR[fde] = x;
+  BasicBlock* bb = BasicBlock::Create(c, "", x);
+  if (returnType->isVoidType()) {
+    ReturnInst::Create(c,bb);  
+  }else{
+    ReturnInst::Create(c,ConstantInt::get(c, returnType, 0),bb);  
+  }
 }
 
 void Root::generate(IRBuilder *irBuilder) {
@@ -360,7 +367,7 @@ void Root::generate(IRBuilder *irBuilder) {
 
 void VarDeclare::generate(IRBuilder *irBuilder) {
   Context& context = irBuilder->getContext();
-  Type *type = type_ == SysType::INT ? context.Int32Type : context.FloatType;
+  Type *type = (type_ == SysType::INT) ? context.Int32Type : context.FloatType;
   Value *value = nullptr;  
   // GlobalVar
   if (irBuilder->getScope()->parent == nullptr) {
@@ -368,33 +375,27 @@ void VarDeclare::generate(IRBuilder *irBuilder) {
     if (value_) {
       value_->generate(irBuilder);
       auto val = irBuilder->getTmpVal();
-      if (val->getType()->isIntegerType() || val->getType()->isFloatType()) {
-        auto init_val = val->getType()->isIntegerType() ? dynamic_cast<ConstantInt*>(val)->getValue(): dynamic_cast<ConstantFloat*>(val)->getValue();
-        if (type_ == SysType::INT) {
-          constant = new ConstantInt(context,
-                                    context.Int32Type,
-                                    init_val);
-        }
-        else {
-          constant = new ConstantFloat(context,
-                                      context.FloatType,
-                                      init_val);
-        }
-        value = constant == nullptr ? new ConstantZero(context,type) : constant;
-        value = GlobalVariable::Create(
-                context,
-                type,
-                identifier_->id_, isConst_,
-                dynamic_cast<Constant*>(value),
-                irBuilder->getModule());
-      } else {
-        value = GlobalVariable::Create(
-                context,
-                type,
-                identifier_->id_, isConst_,
-                dynamic_cast<GlobalVariable*>(val)->getInitValue(),
-                irBuilder->getModule());
+      if (dynamic_cast<GlobalVariable*>(val)) {
+        val = dynamic_cast<GlobalVariable*>(val)->getInitValue();
       }
+      auto init_val = val->getType()->isIntegerType()
+                          ? dynamic_cast<ConstantInt *>(val)->getValue()
+                          : dynamic_cast<ConstantFloat *>(val)->getValue();
+      if (type_ == SysType::INT) {
+        constant = new ConstantInt(context,
+                                  context.Int32Type,
+                                  init_val);
+      } else {
+        constant = new ConstantFloat(context,
+                                    context.FloatType,
+                                    init_val);
+      }
+      value = GlobalVariable::Create(
+              context,
+              type,
+              identifier_->id_, isConst_,
+              constant,
+              irBuilder->getModule());
     } else {
       value = GlobalVariable::Create(
               context,
@@ -406,8 +407,7 @@ void VarDeclare::generate(IRBuilder *irBuilder) {
   }
   else {
     if (isConst_) {
-      value = AllocaInst::Create(context,type,
-                  irBuilder->getBasicBlock(), "");
+      value = AllocaInst::Create(context, type, irBuilder->getBasicBlock(), "");
       if (value_) {
         value_->generate(irBuilder);
         auto val = irBuilder->getTmpVal(); 
@@ -419,7 +419,7 @@ void VarDeclare::generate(IRBuilder *irBuilder) {
           value = ConstantFloat::get(context, init_val);
         }
       }
-    }else {
+    } else {
       value = AllocaInst::Create(context,type,
                         irBuilder->getBasicBlock(), "");
       if(value_) {
@@ -483,7 +483,11 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
     Value* tmp;
     for(int u = 0; u < total; u++) {
       tmp = GetElementPtrInst::Create(context, value, idxList, bb);
-      StoreInst::Create(context, vals[u], tmp, bb);
+      auto temp_val = vals[u];
+      if (temp_val->getType()->isPointerType()) {
+        temp_val = LoadInst::Create(context, type, temp_val, irBuilder->getBasicBlock());
+      }
+      StoreInst::Create(context, temp_val, tmp, bb);
       bool incr = true;
       // whether need to adjust the order e.g. the idxList a[1][2][3] = {3,2,1} to avoid minus operation
       for(int u = len - 1; u >= 0 && incr ; u--) {
@@ -570,13 +574,21 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
   Value *lhs,*rhs,*res;
   lhs_->generate(irBuilder);
   lhs = irBuilder->getTmpVal();
-  if (dynamic_cast<GlobalVariable*>(lhs)) {
-    lhs = dynamic_cast<GlobalVariable*>(lhs)->getInitValue();
+  if (lhs->getType()->isPointerType()) {
+    if (dynamic_cast<GlobalVariable*>(lhs) && dynamic_cast<GlobalVariable*>(lhs)->isConst()) {
+      lhs = dynamic_cast<GlobalVariable*>(lhs)->getInitValue();
+    } else {
+      lhs = LoadInst::Create(context, lhs->getType()->getPtrElementType(), lhs, irBuilder->getBasicBlock());
+    }
   }
   rhs_->generate(irBuilder);
   rhs =irBuilder->getTmpVal(); 
-  if (dynamic_cast<GlobalVariable*>(rhs)) {
-    rhs = dynamic_cast<GlobalVariable*>(rhs)->getInitValue();
+  if (rhs->getType()->isPointerType()) {
+    if (dynamic_cast<GlobalVariable*>(rhs) && dynamic_cast<GlobalVariable*>(rhs)->isConst() ) {
+      rhs = dynamic_cast<GlobalVariable*>(rhs)->getInitValue();
+    } else {
+      rhs = LoadInst::Create(context, rhs->getType()->getPtrElementType(), rhs, irBuilder->getBasicBlock());
+    }
   }
   bool is_float = force_trans(irBuilder, lhs, rhs);
   
@@ -861,22 +873,22 @@ void LValExpression::generate(IRBuilder *irBuilder) {
     }
     irBuilder->setTmpVal(ptr);
   }
-  else {
+  else { // global 
     if(identifier_->dimension_.empty()) {
       auto target = scope->DeclIR[identifier_->id_];
       irBuilder->setTmpVal(target);
     }
     else {
       auto tmp = scope->DeclIR[identifier_->id_];
-      ConstantArray * arr;
-      if (dynamic_cast<GlobalVariable*>(tmp)) {
-        arr = dynamic_cast<ConstantArray*>(dynamic_cast<GlobalVariable*>(tmp)->getInitValue());
-      }
-      else arr = dynamic_cast<ConstantArray*>(tmp);
+      ConstantArray * arr = dynamic_cast<ConstantArray*>(dynamic_cast<GlobalVariable*>(tmp)->getInitValue());
       vector<int> indice;
-      for(auto&idx : identifier_->dimension_) {
+      for(auto& idx : identifier_->dimension_) {
         idx->generate(irBuilder);
-        indice.emplace_back(dynamic_cast<ConstantInt*>(irBuilder->getTmpVal())->getValue());
+        auto temp = irBuilder->getTmpVal();
+        if (dynamic_cast<GlobalVariable*>(temp)) {
+          temp = dynamic_cast<GlobalVariable*>(temp)->getInitValue();
+        }
+        indice.emplace_back(dynamic_cast<ConstantInt*>(temp)->getValue());
       }
       int len = arr->dimension_.size(),
             leng = indice.size(),
