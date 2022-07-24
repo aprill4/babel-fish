@@ -130,21 +130,23 @@ void IClz::print(FILE *fp) {
 }
 
 void FNeg::print(FILE *fp) {
-
+    fprintf(fp, "vneg.f32%s %s, %s", get_cond(), dst->print(), src->print());
 }
 
 void F2ICvt::print(FILE *fp) {
+    fprintf(fp, "vcvt.s32.f32%s %s, %s", get_cond(), dst->print(), src->print());
 }
 
 void I2FCvt::print(FILE *fp) {
+    fprintf(fp, "vcvt.f32.s32%s %s, %s", get_cond(), dst->print(), src->print());
 }
 
 void Branch::print(FILE *fp) {
-
+   fprintf(fp, "b%s %s", get_cond(), label.c_str());
 }
 
 void Call::print(FILE *fp) {
-
+    fprintf(fp, "bl %s", callee.c_str());
 }
 
 void Return::print(FILE *fp) {
@@ -152,11 +154,19 @@ void Return::print(FILE *fp) {
 }
 
 void Push::print(FILE *fp) {
-    
+   fprintf(fp, "push%s { ", get_cond());
+   for (auto reg: regs) {
+       fprintf(fp, "%s, ", reg->print());
+   }
+   fprintf(fp, "}");
 }
 
 void Pop::print(FILE *fp) {
-
+   fprintf(fp, "pop%s { ", get_cond());
+   for (auto reg: regs) {
+       fprintf(fp, "%s, ", reg->print());
+   }
+   fprintf(fp, "}");
 }
 
 void emit_asm (MachineModule *mm, FILE *fp) {
