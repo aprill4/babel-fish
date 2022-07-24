@@ -49,8 +49,6 @@ void parse_nest_array(vector<Value *>&ans, ArrayValue *cur, int idx, vector<int>
   for(auto&val : cur->valueList_) {
     if(val->isNumber_) {
       val->value_->generate(irBuilder);
-      cout << "a\n";
-      cout << irBuilder->getTmpVal()->print() << endl;
       // ans.emplace_back(dynamic_cast<Constant*>(irBuilder->getTmpVal()));
       ans.emplace_back(irBuilder->getTmpVal());
       if(++cnt == remain) cnt=0;
@@ -347,10 +345,10 @@ void Root::generate(IRBuilder *irBuilder) {
   irBuilder->setScope(scope_);
   addPut(irBuilder, "putint" , scope_, Type::getVoidType(c),{Type::getInt32Type(c)});
   addPut(irBuilder, "putch" , scope_, Type::getVoidType(c),{Type::getInt32Type(c)});
-  // addPut(irBuilder, "putarray" , scope_, Type::getVoidType(c),{Type::getInt32Type(c),Type::getArrayType(c,Type::getInt32Type(c),-1)});
+  // addPut(irBuilder, "putarray" , scope_, Type::getVoidType(c),{Type::getInt32Type(c),Type::getArrayType(c,Type::getInt32Type(c),1)});
   addPut(irBuilder, "getint" , scope_, Type::getInt32Type(c),{});
   addPut(irBuilder, "getch" , scope_, Type::getInt32Type(c),{});
-  // addPut(irBuilder, "getarray" , scope_, Type::getArrayType(c,Type::getInt32Type(c),-1),{});
+  // addPut(irBuilder, "getarray" , scope_, Type::getArrayType(c,Type::getInt32Type(c),1),{});
   for (auto &decl : this->declareStatement_) {
     decl->generate(irBuilder);
   }
@@ -364,6 +362,7 @@ void VarDeclare::generate(IRBuilder *irBuilder) {
   Context& context = irBuilder->getContext();
   Type *type = type_ == SysType::INT ? context.Int32Type : context.FloatType;
   Value *value = nullptr;  
+  // GlobalVar
   if (irBuilder->getScope()->parent == nullptr) {
     Constant *constant = nullptr;
     if (value_) {

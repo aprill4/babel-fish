@@ -137,7 +137,6 @@ public:
 
 public:
   Scope *parent;
-  std::map<std::string, Declare *> varDeclares_;
   std::map<std::string, Value *> DeclIR;
   std::map<std::string, FunctionDefinition *> funcDeclares_;
   std::map<FunctionDefinition *, Value *> funcIR;

@@ -69,8 +69,6 @@ CompUnit: CompUnit Decl {
             $$ = $1; 
             $$->declareStatement_.emplace_back($2); 
             if($$->scope_ == nullptr) $$->scope_ = new Scope();
-            for(auto&declare : $2->declares_)
-                $$->scope_->varDeclares_[declare->identifier_->id_] = declare;
       }
       | CompUnit FuncDef { 
             $$ = $1; 
@@ -84,8 +82,6 @@ CompUnit: CompUnit Decl {
             $$ = root; 
             $$->declareStatement_.emplace_back($1);
             if($$->scope_ == nullptr) $$->scope_ = new Scope();
-            for(auto&declare : $1->declares_)
-                $$->scope_->varDeclares_[declare->identifier_->id_] = declare;
       }
       | FuncDef { 
             root = new Root(); 
@@ -255,28 +251,21 @@ FuncDef: BType Ident LEFT_PARENTHESES RIGHT_PARENTHESES Block {
       }
       | BType Ident LEFT_PARENTHESES FuncFParams RIGHT_PARENTHESES Block { 
             $$ = new FunctionDefinition($1, $2, $4, $6); 
-            for(auto&arg : $4->list_) 
-                $$->body_->scope_->varDeclares_[arg->identifier_->id_] = arg;
       }
       | VOID Ident LEFT_PARENTHESES RIGHT_PARENTHESES Block { 
             $$ = new FunctionDefinition(SysType::VOID, $2, new FormalArgumentList(), $5); 
       }
       | VOID Ident LEFT_PARENTHESES FuncFParams RIGHT_PARENTHESES Block { 
             $$ = new FunctionDefinition(SysType::VOID, $2, $4, $6); 
-            for(auto&arg : $4->list_) 
-                $$->body_->scope_->varDeclares_[arg->identifier_->id_] = arg;
       }
       ;
 
 FuncFParams: FuncFParam { 
-            // $$ = new std::vector<FormalArgument*>();
-            // $$->emplace_back($1);
             $$ = new FormalArgumentList(); 
             $$->list_.emplace_back($1); 
       }
       | FuncFParams COMMA FuncFParam { 
             $$ = $1;
-            // $$->emplace_back($3);
             $$->list_.emplace_back($3); 
       }
       ;
@@ -305,12 +294,8 @@ Block: LEFT_BRACES RIGHT_BRACES { $$ = new Block();
      | LEFT_BRACES BlockItems RIGHT_BRACES { 
             $$ = $2; 
             if($$->scope_ == nullptr) $$->scope_ = new Scope();
-            for(auto&stmt : $2->statements_)
-                if(stmt->statement_type() == StmtType::DECL) {
-                  for(auto&declare : dynamic_cast<DeclareStatement*>(stmt)->declares_)
-                        $$->scope_->varDeclares_[declare->identifier_->id_] = declare;
-                }
-                else if(stmt->statement_type() == StmtType::BLOCK) {
+            for(auto&stmt : $2->statements_) {
+                if(stmt->statement_type() == StmtType::BLOCK) {
                   dynamic_cast<Block*>(stmt)->scope_->parent = $$->scope_;
                 }
                 else if(stmt->statement_type() == StmtType::IFELSE) {
@@ -322,18 +307,17 @@ Block: LEFT_BRACES RIGHT_BRACES { $$ = new Block();
                   while_stmt->scope_->parent = $$->scope_;
                 }
                 else continue;
+            }
       }
      ;
 
 BlockItems: BlockItem { 
             $$ = new Block(); 
-            if ($1 != nullptr)
-                  $$->statements_.emplace_back($1); 
+            if ($1 != nullptr) $$->statements_.emplace_back($1); 
       }
       | BlockItems BlockItem { 
             $$ = $1; 
-            if ($1 != nullptr)
-                  $$->statements_.emplace_back($2); 
+            if ($1 != nullptr) $$->statements_.emplace_back($2); 
       }
       ;
 
