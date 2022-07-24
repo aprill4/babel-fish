@@ -39,7 +39,7 @@ bool force_trans(IRBuilder *irBuilder, Value* &lhs, Value* &rhs) {
   return is_float;
 }
 
-void parse_nest_array(vector<Constant *>&ans, ArrayValue *cur, int idx, vector<int>&nums, bool isInt, IRBuilder *irBuilder){
+void parse_nest_array(vector<Value *>&ans, ArrayValue *cur, int idx, vector<int>&nums, bool isInt, IRBuilder *irBuilder){
   int remain = (idx == nums.size()-1) ? 1 : nums[idx+1], 
       expect = nums[idx], 
       cnt = 0,
@@ -49,7 +49,10 @@ void parse_nest_array(vector<Constant *>&ans, ArrayValue *cur, int idx, vector<i
   for(auto&val : cur->valueList_) {
     if(val->isNumber_) {
       val->value_->generate(irBuilder);
-      ans.emplace_back(dynamic_cast<Constant*>(irBuilder->getTmpVal()));
+      cout << "a\n";
+      cout << irBuilder->getTmpVal()->print() << endl;
+      // ans.emplace_back(dynamic_cast<Constant*>(irBuilder->getTmpVal()));
+      ans.emplace_back(irBuilder->getTmpVal());
       if(++cnt == remain) cnt=0;
     }
     else {
@@ -67,8 +70,8 @@ void parse_nest_array(vector<Constant *>&ans, ArrayValue *cur, int idx, vector<i
 
 Value *find_symbol(Scope *scope, std::string symbol, bool is_var) {
   while (scope){
-    if (is_var && scope->varDeclares_.count(symbol))
-      return scope->DeclIR[scope->varDeclares_[symbol]];
+    if (is_var && scope->DeclIR.count(symbol))
+      return scope->DeclIR[symbol];
     else if (!is_var && scope->funcDeclares_.count(symbol))
       return scope->funcIR[scope->funcDeclares_[symbol]];
     else
@@ -344,8 +347,10 @@ void Root::generate(IRBuilder *irBuilder) {
   irBuilder->setScope(scope_);
   addPut(irBuilder, "putint" , scope_, Type::getVoidType(c),{Type::getInt32Type(c)});
   addPut(irBuilder, "putch" , scope_, Type::getVoidType(c),{Type::getInt32Type(c)});
+  // addPut(irBuilder, "putarray" , scope_, Type::getVoidType(c),{Type::getInt32Type(c),Type::getArrayType(c,Type::getInt32Type(c),-1)});
   addPut(irBuilder, "getint" , scope_, Type::getInt32Type(c),{});
   addPut(irBuilder, "getch" , scope_, Type::getInt32Type(c),{});
+  // addPut(irBuilder, "getarray" , scope_, Type::getArrayType(c,Type::getInt32Type(c),-1),{});
   for (auto &decl : this->declareStatement_) {
     decl->generate(irBuilder);
   }
@@ -401,14 +406,30 @@ void VarDeclare::generate(IRBuilder *irBuilder) {
     } 
   }
   else {
-    value = AllocaInst::Create(context,type,
-                       irBuilder->getBasicBlock(), "");
-    if(value_) {
-      value_->generate(irBuilder);
-      StoreInst::Create(context, irBuilder->getTmpVal(), value, irBuilder->getBasicBlock());
+    if (isConst_) {
+      value = AllocaInst::Create(context,type,
+                  irBuilder->getBasicBlock(), "");
+      if (value_) {
+        value_->generate(irBuilder);
+        auto val = irBuilder->getTmpVal(); 
+        StoreInst::Create(context, val, value, irBuilder->getBasicBlock());      
+        auto init_val = val->getType()->isIntegerType() ? dynamic_cast<ConstantInt*>(val)->getValue(): dynamic_cast<ConstantFloat*>(val)->getValue();
+        if (val->getType()->isIntegerType()) {
+          value = ConstantInt::get(context, type, init_val);
+        } else if (val->getType()->isFloatType()) {
+          value = ConstantFloat::get(context, init_val);
+        }
+      }
+    }else {
+      value = AllocaInst::Create(context,type,
+                        irBuilder->getBasicBlock(), "");
+      if(value_) {
+        value_->generate(irBuilder);
+        StoreInst::Create(context, irBuilder->getTmpVal(), value, irBuilder->getBasicBlock());
+      }
     }
   }
-  irBuilder->getScope()->DeclIR[this] = value;
+  irBuilder->getScope()->DeclIR[identifier_->id_] = value;
 }
 
 void ArrayDeclare::generate(IRBuilder *irBuilder) {
@@ -423,7 +444,11 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
   int len = identifier_->dimension_.size();
   for(int u = 0; u < len; u++) {
     identifier_->dimension_[u]->generate(irBuilder);
-    dimensions.emplace_back(dynamic_cast<ConstantInt*>(irBuilder->getTmpVal())->getValue());
+    auto tmp = irBuilder->getTmpVal();
+    if (dynamic_cast<GlobalVariable*>(tmp)) {
+      tmp = dynamic_cast<GlobalVariable*>(tmp)->getInitValue();
+    }
+    dimensions.emplace_back(dynamic_cast<ConstantInt*>(tmp)->getValue());
     total *= dimensions.back();
   }
   nums = dimensions;
@@ -440,7 +465,7 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
     }
   }
   ArrayType *arrType = latter;
-  vector<Constant*>vals;
+  vector<Value*> vals;
   if(value_)  
     parse_nest_array(vals, value_, 0, nums, type_ == SysType::INT, irBuilder);
   else 
@@ -474,7 +499,7 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
       }
     }
   }
-  irBuilder->getScope()->DeclIR[this] = value;
+  irBuilder->getScope()->DeclIR[identifier_->id_] = value;
 }
 
 void FunctionDefinition::generate(IRBuilder *irBuilder) {
@@ -535,7 +560,7 @@ void FunctionDefinition::generate(IRBuilder *irBuilder) {
                                argsType[u]->isFloatType() ? context.FloatType : context.Int32Type,
                                irBuilder->getBasicBlock());
     } 
-    irBuilder->getScope()->DeclIR[formalArgs_->list_[u]] = ptr;
+    irBuilder->getScope()->DeclIR[formalArgs_->list_[u]->identifier_->id_] = ptr;
   }
   body_->generate(irBuilder);
   irBuilder->setScope(irBuilder->getScope()->parent);
@@ -566,7 +591,11 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
                   dynamic_cast<ConstantFloat*>(lhs)->getValue() + dynamic_cast<ConstantFloat*>(rhs)->getValue());
         }
 				else {
-          if(irBuilder->getScope()->parent) 
+          if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(rhs)) {
+            res = ConstantInt::get(context, context.Int32Type,
+                  dynamic_cast<ConstantInt*>(lhs)->getValue() + dynamic_cast<ConstantInt*>(rhs)->getValue());
+          }
+          else if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateAdd(context, lhs, rhs, irBuilder->getBasicBlock());
           else 
             res = ConstantInt::get(context, context.Int32Type,
@@ -582,7 +611,11 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
                   dynamic_cast<ConstantFloat*>(lhs)->getValue() - dynamic_cast<ConstantFloat*>(rhs)->getValue());
         }
 				else {
-          if(irBuilder->getScope()->parent) 
+          if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(rhs)) {
+            res = ConstantInt::get(context, context.Int32Type,
+                  dynamic_cast<ConstantInt*>(lhs)->getValue() - dynamic_cast<ConstantInt*>(rhs)->getValue());
+          }
+          else if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateSub(context, lhs, rhs, irBuilder->getBasicBlock());
           else 
             res = ConstantInt::get(context, context.Int32Type,
@@ -598,7 +631,11 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
                   dynamic_cast<ConstantFloat*>(lhs)->getValue() * dynamic_cast<ConstantFloat*>(rhs)->getValue());
         }
 				else {
-          if(irBuilder->getScope()->parent) 
+          if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(rhs)) {
+            res = ConstantInt::get(context, context.Int32Type,
+                  dynamic_cast<ConstantInt*>(lhs)->getValue() * dynamic_cast<ConstantInt*>(rhs)->getValue());
+          }
+          else if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateMul(context, lhs, rhs, irBuilder->getBasicBlock());
           else 
             res = ConstantInt::get(context, context.Int32Type,
@@ -614,7 +651,11 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
                   dynamic_cast<ConstantFloat*>(lhs)->getValue() / dynamic_cast<ConstantFloat*>(rhs)->getValue());
         }
 				else {
-          if(irBuilder->getScope()->parent) 
+          if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(rhs)) {
+            res = ConstantInt::get(context, context.Int32Type,
+                  dynamic_cast<ConstantInt*>(lhs)->getValue() / dynamic_cast<ConstantInt*>(rhs)->getValue());
+          }
+          else if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateSdiv(context, lhs, rhs, irBuilder->getBasicBlock());
           else 
             res = ConstantInt::get(context, context.Int32Type,
@@ -622,7 +663,11 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
         }
 				break;
 			case BinaryOp::MOD:
-         if(irBuilder->getScope()->parent) 
+          if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(rhs)) {
+            res = ConstantInt::get(context, context.Int32Type,
+                  dynamic_cast<ConstantInt*>(lhs)->getValue() % dynamic_cast<ConstantInt*>(rhs)->getValue());
+          }
+          else if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateMod(context, lhs, rhs, irBuilder->getBasicBlock());
           else 
             res = ConstantInt::get(context, context.Int32Type,
@@ -725,14 +770,22 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
         } 
         break;
 			case BinaryOp::AND:
-        if(irBuilder->getScope()->parent) 
+        if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(rhs)) {
+            res = ConstantInt::get(context, context.Int32Type,
+                  dynamic_cast<ConstantInt*>(lhs)->getValue() && dynamic_cast<ConstantInt*>(rhs)->getValue());
+        }
+        else if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateAnd(context, lhs, rhs, irBuilder->getBasicBlock());
         else 
             res = ConstantInt::get(context, context.Int1Type,
                   dynamic_cast<ConstantInt*>(lhs)->getValue() && dynamic_cast<ConstantInt*>(rhs)->getValue());
         break;
 			case BinaryOp::OR:
-        if(irBuilder->getScope()->parent) 
+        if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(rhs)) {
+            res = ConstantInt::get(context, context.Int32Type,
+                  dynamic_cast<ConstantInt*>(lhs)->getValue() || dynamic_cast<ConstantInt*>(rhs)->getValue());
+        }
+        else if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateOr(context, lhs, rhs, irBuilder->getBasicBlock());
         else 
             res = ConstantInt::get(context, context.Int1Type,
@@ -740,7 +793,6 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
         break;
       default: break;
 		}
-
     irBuilder->setTmpVal(res);
 }
 
@@ -751,7 +803,6 @@ void UnaryExpression::generate(IRBuilder *irBuilder) {
   if (dynamic_cast<GlobalVariable*>(rhs)) {
     rhs = dynamic_cast<GlobalVariable*>(rhs)->getInitValue();
   }
-  cout << rhs->getType()->getTypeName() << endl;
   switch(op_){
 			case UnaryOp::NEGATIVE:
         if(rhs->getType()->isFloatType()) {
@@ -813,17 +864,17 @@ void LValExpression::generate(IRBuilder *irBuilder) {
   }
   else {
     if(identifier_->dimension_.empty()) {
-      auto target = scope->DeclIR[scope->varDeclares_[identifier_->id_]];
+      auto target = scope->DeclIR[identifier_->id_];
       irBuilder->setTmpVal(target);
     }
     else {
-      auto tmp = scope->DeclIR[scope->varDeclares_[identifier_->id_]];
+      auto tmp = scope->DeclIR[identifier_->id_];
       ConstantArray * arr;
-      if (tmp->getType()->isPointerType()) {
+      if (dynamic_cast<GlobalVariable*>(tmp)) {
         arr = dynamic_cast<ConstantArray*>(dynamic_cast<GlobalVariable*>(tmp)->getInitValue());
       }
       else arr = dynamic_cast<ConstantArray*>(tmp);
-      vector<int>indice;
+      vector<int> indice;
       for(auto&idx : identifier_->dimension_) {
         idx->generate(irBuilder);
         indice.emplace_back(dynamic_cast<ConstantInt*>(irBuilder->getTmpVal())->getValue());
@@ -907,6 +958,7 @@ void IfElseStatement::generate(IRBuilder *irBuilder) {
     false_bb->eraseFromParent();
   }
   irBuilder->setBasicBlock(next_bb);
+  irBuilder->setScope(scope_->parent);
 }
 
 void WhileStatement::generate(IRBuilder *irBuilder) {
@@ -936,6 +988,7 @@ void WhileStatement::generate(IRBuilder *irBuilder) {
     BranchInst::Create(c, condVal, while_bb, next_bb, irBuilder->getBasicBlock());    
   }
   irBuilder->setBasicBlock(next_bb);
+  irBuilder->setScope(scope_->parent);
 }
 
 void ReturnStatement::generate(IRBuilder *irBuilder) {
