@@ -1,7 +1,7 @@
 #include "ConstantArray.h"
 
 ConstantArray::ConstantArray(Context &c, ArrayType *type,
-                             const std::vector<Constant *> &value,
+                             const std::vector<Value *> &value,
                              const std::vector<int> &dimension)
     : Constant(c, type, "", value.size()), value_(value), dimension_(dimension) {
   for (int i = 0; i < value.size(); i++) {
@@ -10,11 +10,11 @@ ConstantArray::ConstantArray(Context &c, ArrayType *type,
 }
 
 ConstantArray *ConstantArray::get(Context &c, ArrayType *type,
-                                  const std::vector<Constant *> &value, const std::vector<int> &dimension) {
+                                  const std::vector<Value *> &value, const std::vector<int> &dimension) {
   return new ConstantArray(c, type, value, dimension);
 }
 
-Constant *ConstantArray::getElementValue(int idx) { return value_[idx]; }
+Value *ConstantArray::getElementValue(int idx) { return value_[idx]; }
 
 std::string ConstantArray::print() {
   std::string const_ir;
