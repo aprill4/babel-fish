@@ -6,7 +6,7 @@ extern int yyparse();
 extern Root *root;
 int main(void) {
   yyparse();
-  root->print();
+  // root->print();
   IRBuilder * irBuilder = new IRBuilder();
   root->generate(irBuilder);
   cout << irBuilder->getModule()->print() << endl;
