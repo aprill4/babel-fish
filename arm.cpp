@@ -1,11 +1,6 @@
 #include "arm.h"
 #include "IR.h"
 
-char *mreg_str[] = {
-    "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
-    "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12", "s13", "s14", "s15",
-    "fp", "ip", "sp", "lr", "pc"
-};
 
 void MachineModule::print(FILE *fp) {
     for (auto func: functions) {
@@ -26,24 +21,144 @@ void MachineBasicBlock::print(FILE *fp) {
 }
 
 char *IImm::print() {
+    char *str = new char[12];
+    sprintf(str, "#%d", value);
+    return str;
 }
 
 char *FImm::print() {
-    //char *str = '#' + 
-    //return str;
+    char *str = new char[20];
+    sprintf(str, "#%e", value);
+    return str;
 }
 
 char *VReg::print() {
-    //char *str = 
+    char *str = new char[12];
+    sprintf(str, "v%d", id);
+    return str;
+}
+
+char *MReg::print() {
+    char *mreg_str[] = {
+        "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
+        "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12", "s13", "s14", "s15",
+    };
+
+    return mreg_str[reg];
+}
+
+char *Symbol::print() {
+    return (char *)name.c_str();
+}
+
+void MachineInst::print_shift(FILE *fp) {
+    char *shift_str[] = {
+        "", "lsl", "lsr", "asr", "ror"
+    };
+
+    if (shift_type != NoShift) {
+        fprintf(fp, ", %s #%d", shift_str[shift_type], shift_length);
+    }
+    fprintf(fp, "\n");
+}
+
+char *MachineInst::get_cond() {
+    char *cond_str[] = {
+        "", "le", "lt", "ge", "gt", "eq", "ne"
+    };
+    return cond_str[cond];
+
 }
 
 void Binary::print(FILE *fp) {
     char *op_str[] = {
         "add", "sub", "mul", "div", "fadd", "fsub", "fmul", "fdiv", "lsl", "lsr", "asl", "asr"
     };
-    fprintf(fp, "%s %s, %s, %s\n", op_str[kind], mreg_str[(MReg *)dst->reg], lhs->name.c_str(), rhs->name.c_str());
+    fprintf(fp, "%s%s %s, %s, %s", op_str[kind], get_cond(), dst->print(), lhs->print(), rhs->print());
 }
 
-void emit_asm (MachineModule *mm) {
-    mm->print();
+void ICmp::print(FILE *fp) {
+    fprintf(fp, "cmp%s %s, %s", get_cond(), lhs->print(), rhs->print());
+}
+
+void FCmp::print(FILE *fp) {
+    fprintf(fp, "fcmp%s %s, %s", get_cond(), lhs->print(), rhs->print());
+}
+
+void IMov::print(FILE *fp) {
+    if (dynamic_cast<Symbol *>(src)) {
+        fprintf(fp, "movw%s %s, #:lower:%s", dst->print(), src->print());
+        fprintf(fp, "movt%s %s, #:upper:%s", dst->print(), src->print());
+    } else {
+        fprintf(fp, "mov%s %s, %s", get_cond(), dst->print(), src->print());
+    }
+}
+
+void FMov::print(FILE *fp) {
+    if (dynamic_cast<Symbol *>(src)) {
+        fprintf(fp, "movw%s %s, #:lower:%s", dst->print(), src->print());
+        fprintf(fp, "movt%s %s, #:upper:%s", dst->print(), src->print());
+    } else {
+        fprintf(fp, "vmov.f32%s %s, %s", get_cond(), dst->print(), src->print());
+    }
+}
+
+void ILoad::print(FILE *fp) {
+    if (offset) {
+        fprintf(fp, "ldr%s %s, [%s, %s]", get_cond(), dst->print(), base->print(), offset->print());
+    } else {
+        fprintf(fp, "ldr%s %s, [%s]", get_cond(), dst->print(), base->print());
+    }
+    //index
+
+}
+
+void IStore::print(FILE *fp) {
+
+}
+
+void FLoad::print(FILE *fp) {
+
+}
+
+void FStore::print(FILE *fp) {
+
+}
+
+void IClz::print(FILE *fp) {
+    fprintf(fp, "clz%s %s, %s", get_cond(), dst->print(), src->print());
+}
+
+void FNeg::print(FILE *fp) {
+
+}
+
+void F2ICvt::print(FILE *fp) {
+}
+
+void I2FCvt::print(FILE *fp) {
+}
+
+void Branch::print(FILE *fp) {
+
+}
+
+void Call::print(FILE *fp) {
+
+}
+
+void Return::print(FILE *fp) {
+    fprintf(fp, "bx lr");
+}
+
+void Push::print(FILE *fp) {
+    
+}
+
+void Pop::print(FILE *fp) {
+
+}
+
+void emit_asm (MachineModule *mm, FILE *fp) {
+    mm->print(fp);
 }

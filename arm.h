@@ -29,6 +29,8 @@ struct MachineInst {
     int shift_length;
 
     virtual void print(FILE *fp);
+    void print_shift(FILE *fp);
+    char *get_cond();
 };
 
 struct Binary : MachineInst {
@@ -59,7 +61,7 @@ struct FMov : MachineInst {
     void print(FILE *fp);
 };
 
-struct Load : MachineInst {
+struct ILoad : MachineInst {
     MachineOperand *dst, *base, *offset;
     // PostIndex adds index_length to the base after addressing
     // PreIndex adds index_length to the base before addressing
@@ -69,7 +71,27 @@ struct Load : MachineInst {
     void print(FILE *fp);
 };
 
-struct Store : MachineInst {
+struct IStore : MachineInst {
+    MachineOperand *src, *base, *offset;
+    // PostIndex adds index_length to the base after addressing
+    // PreIndex adds index_length to the base before addressing
+    enum Index { NoIndex, PostIndex, PreIndex };
+    Index index_type = NoIndex;
+    int index_length;
+    void print(FILE *fp);
+};
+
+struct FLoad : MachineInst {
+    MachineOperand *dst, *base, *offset;
+    // PostIndex adds index_length to the base after addressing
+    // PreIndex adds index_length to the base before addressing
+    enum Index { NoIndex, PostIndex, PreIndex };
+    Index index_type = NoIndex;
+    int index_length;
+    void print(FILE *fp);
+};
+
+struct FStore : MachineInst {
     MachineOperand *src, *base, *offset;
     // PostIndex adds index_length to the base after addressing
     // PreIndex adds index_length to the base before addressing
@@ -89,7 +111,12 @@ struct FNeg : MachineInst {
     void print(FILE *fp);
 };
 
-struct FCvt : MachineInst {
+struct F2ICvt : MachineInst {
+    MachineOperand *dst, *src;
+    void print(FILE *fp);
+};
+
+struct I2FCvt : MachineInst {
     MachineOperand *dst, *src;
     void print(FILE *fp);
 };
@@ -104,14 +131,18 @@ struct Call : MachineInst {
     void print(FILE *fp);
 };
 
-struct Return : MachineInst {};
+struct Return : MachineInst {
+    void print(FILE *fp);
+};
 
 struct Push : MachineInst {
     std::vector<MReg *> regs;
+    void print(FILE *fp);
 };
 
 struct Pop : MachineInst {
     std::vector<MReg *> regs;
+    void print(FILE *fp);
 };
 
 struct MachineOperand {
