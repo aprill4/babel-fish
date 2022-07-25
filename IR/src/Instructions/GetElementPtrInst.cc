@@ -1,5 +1,6 @@
 #include "Instructions/GetElementPtrInst.h"
 #include "BasicBlock.h"
+#include "ConstantInt.h"
 #include "Types/ArrayType.h"
 #include "Types/PointerType.h"
 #include "Types/Type.h"
@@ -26,7 +27,15 @@ GetElementPtrInst *GetElementPtrInst::Create(Context &context, Value *ptr,
                                              std::vector<Value *> idxList,
                                              BasicBlock *insertedBlock,
                                              std::string name) {
-  return new GetElementPtrInst(context, ptr, idxList, insertedBlock, name);
+  std::vector<Value *> temp;
+  for (auto i : idxList) {
+    if (dynamic_cast<ConstantInt*>(i)) {
+      temp.emplace_back(ConstantInt::get(context, Type::getInt32Type(context), dynamic_cast<ConstantInt*>(i)->getValue()));
+    } else {
+      temp.emplace_back(i);
+    }
+  }
+  return new GetElementPtrInst(context, ptr, temp, insertedBlock, name);
 }
 
 Type *GetElementPtrInst::computeElementType(Value *ptr,

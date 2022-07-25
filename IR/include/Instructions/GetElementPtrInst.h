@@ -13,7 +13,7 @@ public:
 public:
   static GetElementPtrInst *Create(Context &context, Value *ptr,
                                    std::vector<Value *> idxList,
-                                   BasicBlock *insertedBlock, std::string name = "ptr_");
+                                   BasicBlock *insertedBlock, std::string name = "v");
 
 private:
   Type *elementType_;

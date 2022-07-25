@@ -1,4 +1,5 @@
 #include "ConstantArray.h"
+#include "Exception.h"
 
 ConstantArray::ConstantArray(Context &c, ArrayType *type,
                              const std::vector<Value *> &value,
@@ -14,7 +15,12 @@ ConstantArray *ConstantArray::get(Context &c, ArrayType *type,
   return new ConstantArray(c, type, value, dimension);
 }
 
-Value *ConstantArray::getElementValue(int idx) { return value_[idx]; }
+Value *ConstantArray::getElementValue(int idx) { 
+  if (idx >= value_.size()) {
+    throw Exception("out of array bound");
+  }
+  return value_[idx]; 
+}
 
 std::string ConstantArray::print() {
   std::string const_ir;

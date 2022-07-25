@@ -132,8 +132,9 @@ public:
 
 class Scope {
 public:
-  Scope() { parent = nullptr; }
+  Scope() : parent(nullptr) {}
   void print();
+  bool inGlobal() { return parent == nullptr; }
 
 public:
   Scope *parent;

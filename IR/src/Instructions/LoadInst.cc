@@ -16,6 +16,13 @@ LoadInst *LoadInst::Create(Context &c, Type *type, Value *ptr, BasicBlock *inser
   return new LoadInst(c, type, ptr, insertedBlock, name);
 }
 
+LoadInst *LoadInst::Create(Context &c, Value *ptr, BasicBlock *insertedBlock, std::string name) {
+  assert(ptr->getType()->isPointerType());
+  return new LoadInst(c, ptr->getType()->getPtrElementType(), ptr, insertedBlock, name);
+}
+
+
+
 std::string LoadInst::print() {
   std::string IR;
   char IRtemp[100];

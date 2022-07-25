@@ -1,4 +1,5 @@
 #include "ast.h"
+#include "Exception.h"
 #include "IRBuilder.h"
 #include <variant>
 #include "syntax_analyzer.tab.h"
@@ -40,16 +41,18 @@ bool force_trans(IRBuilder *irBuilder, Value* &lhs, Value* &rhs) {
 }
 
 void parse_nest_array(vector<Value *>&ans, ArrayValue *cur, int idx, vector<int>&nums, bool isInt, IRBuilder *irBuilder){
-  int remain = (idx == nums.size()-1) ? 1 : nums[idx+1], 
+  Context &context = irBuilder->getContext();
+  int remain = (idx == nums.size() - 1) ? 1 : nums[idx+1], 
       expect = nums[idx], 
       cnt = 0,
       original = ans.size();
-  Context &context = irBuilder->getContext();
 
   for(auto&val : cur->valueList_) {
-    if(val->isNumber_) {
+    if (val->isNumber_) {
       val->value_->generate(irBuilder);
-      // ans.emplace_back(dynamic_cast<Constant*>(irBuilder->getTmpVal()));
+      if (isInt && irBuilder->getTmpVal()->getType()->isFloatType()) {
+        throw Exception("array type is int, element isn't float");
+      }
       ans.emplace_back(irBuilder->getTmpVal());
       if(++cnt == remain) cnt=0;
     }
@@ -369,8 +372,7 @@ void VarDeclare::generate(IRBuilder *irBuilder) {
   Context& context = irBuilder->getContext();
   Type *type = (type_ == SysType::INT) ? context.Int32Type : context.FloatType;
   Value *value = nullptr;  
-  // GlobalVar
-  if (irBuilder->getScope()->parent == nullptr) {
+  if (irBuilder->getScope()->inGlobal()) {
     Constant *constant = nullptr;
     if (value_) {
       value_->generate(irBuilder);
@@ -382,13 +384,9 @@ void VarDeclare::generate(IRBuilder *irBuilder) {
                           ? dynamic_cast<ConstantInt *>(val)->getValue()
                           : dynamic_cast<ConstantFloat *>(val)->getValue();
       if (type_ == SysType::INT) {
-        constant = new ConstantInt(context,
-                                  context.Int32Type,
-                                  init_val);
+        constant = new ConstantInt(context, context.Int32Type, init_val);
       } else {
-        constant = new ConstantFloat(context,
-                                    context.FloatType,
-                                    init_val);
+        constant = new ConstantFloat(context, context.FloatType, init_val);
       }
       value = GlobalVariable::Create(
               context,
@@ -403,28 +401,45 @@ void VarDeclare::generate(IRBuilder *irBuilder) {
               identifier_->id_, isConst_,
               new ConstantZero(context, type),
               irBuilder->getModule());    
-    } 
-  }
-  else {
+    }
+  } else {
     if (isConst_) {
-      value = AllocaInst::Create(context, type, irBuilder->getBasicBlock(), "");
+      value = AllocaInst::Create(context, type, irBuilder->getBasicBlock());
       if (value_) {
         value_->generate(irBuilder);
         auto val = irBuilder->getTmpVal(); 
-        StoreInst::Create(context, val, value, irBuilder->getBasicBlock());      
-        auto init_val = val->getType()->isIntegerType() ? dynamic_cast<ConstantInt*>(val)->getValue(): dynamic_cast<ConstantFloat*>(val)->getValue();
+        StoreInst::Create(context, val, value, irBuilder->getBasicBlock());
+        if (val->getType()->isPointerType()) {
+          throw Exception("var init_val isn't const");
+        }
+        auto init_val = val->getType()->isIntegerType() ? dynamic_cast<ConstantInt*>(val)->getValue() : 
+                dynamic_cast<ConstantFloat*>(val)->getValue();
         if (val->getType()->isIntegerType()) {
           value = ConstantInt::get(context, type, init_val);
         } else if (val->getType()->isFloatType()) {
           value = ConstantFloat::get(context, init_val);
         }
+      } else {
+          value = ConstantZero::get(context, type); 
       }
     } else {
-      value = AllocaInst::Create(context,type,
-                        irBuilder->getBasicBlock(), "");
+      value = AllocaInst::Create(context, type, irBuilder->getBasicBlock());
       if(value_) {
         value_->generate(irBuilder);
-        StoreInst::Create(context, irBuilder->getTmpVal(), value, irBuilder->getBasicBlock());
+        auto init_val = irBuilder->getTmpVal();
+        if (init_val->getType()->isPointerType()) {
+          init_val = LoadInst::Create(context, init_val, irBuilder->getBasicBlock());
+        }
+        if (init_val->getType() != type) {
+          if (type->isIntegerType()) {
+            init_val = FpToSiInst::Create(context, context.Int32Type, init_val, irBuilder->getBasicBlock());
+          } else {
+            init_val = SiToFpInst::Create(context, context.FloatType, init_val, irBuilder->getBasicBlock());
+          }
+        }
+        StoreInst::Create(context, init_val, value, irBuilder->getBasicBlock());
+      } else {
+        StoreInst::Create(context, ConstantZero::get(context, type), value, irBuilder->getBasicBlock());        
       }
     }
   }
@@ -445,7 +460,12 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
     identifier_->dimension_[u]->generate(irBuilder);
     auto tmp = irBuilder->getTmpVal();
     if (dynamic_cast<GlobalVariable*>(tmp)) {
+      if (!dynamic_cast<GlobalVariable*>(tmp)->isConst()) {
+        throw Exception("array dimension is not const");    
+      }
       tmp = dynamic_cast<GlobalVariable*>(tmp)->getInitValue();
+    } else if (!dynamic_cast<ConstantInt*>(tmp)) {
+        throw Exception("array dimension is not const");    
     }
     dimensions.emplace_back(dynamic_cast<ConstantInt*>(tmp)->getValue());
     total *= dimensions.back();
@@ -470,7 +490,7 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
   else 
     vals.resize(total, ConstantZero::get(context, type));
 
-  if(irBuilder->getScope()->parent == nullptr) {
+  if(irBuilder->getScope()->inGlobal()) {
     value = GlobalVariable::Create(context, arrType, identifier_->id_, isConst_,
                                    ConstantArray::get(context, arrType, vals, dimensions),
                                    irBuilder->getModule());
@@ -478,14 +498,24 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
   else {
     BasicBlock *bb = irBuilder->getBasicBlock();
     value = AllocaInst::Create(context, arrType, irBuilder->getBasicBlock());
-    vector<Value*> idxList(len, ConstantInt::get(context, context.Int32Type,0));
+    vector<Value*> idxList;
+    for (int i = 0; i < len; i++) {
+      idxList.emplace_back(ConstantInt::get(context, context.Int32Type,0));
+    }
     // TODO : call the memset function in C
     Value* tmp;
     for(int u = 0; u < total; u++) {
       tmp = GetElementPtrInst::Create(context, value, idxList, bb);
       auto temp_val = vals[u];
       if (temp_val->getType()->isPointerType()) {
-        temp_val = LoadInst::Create(context, type, temp_val, irBuilder->getBasicBlock());
+        temp_val = LoadInst::Create(context, temp_val, bb);
+      }
+      if (temp_val->getType() != type) {
+        if (type->isIntegerType()) {
+          temp_val = FpToSiInst::Create(context, context.Int32Type, temp_val, irBuilder->getBasicBlock());
+        } else {
+          temp_val = SiToFpInst::Create(context, context.FloatType, temp_val, irBuilder->getBasicBlock());
+        }
       }
       StoreInst::Create(context, temp_val, tmp, bb);
       bool incr = true;
@@ -571,20 +601,24 @@ void FunctionDefinition::generate(IRBuilder *irBuilder) {
 
 void BinaryExpression::generate(IRBuilder *irBuilder) {
   Context &context = irBuilder->getContext();
-  Value *lhs,*rhs,*res;
+  Value *lhs, *rhs, *res;
   lhs_->generate(irBuilder);
   lhs = irBuilder->getTmpVal();
   if (lhs->getType()->isPointerType()) {
     if (dynamic_cast<GlobalVariable*>(lhs) && dynamic_cast<GlobalVariable*>(lhs)->isConst()) {
       lhs = dynamic_cast<GlobalVariable*>(lhs)->getInitValue();
+    } else if (irBuilder->getScope()->inGlobal()) {
+      lhs = dynamic_cast<GlobalVariable*>(lhs)->getInitValue();
     } else {
-      lhs = LoadInst::Create(context, lhs->getType()->getPtrElementType(), lhs, irBuilder->getBasicBlock());
+      lhs = LoadInst::Create(context, lhs, irBuilder->getBasicBlock());
     }
   }
   rhs_->generate(irBuilder);
   rhs =irBuilder->getTmpVal(); 
   if (rhs->getType()->isPointerType()) {
     if (dynamic_cast<GlobalVariable*>(rhs) && dynamic_cast<GlobalVariable*>(rhs)->isConst() ) {
+      rhs = dynamic_cast<GlobalVariable*>(rhs)->getInitValue();
+    } else if (irBuilder->getScope()->inGlobal()) {
       rhs = dynamic_cast<GlobalVariable*>(rhs)->getInitValue();
     } else {
       rhs = LoadInst::Create(context, rhs->getType()->getPtrElementType(), rhs, irBuilder->getBasicBlock());
@@ -606,11 +640,8 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
             res = ConstantInt::get(context, context.Int32Type,
                   dynamic_cast<ConstantInt*>(lhs)->getValue() + dynamic_cast<ConstantInt*>(rhs)->getValue());
           }
-          else if(irBuilder->getScope()->parent) 
+          else if(!irBuilder->getScope()->inGlobal()) 
             res = BinaryInst::CreateAdd(context, lhs, rhs, irBuilder->getBasicBlock());
-          else 
-            res = ConstantInt::get(context, context.Int32Type,
-                  dynamic_cast<ConstantInt*>(lhs)->getValue() + dynamic_cast<ConstantInt*>(rhs)->getValue());
         }
 				break;
 			case BinaryOp::SUB:
@@ -628,9 +659,6 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
           }
           else if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateSub(context, lhs, rhs, irBuilder->getBasicBlock());
-          else 
-            res = ConstantInt::get(context, context.Int32Type,
-                  dynamic_cast<ConstantInt*>(lhs)->getValue() - dynamic_cast<ConstantInt*>(rhs)->getValue());
         }
 				break;
 			case BinaryOp::MUL:
@@ -648,9 +676,6 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
           }
           else if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateMul(context, lhs, rhs, irBuilder->getBasicBlock());
-          else 
-            res = ConstantInt::get(context, context.Int32Type,
-                  dynamic_cast<ConstantInt*>(lhs)->getValue() * dynamic_cast<ConstantInt*>(rhs)->getValue());
         }
 				break;
 			case BinaryOp::DIV:
@@ -668,9 +693,6 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
           }
           else if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateSdiv(context, lhs, rhs, irBuilder->getBasicBlock());
-          else 
-            res = ConstantInt::get(context, context.Int32Type,
-                  dynamic_cast<ConstantInt*>(lhs)->getValue() / dynamic_cast<ConstantInt*>(rhs)->getValue());
         }
 				break;
 			case BinaryOp::MOD:
@@ -680,9 +702,6 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
           }
           else if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateMod(context, lhs, rhs, irBuilder->getBasicBlock());
-          else 
-            res = ConstantInt::get(context, context.Int32Type,
-                  dynamic_cast<ConstantInt*>(lhs)->getValue() % dynamic_cast<ConstantInt*>(rhs)->getValue());
 				break;
 			case BinaryOp::LT:
         if(is_float) {
@@ -691,8 +710,7 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
           else 
             res = ConstantInt::get(context, context.Int1Type,
                   dynamic_cast<ConstantFloat*>(lhs)->getValue() < dynamic_cast<ConstantFloat*>(rhs)->getValue());
-        }
-				else {
+        } else {
           if(irBuilder->getScope()->parent) 
             res = IcmpInst::Create(context, IcmpInst::IcmpOp::LT, lhs, rhs, irBuilder->getBasicBlock());
           else 
@@ -707,8 +725,7 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
           else 
             res = ConstantInt::get(context, context.Int1Type,
                   dynamic_cast<ConstantFloat*>(lhs)->getValue() <= dynamic_cast<ConstantFloat*>(rhs)->getValue());
-        }
-				else {
+        } else {
           if(irBuilder->getScope()->parent) 
             res = IcmpInst::Create(context, IcmpInst::IcmpOp::LTE, lhs, rhs, irBuilder->getBasicBlock());
           else 
@@ -723,8 +740,7 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
           else 
             res = ConstantInt::get(context, context.Int1Type,
                   dynamic_cast<ConstantFloat*>(lhs)->getValue() > dynamic_cast<ConstantFloat*>(rhs)->getValue());
-        }
-				else {
+        } else {
           if(irBuilder->getScope()->parent) 
             res = IcmpInst::Create(context, IcmpInst::IcmpOp::GT, lhs, rhs, irBuilder->getBasicBlock());
           else 
@@ -739,8 +755,7 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
           else 
             res = ConstantInt::get(context, context.Int1Type,
                   dynamic_cast<ConstantFloat*>(lhs)->getValue() >= dynamic_cast<ConstantFloat*>(rhs)->getValue());
-        }
-				else {
+        } else {
           if(irBuilder->getScope()->parent) 
             res = IcmpInst::Create(context, IcmpInst::IcmpOp::GTE, lhs, rhs, irBuilder->getBasicBlock());
           else 
@@ -755,8 +770,7 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
           else 
             res = ConstantInt::get(context, context.Int1Type,
                   dynamic_cast<ConstantFloat*>(lhs)->getValue() == dynamic_cast<ConstantFloat*>(rhs)->getValue());
-        }
-				else {
+        } else {
           if(irBuilder->getScope()->parent) 
             res = IcmpInst::Create(context, IcmpInst::IcmpOp::EQ, lhs, rhs, irBuilder->getBasicBlock());
           else 
@@ -771,8 +785,7 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
           else 
             res = ConstantInt::get(context, context.Int1Type,
                   dynamic_cast<ConstantFloat*>(lhs)->getValue() != dynamic_cast<ConstantFloat*>(rhs)->getValue());
-        }
-				else {
+        } else {
           if(irBuilder->getScope()->parent) 
             res = IcmpInst::Create(context, IcmpInst::IcmpOp::NEQ, lhs, rhs, irBuilder->getBasicBlock());
           else 
@@ -787,9 +800,6 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
         }
         else if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateAnd(context, lhs, rhs, irBuilder->getBasicBlock());
-        else 
-            res = ConstantInt::get(context, context.Int1Type,
-                  dynamic_cast<ConstantInt*>(lhs)->getValue() && dynamic_cast<ConstantInt*>(rhs)->getValue());
         break;
 			case BinaryOp::OR:
         if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(rhs)) {
@@ -798,9 +808,6 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
         }
         else if(irBuilder->getScope()->parent) 
             res = BinaryInst::CreateOr(context, lhs, rhs, irBuilder->getBasicBlock());
-        else 
-            res = ConstantInt::get(context, context.Int1Type,
-                  dynamic_cast<ConstantInt*>(lhs)->getValue() || dynamic_cast<ConstantInt*>(rhs)->getValue());
         break;
       default: break;
 		}
@@ -811,9 +818,16 @@ void UnaryExpression::generate(IRBuilder *irBuilder) {
   Context &context = irBuilder->getContext();
   rhs_->generate(irBuilder);
   Value *rhs = irBuilder->getTmpVal(), *res;
-  if (dynamic_cast<GlobalVariable*>(rhs)) {
-    rhs = dynamic_cast<GlobalVariable*>(rhs)->getInitValue();
+  if (rhs->getType()->isPointerType()) {
+    if (dynamic_cast<GlobalVariable*>(rhs) && dynamic_cast<GlobalVariable*>(rhs)->isConst() ) {
+      rhs = dynamic_cast<GlobalVariable*>(rhs)->getInitValue();
+    } else if (irBuilder->getScope()->inGlobal()) {
+      rhs = dynamic_cast<GlobalVariable*>(rhs)->getInitValue();
+    } else {
+      rhs = LoadInst::Create(context, rhs->getType()->getPtrElementType(), rhs, irBuilder->getBasicBlock());
+    }
   }
+
   switch(op_){
 			case UnaryOp::NEGATIVE:
         if(rhs->getType()->isFloatType()) {
@@ -858,29 +872,13 @@ void UnaryExpression::generate(IRBuilder *irBuilder) {
 void LValExpression::generate(IRBuilder *irBuilder) {
   Context &context = irBuilder->getContext();
   Scope *scope = irBuilder->getScope();
-  if(irBuilder->getScope()->parent) {
-    Value *ptr = find_symbol(scope, identifier_->id_, true);
-    if(!(identifier_->dimension_.empty())){
-      vector<Value *> idxList;
-      for(auto&idx : identifier_->dimension_) {
-        idx->generate(irBuilder);
-        idxList.emplace_back(irBuilder->getTmpVal());
-      }
-      ptr = GetElementPtrInst::Create(context, 
-                                      ptr, 
-                                      idxList,
-                                      irBuilder->getBasicBlock());
-    }
-    irBuilder->setTmpVal(ptr);
-  }
-  else { // global 
+  if (irBuilder->getScope()->inGlobal()) {
     if(identifier_->dimension_.empty()) {
-      auto target = scope->DeclIR[identifier_->id_];
-      irBuilder->setTmpVal(target);
-    }
-    else {
+      auto val = scope->DeclIR[identifier_->id_];
+      irBuilder->setTmpVal(val);
+    } else {
       auto tmp = scope->DeclIR[identifier_->id_];
-      ConstantArray * arr = dynamic_cast<ConstantArray*>(dynamic_cast<GlobalVariable*>(tmp)->getInitValue());
+      auto arr = dynamic_cast<ConstantArray*>(dynamic_cast<GlobalVariable*>(tmp)->getInitValue());
       vector<int> indice;
       for(auto& idx : identifier_->dimension_) {
         idx->generate(irBuilder);
@@ -888,18 +886,39 @@ void LValExpression::generate(IRBuilder *irBuilder) {
         if (dynamic_cast<GlobalVariable*>(temp)) {
           temp = dynamic_cast<GlobalVariable*>(temp)->getInitValue();
         }
+        if (!temp->getType()->isIntegerType()) {
+          throw Exception("array dimension isn't float in global");
+        }
         indice.emplace_back(dynamic_cast<ConstantInt*>(temp)->getValue());
       }
-      int len = arr->dimension_.size(),
-            leng = indice.size(),
-            acc = 1, idx = 0; 
+      int len = arr->dimension_.size(), leng = indice.size(), acc = 1, idx = 0;
       //calculate the location of the multi-dimensions element
-      for(int u = leng - 1; u >= 0; u--){
-        idx += acc*indice[u];
+      for(int u = leng - 1; u >= 0; u--) {
+        idx += acc * indice[u];
         acc *= arr->dimension_[u];
       }
-      irBuilder->setTmpVal(arr->value_[idx]);
+      irBuilder->setTmpVal(arr->getElementValue(idx));
     }
+  } else {
+    Value *ptr = find_symbol(scope, identifier_->id_, true);
+    if(!(identifier_->dimension_.empty())){
+      vector<Value *> idxList;
+      for(auto&idx : identifier_->dimension_) {
+        idx->generate(irBuilder);
+        auto tmp = irBuilder->getTmpVal();
+        if (tmp->getType()->isFloatType()) {
+          throw Exception("array dimension isn't float in Function " + irBuilder->getFunction()->getName());
+        } else if (tmp->getType()->isPointerType()) {
+          tmp = LoadInst::Create(context, tmp, irBuilder->getBasicBlock());
+        }
+        idxList.emplace_back(tmp);
+      }
+      ptr = GetElementPtrInst::Create(context, 
+                                      ptr, 
+                                      idxList,
+                                      irBuilder->getBasicBlock());
+    }
+    irBuilder->setTmpVal(ptr);
   }
 }
 
