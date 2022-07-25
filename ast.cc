@@ -342,7 +342,7 @@ void addPut(IRBuilder *irBuilder, string name,Scope* scope_,Type * returnType,st
   FunctionDefinition* fde = new FunctionDefinition(SysType::VOID,id2,fl, nullptr);
   auto x =   Function::Create(c, funty, parms, name, irBuilder->getModule());
   scope_->funcIR[fde] = x;
-  BasicBlock* bb = BasicBlock::Create(c, "", x);
+  BasicBlock* bb = BasicBlock::Create(c, name, x);
   if (returnType->isVoidType()) {
     ReturnInst::Create(c,bb);  
   }else{
@@ -596,6 +596,13 @@ void FunctionDefinition::generate(IRBuilder *irBuilder) {
     irBuilder->getScope()->DeclIR[formalArgs_->list_[u]->identifier_->id_] = ptr;
   }
   body_->generate(irBuilder);
+  if (!irBuilder->getBasicBlock()->hasTerminator()) {
+    if (returnType_ == SysType::VOID) {  
+      ReturnInst::Create(context,irBuilder->getBasicBlock());
+    } else {
+      ReturnInst::Create(context, ConstantZero::get(context, check_sys_type(returnType_, context)), irBuilder->getBasicBlock());
+    }
+  }
   irBuilder->setScope(irBuilder->getScope()->parent);
 }
 
@@ -957,6 +964,8 @@ void IfElseStatement::generate(IRBuilder *irBuilder) {
       BasicBlock::Create(c, "if_false_entry", irBuilder->getFunction());
   auto next_bb = BasicBlock::Create(c, "next_entry", irBuilder->getFunction());
   Value *condVal;
+  cout << tmpVal->print() << endl;
+  cout << tmpVal->getType()->getTypeName() << endl;
   if (tmpVal->getType()->isIntegerType()) {
     condVal = IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
                                ConstantInt::get(c, Type::getInt1Type(c), 0),
@@ -1027,18 +1036,18 @@ void ReturnStatement::generate(IRBuilder *irBuilder) {
   if (value_) {
     auto ret_type = irBuilder->getFunction()->getReturnType();
     value_->generate(irBuilder);
-    if (ret_type != irBuilder->getTmpVal()->getType()) {
+    retVal = irBuilder->getTmpVal();
+    if (retVal->getType()->isPointerType()) {
+      retVal = LoadInst::Create(c, retVal, irBuilder->getBasicBlock());
+    }
+    if (ret_type != retVal->getType()) {
       if (ret_type->isIntegerType()) {
         retVal =
-            FpToSiInst::Create(c, Type::getInt32Type(c), irBuilder->getTmpVal(),
-                               irBuilder->getBasicBlock());
+            FpToSiInst::Create(c, Type::getInt32Type(c), retVal, irBuilder->getBasicBlock());
       } else {
         retVal =
-            SiToFpInst::Create(c, Type::getFloatType(c), irBuilder->getTmpVal(),
-                               irBuilder->getBasicBlock());
+            SiToFpInst::Create(c, Type::getFloatType(c), retVal, irBuilder->getBasicBlock());
       }
-    }else {
-      retVal = irBuilder->getTmpVal();
     }
     ReturnInst::Create(c, retVal, irBuilder->getBasicBlock());
   } else {
@@ -1066,6 +1075,9 @@ void FuncCallExpression::generate(IRBuilder *irBuilder) {
   for(int u = 0, len = funcType->getArgumentsNum(); u < len; u++) {
     actualArgs_->list_[u]->generate(irBuilder);
     auto val = irBuilder->getTmpVal();
+    if (val->getType()->isPointerType()) {
+      val = LoadInst::Create(context, val, irBuilder->getBasicBlock());
+    }
     if(dynamic_cast<ConstantInt*>(val) && funcType->getArgumentType(u) == context.FloatType)
       //SiToFpInst::Create(context, context.FloatType, val, irBuilder->getBasicBlock()); godbolt transform number without explicit instructions
       funcArgs.emplace_back(ConstantFloat::get(context, static_cast<float>(dynamic_cast<ConstantInt*>(val)->getValue())));
@@ -1075,8 +1087,9 @@ void FuncCallExpression::generate(IRBuilder *irBuilder) {
                                              static_cast<int>(dynamic_cast<ConstantFloat*>(val)->getValue())));
     else funcArgs.emplace_back(val);
   }
-  CallInst::Create(dynamic_cast<Function*>(irBuilder->getModule()->symbolTable_[identifier_->id_]),
+  auto tmp = CallInst::Create(context, dynamic_cast<Function*>(irBuilder->getModule()->symbolTable_[identifier_->id_]),
                    funcArgs, 
                    irBuilder->getBasicBlock());
+  irBuilder->setTmpVal(tmp);
   //return value will be set by ReturnStatement::generate
 } 

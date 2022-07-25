@@ -81,7 +81,7 @@ std::string Instruction::getInstructionOpName() {
     instName = "sdiv";
     break;
   case InstId::Mod:
-    instName = "mod";
+    instName = "srem";
     break;
   case InstId::Fadd:
     instName = "fadd";

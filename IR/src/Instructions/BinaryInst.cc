@@ -79,14 +79,14 @@ BinaryInst *BinaryInst::CreateFdiv(Context &context, Value *leftValue,
 BinaryInst *BinaryInst::CreateAnd(Context &context, Value *leftValue,
                                    Value *rightValue,
                                    BasicBlock *insertedBlock, std::string name) {
-  return new BinaryInst(context, Type::getFloatType(context), InstId::And, leftValue,
+  return new BinaryInst(context, Type::getInt1Type(context), InstId::And, leftValue,
                         rightValue, insertedBlock, name);
 }
 
 BinaryInst *BinaryInst::CreateOr(Context &context, Value *leftValue,
                                    Value *rightValue,
                                    BasicBlock *insertedBlock, std::string name) {
-  return new BinaryInst(context, Type::getFloatType(context), InstId::Or, leftValue,
+  return new BinaryInst(context, Type::getInt1Type(context), InstId::Or, leftValue,
                         rightValue, insertedBlock, name);
 }
 
@@ -95,14 +95,24 @@ std::string BinaryInst::print() {
   char IRtemp[100];
   if (getOperandType(0) == getOperandType(1)) {
     // <result> = add <type> <op1>, <op2>
-    std::string fmt("%%%s = %s nsw %s %s, %s");
+    std::string fmt;
+    if (isAdd() || isSub()) {
+      fmt = "%%%s = %s nsw %s %s, %s";
+    } else {
+      fmt = "%%%s = %s %s %s, %s";    
+    }
     std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getLLVM_Name().c_str(),
                   getInstructionOpName().c_str(), getOperandTypeName(0).c_str(),
                   print_as_op(getOperand(0)).c_str(),
                   print_as_op(getOperand(1)).c_str());
   } else {
     // <result> = add <type> <op1>, <type> <op2>
-    std::string fmt("%%%s = %s nsw %s %s, %s %s");
+    std::string fmt;
+    if (isAdd() || isSub()) {
+      fmt = "%%%s = %s nsw %s %s, %s %s";
+    } else {
+      fmt = "%%%s = %s %s %s, %s %s";
+    }
     std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getLLVM_Name().c_str(),
                   getInstructionOpName().c_str(), getOperandTypeName(0).c_str(),
                   print_as_op(getOperand(0)).c_str(),

@@ -27,7 +27,7 @@ std::string IcmpInst::getIcmpOpName() {
     icmpOpName = "eq";
     break;
   case IcmpOp::NEQ:
-    icmpOpName = "neq";
+    icmpOpName = "ne";
     break;
   case IcmpOp::GT:
     icmpOpName = "sgt";

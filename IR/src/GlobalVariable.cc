@@ -1,5 +1,6 @@
 #include "GlobalVariable.h"
 #include "Constant.h"
+#include "ConstantArray.h"
 #include "Module.h"
 #include "Util.h"
 
@@ -24,8 +25,10 @@ std::string GlobalVariable::print() {
   global_val_ir += print_as_op(this);
   global_val_ir += " = ";
   global_val_ir += (isConst_ ? "constant " : "global ");
-  global_val_ir += getType()->getPtrElementType()->getTypeName();
-  global_val_ir += " ";
+  if (!dynamic_cast<ConstantArray*>(initValue_)) {
+    global_val_ir += getType()->getPtrElementType()->getTypeName();
+    global_val_ir += " ";
+  }
   global_val_ir += initValue_->print();
   return global_val_ir;
 }

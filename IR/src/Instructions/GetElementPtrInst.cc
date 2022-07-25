@@ -72,6 +72,9 @@ std::string GetElementPtrInst::print() {
       IR += ", ";
     IR += getOperand(i)->getType()->getTypeName() + " " +
           print_as_op(getOperand(i));
+    if (i == 0) {
+      IR += ", i32 0";
+    }
   }
   return IR;
 }

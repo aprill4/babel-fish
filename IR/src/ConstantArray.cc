@@ -1,4 +1,5 @@
 #include "ConstantArray.h"
+#include "ConstantZero.h"
 #include "Exception.h"
 
 ConstantArray::ConstantArray(Context &c, ArrayType *type,
@@ -24,13 +25,58 @@ Value *ConstantArray::getElementValue(int idx) {
 
 std::string ConstantArray::print() {
   std::string const_ir;
-  const_ir += getType()->getTypeName();
-  const_ir += " ";
-  const_ir += "[";
-  for (int i = 0; i < value_.size(); i++) {
-    const_ir += getElementValue(i)->print();
-    const_ir += ", ";
+  if (!dynamic_cast<ConstantZero*>(getElementValue(value_.size() - 1))) {
+    const_ir += "[";
+    const_ir += std::to_string(value_.size());
+    const_ir += " x ";
+    const_ir += getElementValue(0)->getType()->getTypeName();
+    const_ir += "] ";    
+    const_ir += "[ ";
+    for (int i = 0; i < value_.size(); i++) {
+      const_ir += getElementValue(i)->getType()->getTypeName();
+      const_ir += " ";
+      const_ir += getElementValue(i)->print();
+      if (i < value_.size() - 1) {
+        const_ir += ", ";
+      }
+    }
+    const_ir += " ]";     
+  } else {
+    const_ir += "<{ ";
+    for (int i = 0; i < value_.size(); i++) {
+      if (dynamic_cast<ConstantZero*>(getElementValue(i))) {
+        const_ir += "[";
+        const_ir += std::to_string(value_.size() - i);
+        const_ir += " x ";
+        const_ir += getElementValue(i)->getType()->getTypeName();
+        const_ir += "]";
+        break;
+      }
+      const_ir += getElementValue(i)->getType()->getTypeName();
+      if (i < value_.size() - 1) {
+        const_ir += ", ";
+      }
+    }  
+    const_ir += " }> ";
+    const_ir += "<{ ";
+    for (int i = 0; i < value_.size(); i++) {
+      if (dynamic_cast<ConstantZero*>(getElementValue(i))) {
+        const_ir += "[";
+        const_ir += std::to_string(value_.size() - i);
+        const_ir += " x ";
+        const_ir += getElementValue(i)->getType()->getTypeName();
+        const_ir += "] ";
+        const_ir += getElementValue(i)->print();
+        break;
+      }
+      const_ir += getElementValue(i)->getType()->getTypeName();
+      const_ir += " ";
+      const_ir += getElementValue(i)->print();
+      if (i < value_.size() - 1) {
+        const_ir += ", ";
+      }
+    }
+    const_ir += " }>"; 
   }
-  const_ir += "]";
   return const_ir;
 }

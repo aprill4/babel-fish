@@ -25,10 +25,10 @@ std::string FcmpInst::getFcmpOpName() {
   std::string icmpOpName;
   switch (fcmpOp_) {
   case FcmpOp::EQ:
-    icmpOpName = "ueq";
+    icmpOpName = "eq";
     break;
   case FcmpOp::NEQ:
-    icmpOpName = "une";
+    icmpOpName = "ne";
     break;
   case FcmpOp::GT:
     icmpOpName = "ugt";

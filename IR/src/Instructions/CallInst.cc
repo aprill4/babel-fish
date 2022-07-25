@@ -5,10 +5,10 @@
 #include "Util.h"
 #include <cassert>
 
-CallInst::CallInst(Function *func, std::vector<Value *> funcArgs,
-                   BasicBlock *insertedBlock)
-    : Instruction(func->getReturnType(), InstId::Call, funcArgs.size() + 1,
-                  insertedBlock) {
+CallInst::CallInst(Context& c, Function *func, std::vector<Value *> funcArgs,
+                   BasicBlock *insertedBlock, std::string name)
+    : Instruction(c, func->getReturnType(), InstId::Call, funcArgs.size() + 1,
+                  insertedBlock, name) {
   assert(func->getArgumentsNum() == funcArgs.size());
   setOperand(func, 0);
   for (int i = 0; i < funcArgs.size(); i++) {
@@ -17,9 +17,9 @@ CallInst::CallInst(Function *func, std::vector<Value *> funcArgs,
   insertedBlock->addInstruction(this);
 }
 
-CallInst *CallInst::Create(Function *func, std::vector<Value *> funcArgs,
-                           BasicBlock *insertedBlock) {
-  return new CallInst(func, funcArgs, insertedBlock);
+CallInst *CallInst::Create(Context& c, Function *func, std::vector<Value *> funcArgs,
+                           BasicBlock *insertedBlock, std::string name) {
+  return new CallInst(c, func, funcArgs, insertedBlock, name);
 }
 
 FunctionType *CallInst::getFunctionType() {
