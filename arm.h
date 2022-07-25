@@ -24,12 +24,8 @@ struct MachineInst {
     enum Cond { NoCond, Le, Lt, Ge, Gt, Eq, Ne };
     Cond cond = NoCond;
 
-    enum FlexibleShift { NoShift, Lsl, Lsr, Asl, Asr };
-    FlexibleShift shift_type = NoShift;
-    int shift_length;
-
     virtual void print(FILE *fp);
-    void print_shift(FILE *fp);
+    void newline(FILE *fp);
     char *get_cond();
 };
 
@@ -144,6 +140,12 @@ struct Pop : MachineInst {
 };
 
 struct MachineOperand {
+    enum FlexibleShift { NoShift, Lsl, Lsr, Asl, Asr };
+    FlexibleShift shift_type = NoShift;
+    int shift_length;
+
+    char* get_shift();
+
     virtual char *print();
 };
 
