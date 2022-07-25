@@ -62,7 +62,7 @@ struct FMov : MachineInst {
 };
 
 struct ILoad : MachineInst {
-    MachineOperand *dst, *base, *offset;
+    MachineOperand *dst, *base, *offset, *index;
     // PostIndex adds index_length to the base after addressing
     // PreIndex adds index_length to the base before addressing
     enum Index { NoIndex, PostIndex, PreIndex };
@@ -72,27 +72,25 @@ struct ILoad : MachineInst {
 };
 
 struct IStore : MachineInst {
-    MachineOperand *src, *base, *offset;
+    MachineOperand *src, *base, *offset, *index;
     // PostIndex adds index_length to the base after addressing
     // PreIndex adds index_length to the base before addressing
     enum Index { NoIndex, PostIndex, PreIndex };
     Index index_type = NoIndex;
-    int index_length;
     void print(FILE *fp);
 };
 
 struct FLoad : MachineInst {
-    MachineOperand *dst, *base, *offset;
+    MachineOperand *dst, *base, *offset, *index;
     // PostIndex adds index_length to the base after addressing
     // PreIndex adds index_length to the base before addressing
     enum Index { NoIndex, PostIndex, PreIndex };
     Index index_type = NoIndex;
-    int index_length;
     void print(FILE *fp);
 };
 
 struct FStore : MachineInst {
-    MachineOperand *src, *base, *offset;
+    MachineOperand *src, *base, *offset, *index;
     // PostIndex adds index_length to the base after addressing
     // PreIndex adds index_length to the base before addressing
     enum Index { NoIndex, PostIndex, PreIndex };

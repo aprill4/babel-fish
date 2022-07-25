@@ -20,6 +20,21 @@ void MachineBasicBlock::print(FILE *fp) {
     }
 }
 
+// MachineOperand
+char* MachineOperand::print_shift() {
+    char *shift_str[] = {
+        "", "lsl", "lsr", "asr", "ror"
+    };
+
+    char *str = new char[20];
+    if (shift_type != NoShift) {
+        sprintf(str, ", %s #%d\n", shift_str[shift_type], shift_length);
+        return str;
+    }
+
+    return "\n";
+}
+
 char *IImm::print() {
     char *str = new char[12];
     sprintf(str, "#%d", value);
@@ -51,16 +66,6 @@ char *Symbol::print() {
     return (char *)name.c_str();
 }
 
-void MachineInst::print_shift(FILE *fp) {
-    char *shift_str[] = {
-        "", "lsl", "lsr", "asr", "ror"
-    };
-
-    if (shift_type != NoShift) {
-        fprintf(fp, ", %s #%d", shift_str[shift_type], shift_length);
-    }
-    fprintf(fp, "\n");
-}
 
 char *MachineInst::get_cond() {
     char *cond_str[] = {
@@ -104,13 +109,13 @@ void FMov::print(FILE *fp) {
 }
 
 void ILoad::print(FILE *fp) {
-    if (offset) {
-        fprintf(fp, "ldr%s %s, [%s, %s]", get_cond(), dst->print(), base->print(), offset->print());
-    } else {
-        fprintf(fp, "ldr%s %s, [%s]", get_cond(), dst->print(), base->print());
+    switch (index_type) {
+        case PreIndex:
+            fprintf(fp, "ldr%s %s, [%s, %s]!", get_cond(), dst->print(), base->print(), index->print());
+            break;
+        case PostIndex:
+            fprintf(fp, "ldr%s %s, [%s], #%s", get_cond(), dst->print(), base->print(), offset);
     }
-    //index
-
 }
 
 void IStore::print(FILE *fp) {
