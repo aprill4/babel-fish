@@ -805,6 +805,7 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
 			case BinaryOp::AND:{
           auto lb = BasicBlock::Create(context, "l", irBuilder->getFunction());
           auto rb = BasicBlock::Create(context, "r", irBuilder->getFunction());
+          rb->addSuccessor(irBuilder->getNextBlock());
           BranchInst::Create(context, irBuilder->getNextBlock(), rb);
           irBuilder->setLoopBlock(lb, irBuilder->getNextBlock());
           lhs_->generate(irBuilder);
@@ -815,6 +816,8 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
             } else {
               lhs = FcmpInst::Create(context, FcmpInst::FcmpOp::NEQ, lhs, ConstantZero::get(context, lhs->getType()), irBuilder->getBasicBlock());
             }
+            irBuilder->getBasicBlock()->addSuccessor(lb);
+            irBuilder->getBasicBlock()->addSuccessor(rb);
             BranchInst::Create(context, lhs, lb, rb, irBuilder->getBasicBlock());
           }
           irBuilder->setBasicBlock(lb);
@@ -826,6 +829,8 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
             } else {
               rhs = FcmpInst::Create(context, FcmpInst::FcmpOp::NEQ, rhs, ConstantZero::get(context, rhs->getType()), irBuilder->getBasicBlock());
             }
+            irBuilder->getBasicBlock()->addSuccessor(irBuilder->getWhileBlock());
+            irBuilder->getBasicBlock()->addSuccessor(rb);
             BranchInst::Create(context, rhs, irBuilder->getWhileBlock(), rb, irBuilder->getBasicBlock());
           }
           irBuilder->setBasicBlock(lb);
@@ -835,8 +840,9 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
 			case BinaryOp::OR: {
           auto lb = BasicBlock::Create(context, "l", irBuilder->getFunction());
           auto rb = BasicBlock::Create(context, "r", irBuilder->getFunction());
+          lb->addSuccessor(irBuilder->getWhileBlock());
           BranchInst::Create(context, irBuilder->getWhileBlock(), lb);
-            irBuilder->setLoopBlock(irBuilder->getWhileBlock(), rb);
+          irBuilder->setLoopBlock(irBuilder->getWhileBlock(), rb);
           lhs_->generate(irBuilder);
           lhs = irBuilder->getTmpVal();
           if (lhs != nullptr) {
@@ -845,7 +851,10 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
             } else {
               lhs = FcmpInst::Create(context, FcmpInst::FcmpOp::NEQ, lhs, ConstantZero::get(context, lhs->getType()), irBuilder->getBasicBlock());
             }
+            irBuilder->getBasicBlock()->addSuccessor(lb);
+            irBuilder->getBasicBlock()->addSuccessor(rb);
             BranchInst::Create(context, lhs, lb, rb, irBuilder->getBasicBlock());
+
           }
           irBuilder->setBasicBlock(rb);
           rhs_->generate(irBuilder);
@@ -856,6 +865,8 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
             } else {
               rhs = FcmpInst::Create(context, FcmpInst::FcmpOp::NEQ, rhs, ConstantZero::get(context, rhs->getType()), irBuilder->getBasicBlock());
             }
+            irBuilder->getBasicBlock()->addSuccessor(lb);
+            irBuilder->getBasicBlock()->addSuccessor(irBuilder->getNextBlock());
             BranchInst::Create(context, rhs, lb, irBuilder->getNextBlock(), irBuilder->getBasicBlock());
           }
           irBuilder->setBasicBlock(rb);
@@ -1008,6 +1019,8 @@ void IfElseStatement::generate(IRBuilder *irBuilder) {
   auto false_bb =
       BasicBlock::Create(c, "if_false_entry", irBuilder->getFunction());
   auto next_bb = BasicBlock::Create(c, "next_entry", irBuilder->getFunction());
+  true_bb->addSuccessor(next_bb);
+  false_bb->addSuccessor(next_bb);
   if (elseStmt_) {
     irBuilder->setLoopBlock(true_bb, false_bb);  
   } else {
@@ -1032,9 +1045,13 @@ void IfElseStatement::generate(IRBuilder *irBuilder) {
                           ConstantFloat::get(c, 0), irBuilder->getBasicBlock());
     }
     if (elseStmt_) {
+      irBuilder->getBasicBlock()->addSuccessor(true_bb);
+      irBuilder->getBasicBlock()->addSuccessor(false_bb);
       BranchInst::Create(c, condVal, true_bb, false_bb,
                         irBuilder->getBasicBlock());
     } else {
+      irBuilder->getBasicBlock()->addSuccessor(true_bb);
+      irBuilder->getBasicBlock()->addSuccessor(next_bb);
       BranchInst::Create(c, condVal, true_bb, next_bb,
                         irBuilder->getBasicBlock());
     }
@@ -1042,12 +1059,14 @@ void IfElseStatement::generate(IRBuilder *irBuilder) {
   irBuilder->setBasicBlock(true_bb);
   thenStmt_->generate(irBuilder);
   if (!irBuilder->getBasicBlock()->hasTerminator()) {
+    irBuilder->getBasicBlock()->addSuccessor(next_bb);
     BranchInst::Create(c, next_bb, irBuilder->getBasicBlock());
   }
   if (elseStmt_) {
     irBuilder->setBasicBlock(false_bb);
     elseStmt_->generate(irBuilder);
     if (!irBuilder->getBasicBlock()->hasTerminator()) {
+      irBuilder->getBasicBlock()->addSuccessor(next_bb);
       BranchInst::Create(c, next_bb, irBuilder->getBasicBlock());
     }
   } else {
@@ -1062,6 +1081,7 @@ void WhileStatement::generate(IRBuilder *irBuilder) {
   irBuilder->setScope(scope_);
   auto while_bb = BasicBlock::Create(c, "while_entry", irBuilder->getFunction());
   auto next_bb = BasicBlock::Create(c, "next_entry", irBuilder->getFunction());
+  while_bb->addSuccessor(next_bb);
   irBuilder->setLoopBlock(while_bb, next_bb);
   cond_->generate(irBuilder);
   irBuilder->popLoopBlock();
@@ -1078,12 +1098,16 @@ void WhileStatement::generate(IRBuilder *irBuilder) {
                                 ConstantFloat::get(c, 0),
                                 irBuilder->getBasicBlock());
     }
+    irBuilder->getBasicBlock()->addSuccessor(while_bb);
+    irBuilder->getBasicBlock()->addSuccessor(next_bb);
     BranchInst::Create(c, condVal, while_bb, next_bb, irBuilder->getBasicBlock());    
     irBuilder->setBasicBlock(while_bb);
     irBuilder->setLoopBlock(while_bb, next_bb);
     doStmt_->generate(irBuilder); 
     irBuilder->popLoopBlock();
     if (!irBuilder->getBasicBlock()->hasTerminator()) {
+      irBuilder->getBasicBlock()->addSuccessor(while_bb);
+      irBuilder->getBasicBlock()->addSuccessor(next_bb);
       BranchInst::Create(c, condVal, while_bb, next_bb, irBuilder->getBasicBlock());    
     }
   }
@@ -1117,10 +1141,12 @@ void ReturnStatement::generate(IRBuilder *irBuilder) {
 }
 
 void BreakStatement::generate(IRBuilder *irBuilder) {
+  irBuilder->getBasicBlock()->addSuccessor(irBuilder->getNextBlock());
   BranchInst::Create(irBuilder->getContext(),irBuilder->getNextBlock(),irBuilder->getBasicBlock());
 }
 
 void ContinueStatement::generate(IRBuilder *irBuilder) {
+  irBuilder->getBasicBlock()->addSuccessor(irBuilder->getWhileBlock());
   BranchInst::Create(irBuilder->getContext(),irBuilder->getWhileBlock(),irBuilder->getBasicBlock());
 }
 
