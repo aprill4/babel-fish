@@ -20,6 +20,20 @@ void MachineBasicBlock::print(FILE *fp) {
     }
 }
 
+char* MachineOperand::get_shift() {
+    char *shift_str[] = {
+        "", "lsl", "lsr", "asr", "ror"
+    };
+
+    char *str = new char[20];
+    if (shift_type != NoShift) {
+        sprintf(str, ", %s #%d", shift_str[shift_type], shift_length);
+        return str;
+    }
+
+    return "";
+}
+
 char *IImm::print() {
     char *str = new char[12];
     sprintf(str, "#%d", value);
@@ -51,14 +65,7 @@ char *Symbol::print() {
     return (char *)name.c_str();
 }
 
-void MachineInst::print_shift(FILE *fp) {
-    char *shift_str[] = {
-        "", "lsl", "lsr", "asr", "ror"
-    };
-
-    if (shift_type != NoShift) {
-        fprintf(fp, ", %s #%d", shift_str[shift_type], shift_length);
-    }
+void MachineInst::newline(FILE *fp) {
     fprintf(fp, "\n");
 }
 
@@ -67,7 +74,6 @@ char *MachineInst::get_cond() {
         "", "le", "lt", "ge", "gt", "eq", "ne"
     };
     return cond_str[cond];
-
 }
 
 void Binary::print(FILE *fp) {
@@ -104,17 +110,41 @@ void FMov::print(FILE *fp) {
 }
 
 void ILoad::print(FILE *fp) {
-    if (offset) {
-        fprintf(fp, "ldr%s %s, [%s, %s]", get_cond(), dst->print(), base->print(), offset->print());
-    } else {
-        fprintf(fp, "ldr%s %s, [%s]", get_cond(), dst->print(), base->print());
+    switch (index_type) {
+        case PreIndex:
+            fprintf(fp, "ldr%s %s, [%s, %s%s]!", get_cond(), dst->print(), base->print(), index->print(), index->get_shift());
+            break;
+        case PostIndex:
+            fprintf(fp, "ldr%s %s, [%s], %s%s", get_cond(), dst->print(), base->print(), index->print(), index->get_shift());
+            break;
+        case NoIndex: {
+                if (offset) {
+                    fprintf(fp, "ldr%s %s, [%s, %s]", get_cond(), dst->print(), base->print(), offset->print());
+                } else {
+                    fprintf(fp, "ldr%s %s, [%s]", get_cond(), dst->print(), base->print());
+                }
+            }
+            break;
     }
-    //index
-
 }
 
 void IStore::print(FILE *fp) {
-
+    switch (index_type) {
+        case PreIndex:
+            fprintf(fp, "str%s %s, [%s, %s%s]!", get_cond(), src->print(), base->print(), index->print(), index->get_shift());
+            break;
+        case PostIndex:
+            fprintf(fp, "str%s %s, [%s], %s%s", get_cond(), src->print(), base->print(), index->print(), index->get_shift());
+            break;
+        case NoIndex: {
+                if (offset) {
+                    fprintf(fp, "str%s %s, [%s, %s]", get_cond(), src->print(), base->print(), offset->print());
+                } else {
+                    fprintf(fp, "str%s %s, [%s]", get_cond(), src->print(), base->print());
+                }
+            }
+            break;
+    }
 }
 
 void FLoad::print(FILE *fp) {

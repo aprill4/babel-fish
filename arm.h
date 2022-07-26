@@ -24,12 +24,8 @@ struct MachineInst {
     enum Cond { NoCond, Le, Lt, Ge, Gt, Eq, Ne };
     Cond cond = NoCond;
 
-    enum FlexibleShift { NoShift, Lsl, Lsr, Asl, Asr };
-    FlexibleShift shift_type = NoShift;
-    int shift_length;
-
     virtual void print(FILE *fp);
-    void print_shift(FILE *fp);
+    void newline(FILE *fp);
     char *get_cond();
 };
 
@@ -62,7 +58,7 @@ struct FMov : MachineInst {
 };
 
 struct ILoad : MachineInst {
-    MachineOperand *dst, *base, *offset;
+    MachineOperand *dst, *base, *offset, *index;
     // PostIndex adds index_length to the base after addressing
     // PreIndex adds index_length to the base before addressing
     enum Index { NoIndex, PostIndex, PreIndex };
@@ -72,27 +68,25 @@ struct ILoad : MachineInst {
 };
 
 struct IStore : MachineInst {
-    MachineOperand *src, *base, *offset;
+    MachineOperand *src, *base, *offset, *index;
     // PostIndex adds index_length to the base after addressing
     // PreIndex adds index_length to the base before addressing
     enum Index { NoIndex, PostIndex, PreIndex };
     Index index_type = NoIndex;
-    int index_length;
     void print(FILE *fp);
 };
 
 struct FLoad : MachineInst {
-    MachineOperand *dst, *base, *offset;
+    MachineOperand *dst, *base, *offset, *index;
     // PostIndex adds index_length to the base after addressing
     // PreIndex adds index_length to the base before addressing
     enum Index { NoIndex, PostIndex, PreIndex };
     Index index_type = NoIndex;
-    int index_length;
     void print(FILE *fp);
 };
 
 struct FStore : MachineInst {
-    MachineOperand *src, *base, *offset;
+    MachineOperand *src, *base, *offset, *index;
     // PostIndex adds index_length to the base after addressing
     // PreIndex adds index_length to the base before addressing
     enum Index { NoIndex, PostIndex, PreIndex };
@@ -146,6 +140,12 @@ struct Pop : MachineInst {
 };
 
 struct MachineOperand {
+    enum FlexibleShift { NoShift, Lsl, Lsr, Asl, Asr };
+    FlexibleShift shift_type = NoShift;
+    int shift_length;
+
+    char* get_shift();
+
     virtual char *print();
 };
 
