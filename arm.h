@@ -3,6 +3,14 @@
 #include <list>
 #include <vector>
 #include <cstdio>
+#include <string>
+
+struct MachineBasicBlock;
+struct MachineModule;
+struct MachineFunction;
+struct MachineInst;
+struct MachineOperand;
+struct MReg;
 
 struct MachineModule {
     std::vector<MachineFunction *> functions;
