@@ -810,12 +810,22 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
           lhs_->generate(irBuilder);
           lhs = irBuilder->getTmpVal();
           if (lhs != nullptr) {
+            if (lhs->getType()->isIntegerType()){
+              lhs = IcmpInst::Create(context, IcmpInst::IcmpOp::NEQ, lhs, ConstantZero::get(context, lhs->getType()), irBuilder->getBasicBlock());
+            } else {
+              lhs = FcmpInst::Create(context, FcmpInst::FcmpOp::NEQ, lhs, ConstantZero::get(context, lhs->getType()), irBuilder->getBasicBlock());
+            }
             BranchInst::Create(context, lhs, lb, rb, irBuilder->getBasicBlock());
           }
           irBuilder->setBasicBlock(lb);
           rhs_->generate(irBuilder);
           rhs = irBuilder->getTmpVal();
           if (rhs != nullptr){
+            if (rhs->getType()->isIntegerType()){
+              rhs = IcmpInst::Create(context, IcmpInst::IcmpOp::NEQ, rhs, ConstantZero::get(context, rhs->getType()), irBuilder->getBasicBlock());
+            } else {
+              rhs = FcmpInst::Create(context, FcmpInst::FcmpOp::NEQ, rhs, ConstantZero::get(context, rhs->getType()), irBuilder->getBasicBlock());
+            }
             BranchInst::Create(context, rhs, irBuilder->getWhileBlock(), rb, irBuilder->getBasicBlock());
           }
           irBuilder->setBasicBlock(lb);
@@ -830,12 +840,22 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
           lhs_->generate(irBuilder);
           lhs = irBuilder->getTmpVal();
           if (lhs != nullptr) {
+            if (lhs->getType()->isIntegerType()){
+              lhs = IcmpInst::Create(context, IcmpInst::IcmpOp::NEQ, lhs, ConstantZero::get(context, lhs->getType()), irBuilder->getBasicBlock());
+            } else {
+              lhs = FcmpInst::Create(context, FcmpInst::FcmpOp::NEQ, lhs, ConstantZero::get(context, lhs->getType()), irBuilder->getBasicBlock());
+            }
             BranchInst::Create(context, lhs, lb, rb, irBuilder->getBasicBlock());
           }
           irBuilder->setBasicBlock(rb);
           rhs_->generate(irBuilder);
           rhs = irBuilder->getTmpVal();
           if (rhs != nullptr){
+            if (rhs->getType()->isIntegerType()){
+              rhs = IcmpInst::Create(context, IcmpInst::IcmpOp::NEQ, rhs, ConstantZero::get(context, rhs->getType()), irBuilder->getBasicBlock());
+            } else {
+              rhs = FcmpInst::Create(context, FcmpInst::FcmpOp::NEQ, rhs, ConstantZero::get(context, rhs->getType()), irBuilder->getBasicBlock());
+            }
             BranchInst::Create(context, rhs, lb, irBuilder->getNextBlock(), irBuilder->getBasicBlock());
           }
           irBuilder->setBasicBlock(rb);
@@ -871,19 +891,20 @@ void UnaryExpression::generate(IRBuilder *irBuilder) {
         }
         else {
           if(irBuilder->getScope()->parent) 
-            res = BinaryInst::CreateSub(context, ConstantInt::get(context, context.Int32Type, 0), rhs, irBuilder->getBasicBlock());
+            res = BinaryInst::CreateSub(context, ConstantInt::get(context, rhs->getType(), 0), rhs, irBuilder->getBasicBlock());
           else 
             res = ConstantInt::get(context, context.Int32Type, -dynamic_cast<ConstantInt*>(rhs)->getValue());
         }
         break;
 			case UnaryOp::NOT:
         if(irBuilder->getScope()->parent) {
-          auto zero = ConstantZero::get(context, context.Int1Type);
+          auto zero = ConstantZero::get(context, rhs->getType());
           rhs = IcmpInst::Create(context, 
                                  IcmpInst::IcmpOp::NEQ, 
                                  rhs, 
                                  zero, 
                                  irBuilder->getBasicBlock());
+          zero = ConstantZero::get(context, rhs->getType());
           res = IcmpInst::Create(context, 
                                  IcmpInst::IcmpOp::EQ, 
                                  rhs, 
@@ -1000,7 +1021,7 @@ void IfElseStatement::generate(IRBuilder *irBuilder) {
     if (tmpVal->getType()->isIntegerType()) {
       if (static_cast<IntegerType*>(tmpVal->getType())->getBitsNum() != 1) {    
         condVal = IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
-                                  ConstantInt::get(c, Type::getInt1Type(c), 0),
+                                  ConstantInt::get(c, tmpVal->getType(), 0),
                                   irBuilder->getBasicBlock());
       } else {
         condVal = tmpVal;
@@ -1050,7 +1071,7 @@ void WhileStatement::generate(IRBuilder *irBuilder) {
     if (tmpVal->getType()->isIntegerType()) {
       condVal = IcmpInst::Create(
           c, IcmpInst::IcmpOp::NEQ, tmpVal,
-          ConstantInt::get(c, Type::getInt1Type(c), 0),
+          ConstantInt::get(c, tmpVal->getType(), 0),
           irBuilder->getBasicBlock());
     } else {
       condVal = IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
