@@ -1,0 +1,4 @@
+irs/072_percolation.ll:34:50: error: '@array11' defined with type '<{ [110 x i32] }>*' but expected '[110 x i32]*'
+  %v31 = getelementptr [110 x i32], [110 x i32]* @array11, i32 0, i32 %v30
+                                                 ^
+1 error generated.

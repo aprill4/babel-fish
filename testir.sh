@@ -1,40 +1,57 @@
 #!/bin/bash
 
+set -u
+
 Green='\033[0;32m'
+Yellow='\033[0;33m'
 Blue='\033[0;34m'
 Red='\033[0;31m'
 
-[[ $# -ne 1 ]] && echo -e "Usage: $0 <llir-dir>\n<llir-dir> contains generated LLVM IR" && exit 1
+#[[ $# -ne 1 ]] && echo -e "Usage: $0 <llir-dir>\n<llir-dir> contains generated LLVM IR" && exit 1
 
-srcdir=$1
-outdir=IRtest_out
+srcdir=oldtest
+IRdir=irs
+TestOutDir=IRtest_out
+OutDir=rigth_out
 
-mkdir -p $outdir
 
-file_num=`ls $srcdir | wc -l`
+mkdir -p $OutDir
+mkdir -p $TestOutDir
+mkdir -p $IRdir
+
+file_num=`ls $srcdir | wc -l | tr -d '[:space:]'`
 current_file_count=1
 
 for file in `ls $srcdir`
 do
+    ir=${file%.*}.ll
+    ./build/check.out < $srcdir/$file > $IRdir/$ir
+    
     progress="[$current_file_count/$file_num]"
-    elf=$outdir/${file::-2}elf
-    out=${elf::-3}out
-    err=${elf::-3}err
+    elf=$TestOutDir/${ir%.*}.elf
+    out=${elf%.*}.out
+    err=${elf%.*}.err
 
-    clang $srcdir/$file -x ir -o $elf 2> $err
+    clang -xc $srcdir/$file -o $OutDir/${file%.*}.elf 
+    clang $IRdir/$ir -x ir -o $elf 2> $err
 
     compile_status=$?
     if [ $compile_status -eq 0 ] 
     then
-        ./$elf > $out
+        timeout 5 ./$elf > $out 2>>$err
         run_status=$?
-        if [ $run_status -eq 0 ]
+        ./$OutDir/${file%.*}.elf > $OutDir/${file%.*}.out
+        right_status=$?
+        if [ $run_status -eq $right_status ]
         then
             echo -e "${Green}${progress} ${file} passed"
             rm -f $err
             [ ! -s $out ] && rm -f $out
+        elif [ $run_status -eq 124 ]
+        then
+            echo -e "${Blue}${progress} ${file} timeout, details saved to ${err}"
         else
-            echo -e "${Blue}${progess} ${file} runtime error, details saved to ${err}"
+            echo -e "${Yellow}${progress} ${file} runtime error, details saved to ${err}"
         fi
     else
         echo -e "${Red}${progress} ${file} compile error, details saved to ${err}"

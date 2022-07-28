@@ -1,0 +1,4 @@
+irs/96_int_split.ll:35:29: error: invalid getelementptr indices
+  %v32 = getelementptr i32, i32* %v16, i32 0, i32 %v31
+                            ^
+1 error generated.

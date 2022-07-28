@@ -1,0 +1,4 @@
+irs/068_genealogical_tree.ll:54:48: error: '@indegree16' defined with type '<{ [10 x i32] }>*' but expected '[10 x i32]*'
+  %v53 = getelementptr [10 x i32], [10 x i32]* @indegree16, i32 0, i32 %v52
+                                               ^
+1 error generated.

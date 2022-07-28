@@ -1,0 +1,4 @@
+irs/073_backpack.ll:55:29: error: invalid getelementptr indices
+  %v51 = getelementptr i32, i32* %v20, i32 0, i32 %v50
+                            ^
+1 error generated.

@@ -1,0 +1,4 @@
+irs/070_multiplication_puzzle.ll:53:63: error: '@dp21' defined with type '<{ [100 x i32] }>*' but expected '[10 x [10 x i32]]*'
+  %v133 = getelementptr [10 x [10 x i32]], [10 x [10 x i32]]* @dp21, i32 0, i32 0, i32 %v131
+                                                              ^
+1 error generated.
