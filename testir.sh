@@ -4,7 +4,9 @@ Green='\033[0;32m'
 Blue='\033[0;34m'
 Red='\033[0;31m'
 
-srcdir=irs
+[[ $# -ne 1 ]] && echo -e "Usage: $0 <llir-dir>\n<llir-dir> contains generated LLVM IR" && exit 1
+
+srcdir=$1
 outdir=IRtest_out
 
 mkdir -p $outdir
