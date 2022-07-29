@@ -39,6 +39,7 @@ public:
     loop_.emplace_back(whileBlock, nextBlock);
   }
   void popLoopBlock() { loop_.pop_back(); }
+  std::size_t loopBlockSize() { return loop_.size(); }
 
 private:
   Value *val_;

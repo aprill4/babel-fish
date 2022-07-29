@@ -1,0 +1,4 @@
+irs/82_remove_duplicate_element.ll:32:29: error: invalid getelementptr indices
+  %v29 = getelementptr i32, i32* %v12, i32 0, i32 %v28
+                            ^
+1 error generated.

@@ -16,35 +16,35 @@ BinaryInst::BinaryInst(Context &c, Type *type, InstId instId, Value *leftValue,
 BinaryInst *BinaryInst::CreateAdd(Context &context, Value *leftValue,
                                   Value *rightValue,
                                   BasicBlock *insertedBlock, std::string name) {
-  return new BinaryInst(context, Type::getInt32Type(context), InstId::Add, leftValue,
+  return new BinaryInst(context, leftValue->getType(), InstId::Add, leftValue,
                         rightValue, insertedBlock, name);
 }
 
 BinaryInst *BinaryInst::CreateSub(Context &context, Value *leftValue,
                                   Value *rightValue,
                                   BasicBlock *insertedBlock, std::string name) {
-  return new BinaryInst(context, Type::getInt32Type(context), InstId::Sub, leftValue,
+  return new BinaryInst(context, leftValue->getType(), InstId::Sub, leftValue,
                         rightValue, insertedBlock, name);
 }
 
 BinaryInst *BinaryInst::CreateMul(Context &context, Value *leftValue,
                                   Value *rightValue,
                                   BasicBlock *insertedBlock, std::string name) {
-  return new BinaryInst(context, Type::getInt32Type(context), InstId::Mul, leftValue,
+  return new BinaryInst(context, leftValue->getType(), InstId::Mul, leftValue,
                         rightValue, insertedBlock, name);
 }
 
 BinaryInst *BinaryInst::CreateSdiv(Context &context, Value *leftValue,
                                    Value *rightValue,
                                    BasicBlock *insertedBlock, std::string name) {
-  return new BinaryInst(context, Type::getInt32Type(context), InstId::Sdiv, leftValue,
+  return new BinaryInst(context, leftValue->getType(), InstId::Sdiv, leftValue,
                         rightValue, insertedBlock, name);
 }
 
 BinaryInst *BinaryInst::CreateMod(Context &context, Value *leftValue,
                                    Value *rightValue,
                                    BasicBlock *insertedBlock, std::string name) {
-  return new BinaryInst(context, Type::getInt32Type(context), InstId::Mod, leftValue,
+  return new BinaryInst(context, leftValue->getType(), InstId::Mod, leftValue,
                         rightValue, insertedBlock, name);
 }
 
@@ -79,14 +79,14 @@ BinaryInst *BinaryInst::CreateFdiv(Context &context, Value *leftValue,
 BinaryInst *BinaryInst::CreateAnd(Context &context, Value *leftValue,
                                    Value *rightValue,
                                    BasicBlock *insertedBlock, std::string name) {
-  return new BinaryInst(context, Type::getInt1Type(context), InstId::And, leftValue,
+  return new BinaryInst(context, leftValue->getType(), InstId::And, leftValue,
                         rightValue, insertedBlock, name);
 }
 
 BinaryInst *BinaryInst::CreateOr(Context &context, Value *leftValue,
                                    Value *rightValue,
                                    BasicBlock *insertedBlock, std::string name) {
-  return new BinaryInst(context, Type::getInt1Type(context), InstId::Or, leftValue,
+  return new BinaryInst(context, leftValue->getType(), InstId::Or, leftValue,
                         rightValue, insertedBlock, name);
 }
 

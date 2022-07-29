@@ -1,0 +1,7 @@
+warning: overriding the module target triple with arm64-apple-macosx12.0.0 [-Woverride-module]
+1 warning generated.
+Undefined symbols for architecture arm64:
+  "_main", referenced from:
+     implicit entry/start for main executable
+ld: symbol(s) not found for architecture arm64
+clang-14: error: linker command failed with exit code 1 (use -v to see invocation)

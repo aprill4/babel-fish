@@ -1,0 +1,4 @@
+irs/065_sort_test5.ll:26:29: error: invalid getelementptr indices
+  %v20 = getelementptr i32, i32* %v14, i32 0, i32 %v19
+                            ^
+1 error generated.

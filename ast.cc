@@ -608,20 +608,20 @@ void FunctionDefinition::generate(IRBuilder *irBuilder) {
 
 void BinaryExpression::generate(IRBuilder *irBuilder) {
   Context &context = irBuilder->getContext();
-  Value *lhs, *rhs, *res;
-  lhs_->generate(irBuilder);
-  lhs = irBuilder->getTmpVal();
-  if (lhs->getType()->isPointerType()) {
-    if (dynamic_cast<GlobalVariable*>(lhs) && dynamic_cast<GlobalVariable*>(lhs)->isConst()) {
-      lhs = dynamic_cast<GlobalVariable*>(lhs)->getInitValue();
-    } else if (irBuilder->getScope()->inGlobal()) {
-      lhs = dynamic_cast<GlobalVariable*>(lhs)->getInitValue();
-    } else {
-      lhs = LoadInst::Create(context, lhs, irBuilder->getBasicBlock());
-    }
-  }
+  Value *lhs = nullptr, *rhs = nullptr, *res = nullptr;
   bool is_float = false;
-  if (op_ != BinaryOp::OR) {
+  if (op_ != BinaryOp::OR && op_ != BinaryOp::AND) {
+    lhs_->generate(irBuilder);
+    lhs = irBuilder->getTmpVal();
+    if (lhs->getType()->isPointerType()) {
+      if (dynamic_cast<GlobalVariable*>(lhs) && dynamic_cast<GlobalVariable*>(lhs)->isConst()) {
+        lhs = dynamic_cast<GlobalVariable*>(lhs)->getInitValue();
+      } else if (irBuilder->getScope()->inGlobal()) {
+        lhs = dynamic_cast<GlobalVariable*>(lhs)->getInitValue();
+      } else {
+        lhs = LoadInst::Create(context, lhs, irBuilder->getBasicBlock());
+      }
+    }
     rhs_->generate(irBuilder);
     rhs =irBuilder->getTmpVal(); 
     if (rhs->getType()->isPointerType()) {
@@ -635,7 +635,6 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
     }
     is_float = force_trans(irBuilder, lhs, rhs);
   }
-  
   switch(op_) {
 			case BinaryOp::ADD:
 				if(is_float) {
@@ -803,32 +802,76 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
                   dynamic_cast<ConstantInt*>(lhs)->getValue() != dynamic_cast<ConstantInt*>(rhs)->getValue());
         } 
         break;
-			case BinaryOp::AND:
-        if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(rhs)) {
-            res = ConstantInt::get(context, context.Int32Type,
-                  dynamic_cast<ConstantInt*>(lhs)->getValue() && dynamic_cast<ConstantInt*>(rhs)->getValue());
-        }
-        else if(irBuilder->getScope()->parent) 
-            res = BinaryInst::CreateAnd(context, lhs, rhs, irBuilder->getBasicBlock());
-        break;
-			case BinaryOp::OR:
-        if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(rhs)) {
-            res = ConstantInt::get(context, context.Int32Type,
-                  dynamic_cast<ConstantInt*>(lhs)->getValue() || dynamic_cast<ConstantInt*>(rhs)->getValue());
-        }
-        else if(irBuilder->getScope()->parent){
-          auto source = irBuilder->getBasicBlock();
-          auto rb = BasicBlock::Create(context, "r", irBuilder->getFunction());
+			case BinaryOp::AND:{
           auto lb = BasicBlock::Create(context, "l", irBuilder->getFunction());
-          BranchInst::Create(context, lhs, lb, rb, irBuilder->getBasicBlock());
+          auto rb = BasicBlock::Create(context, "r", irBuilder->getFunction());
+          rb->addSuccessor(irBuilder->getNextBlock());
+          BranchInst::Create(context, irBuilder->getNextBlock(), rb);
+          irBuilder->setLoopBlock(lb, irBuilder->getNextBlock());
+          lhs_->generate(irBuilder);
+          lhs = irBuilder->getTmpVal();
+          if (lhs != nullptr) {
+            if (lhs->getType()->isIntegerType()){
+              lhs = IcmpInst::Create(context, IcmpInst::IcmpOp::NEQ, lhs, ConstantZero::get(context, lhs->getType()), irBuilder->getBasicBlock());
+            } else {
+              lhs = FcmpInst::Create(context, FcmpInst::FcmpOp::NEQ, lhs, ConstantZero::get(context, lhs->getType()), irBuilder->getBasicBlock());
+            }
+            irBuilder->getBasicBlock()->addSuccessor(lb);
+            irBuilder->getBasicBlock()->addSuccessor(rb);
+            BranchInst::Create(context, lhs, lb, rb, irBuilder->getBasicBlock());
+          }
+          irBuilder->setBasicBlock(lb);
+          rhs_->generate(irBuilder);
+          rhs = irBuilder->getTmpVal();
+          if (rhs != nullptr){
+            if (rhs->getType()->isIntegerType()){
+              rhs = IcmpInst::Create(context, IcmpInst::IcmpOp::NEQ, rhs, ConstantZero::get(context, rhs->getType()), irBuilder->getBasicBlock());
+            } else {
+              rhs = FcmpInst::Create(context, FcmpInst::FcmpOp::NEQ, rhs, ConstantZero::get(context, rhs->getType()), irBuilder->getBasicBlock());
+            }
+            irBuilder->getBasicBlock()->addSuccessor(irBuilder->getWhileBlock());
+            irBuilder->getBasicBlock()->addSuccessor(rb);
+            BranchInst::Create(context, rhs, irBuilder->getWhileBlock(), rb, irBuilder->getBasicBlock());
+          }
+          irBuilder->setBasicBlock(lb);
+          irBuilder->popLoopBlock();
+        }
+        break;
+			case BinaryOp::OR: {
+          auto lb = BasicBlock::Create(context, "l", irBuilder->getFunction());
+          auto rb = BasicBlock::Create(context, "r", irBuilder->getFunction());
+          lb->addSuccessor(irBuilder->getWhileBlock());
+          BranchInst::Create(context, irBuilder->getWhileBlock(), lb);
+          irBuilder->setLoopBlock(irBuilder->getWhileBlock(), rb);
+          lhs_->generate(irBuilder);
+          lhs = irBuilder->getTmpVal();
+          if (lhs != nullptr) {
+            if (lhs->getType()->isIntegerType()){
+              lhs = IcmpInst::Create(context, IcmpInst::IcmpOp::NEQ, lhs, ConstantZero::get(context, lhs->getType()), irBuilder->getBasicBlock());
+            } else {
+              lhs = FcmpInst::Create(context, FcmpInst::FcmpOp::NEQ, lhs, ConstantZero::get(context, lhs->getType()), irBuilder->getBasicBlock());
+            }
+            irBuilder->getBasicBlock()->addSuccessor(lb);
+            irBuilder->getBasicBlock()->addSuccessor(rb);
+            BranchInst::Create(context, lhs, lb, rb, irBuilder->getBasicBlock());
+
+          }
           irBuilder->setBasicBlock(rb);
           rhs_->generate(irBuilder);
           rhs = irBuilder->getTmpVal();
-          BranchInst::Create(context, lb, irBuilder->getBasicBlock());
-          std::vector<std::pair<Value *, BasicBlock *>> valAndLabels{make_pair(lhs, source), make_pair(rhs, rb)};
-          res = PhiInst::Create(context, Type::getInt1Type(context), valAndLabels, lb);
-          irBuilder->setBasicBlock(lb);
-        } 
+          if (rhs != nullptr){
+            if (rhs->getType()->isIntegerType()){
+              rhs = IcmpInst::Create(context, IcmpInst::IcmpOp::NEQ, rhs, ConstantZero::get(context, rhs->getType()), irBuilder->getBasicBlock());
+            } else {
+              rhs = FcmpInst::Create(context, FcmpInst::FcmpOp::NEQ, rhs, ConstantZero::get(context, rhs->getType()), irBuilder->getBasicBlock());
+            }
+            irBuilder->getBasicBlock()->addSuccessor(lb);
+            irBuilder->getBasicBlock()->addSuccessor(irBuilder->getNextBlock());
+            BranchInst::Create(context, rhs, lb, irBuilder->getNextBlock(), irBuilder->getBasicBlock());
+          }
+          irBuilder->setBasicBlock(rb);
+          irBuilder->popLoopBlock();
+        }
         break;
       default: break;
 		}
@@ -838,7 +881,7 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
 void UnaryExpression::generate(IRBuilder *irBuilder) {
   Context &context = irBuilder->getContext();
   rhs_->generate(irBuilder);
-  Value *rhs = irBuilder->getTmpVal(), *res;
+  Value *rhs = irBuilder->getTmpVal(), *res = nullptr;
   if (rhs->getType()->isPointerType()) {
     if (dynamic_cast<GlobalVariable*>(rhs) && dynamic_cast<GlobalVariable*>(rhs)->isConst() ) {
       rhs = dynamic_cast<GlobalVariable*>(rhs)->getInitValue();
@@ -859,19 +902,20 @@ void UnaryExpression::generate(IRBuilder *irBuilder) {
         }
         else {
           if(irBuilder->getScope()->parent) 
-            res = BinaryInst::CreateSub(context, ConstantInt::get(context, context.Int32Type, 0), rhs, irBuilder->getBasicBlock());
+            res = BinaryInst::CreateSub(context, ConstantInt::get(context, rhs->getType(), 0), rhs, irBuilder->getBasicBlock());
           else 
             res = ConstantInt::get(context, context.Int32Type, -dynamic_cast<ConstantInt*>(rhs)->getValue());
         }
         break;
 			case UnaryOp::NOT:
         if(irBuilder->getScope()->parent) {
-          auto zero = ConstantZero::get(context, context.Int1Type);
+          auto zero = ConstantZero::get(context, rhs->getType());
           rhs = IcmpInst::Create(context, 
                                  IcmpInst::IcmpOp::NEQ, 
                                  rhs, 
                                  zero, 
                                  irBuilder->getBasicBlock());
+          zero = ConstantZero::get(context, rhs->getType());
           res = IcmpInst::Create(context, 
                                  IcmpInst::IcmpOp::EQ, 
                                  rhs, 
@@ -970,43 +1014,59 @@ void AssignStatement::generate(IRBuilder *irBuilder) {
 void IfElseStatement::generate(IRBuilder *irBuilder) {
   Context &c = irBuilder->getContext();
   irBuilder->setScope(scope_);
-  cond_->generate(irBuilder);
-  auto tmpVal = irBuilder->getTmpVal();
   auto true_bb =
       BasicBlock::Create(c, "if_true_entry", irBuilder->getFunction());
   auto false_bb =
       BasicBlock::Create(c, "if_false_entry", irBuilder->getFunction());
   auto next_bb = BasicBlock::Create(c, "next_entry", irBuilder->getFunction());
-  Value *condVal;
-  if (tmpVal->getType()->isIntegerType()) {
-    if (static_cast<IntegerType*>(tmpVal->getType())->getBitsNum() != 1) {    
-      condVal = IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
-                                ConstantInt::get(c, Type::getInt1Type(c), 0),
-                                irBuilder->getBasicBlock());
-    } else {
-      condVal = tmpVal;
-    }
-  } else {
-    condVal =
-        IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
-                         ConstantFloat::get(c, 0), irBuilder->getBasicBlock());
-  }
+  true_bb->addSuccessor(next_bb);
+  false_bb->addSuccessor(next_bb);
   if (elseStmt_) {
-    BranchInst::Create(c, condVal, true_bb, false_bb,
-                       irBuilder->getBasicBlock());
+    irBuilder->setLoopBlock(true_bb, false_bb);  
   } else {
-    BranchInst::Create(c, condVal, true_bb, next_bb,
-                       irBuilder->getBasicBlock());
+    irBuilder->setLoopBlock(true_bb, next_bb);
+  }
+  cond_->generate(irBuilder);
+  irBuilder->popLoopBlock();
+  auto tmpVal = irBuilder->getTmpVal();
+  if (tmpVal) {
+    Value *condVal;
+    if (tmpVal->getType()->isIntegerType()) {
+      if (static_cast<IntegerType*>(tmpVal->getType())->getBitsNum() != 1) {    
+        condVal = IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
+                                  ConstantInt::get(c, tmpVal->getType(), 0),
+                                  irBuilder->getBasicBlock());
+      } else {
+        condVal = tmpVal;
+      }
+    } else {
+      condVal =
+          IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
+                          ConstantFloat::get(c, 0), irBuilder->getBasicBlock());
+    }
+    if (elseStmt_) {
+      irBuilder->getBasicBlock()->addSuccessor(true_bb);
+      irBuilder->getBasicBlock()->addSuccessor(false_bb);
+      BranchInst::Create(c, condVal, true_bb, false_bb,
+                        irBuilder->getBasicBlock());
+    } else {
+      irBuilder->getBasicBlock()->addSuccessor(true_bb);
+      irBuilder->getBasicBlock()->addSuccessor(next_bb);
+      BranchInst::Create(c, condVal, true_bb, next_bb,
+                        irBuilder->getBasicBlock());
+    }
   }
   irBuilder->setBasicBlock(true_bb);
   thenStmt_->generate(irBuilder);
   if (!irBuilder->getBasicBlock()->hasTerminator()) {
+    irBuilder->getBasicBlock()->addSuccessor(next_bb);
     BranchInst::Create(c, next_bb, irBuilder->getBasicBlock());
   }
   if (elseStmt_) {
     irBuilder->setBasicBlock(false_bb);
     elseStmt_->generate(irBuilder);
     if (!irBuilder->getBasicBlock()->hasTerminator()) {
+      irBuilder->getBasicBlock()->addSuccessor(next_bb);
       BranchInst::Create(c, next_bb, irBuilder->getBasicBlock());
     }
   } else {
@@ -1018,29 +1078,38 @@ void IfElseStatement::generate(IRBuilder *irBuilder) {
 
 void WhileStatement::generate(IRBuilder *irBuilder) {
   Context& c = irBuilder->getContext();
-  cond_->generate(irBuilder);
   irBuilder->setScope(scope_);
-  auto tmpVal = irBuilder->getTmpVal();
   auto while_bb = BasicBlock::Create(c, "while_entry", irBuilder->getFunction());
   auto next_bb = BasicBlock::Create(c, "next_entry", irBuilder->getFunction());
-  Value* condVal;
-  if (tmpVal->getType()->isIntegerType()) {
-    condVal = IcmpInst::Create(
-        c, IcmpInst::IcmpOp::NEQ, tmpVal,
-        ConstantInt::get(c, Type::getInt1Type(c), 0),
-        irBuilder->getBasicBlock());
-  } else {
-    condVal = IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
-                               ConstantFloat::get(c, 0),
-                               irBuilder->getBasicBlock());
-  }
-  BranchInst::Create(c, condVal, while_bb, next_bb, irBuilder->getBasicBlock());    
-  irBuilder->setBasicBlock(while_bb);
+  while_bb->addSuccessor(next_bb);
   irBuilder->setLoopBlock(while_bb, next_bb);
-  doStmt_->generate(irBuilder); 
+  cond_->generate(irBuilder);
   irBuilder->popLoopBlock();
-  if (!irBuilder->getBasicBlock()->hasTerminator()) {
+  auto tmpVal = irBuilder->getTmpVal();
+  if (tmpVal) {    
+    Value* condVal;
+    if (tmpVal->getType()->isIntegerType()) {
+      condVal = IcmpInst::Create(
+          c, IcmpInst::IcmpOp::NEQ, tmpVal,
+          ConstantInt::get(c, tmpVal->getType(), 0),
+          irBuilder->getBasicBlock());
+    } else {
+      condVal = IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
+                                ConstantFloat::get(c, 0),
+                                irBuilder->getBasicBlock());
+    }
+    irBuilder->getBasicBlock()->addSuccessor(while_bb);
+    irBuilder->getBasicBlock()->addSuccessor(next_bb);
     BranchInst::Create(c, condVal, while_bb, next_bb, irBuilder->getBasicBlock());    
+    irBuilder->setBasicBlock(while_bb);
+    irBuilder->setLoopBlock(while_bb, next_bb);
+    doStmt_->generate(irBuilder); 
+    irBuilder->popLoopBlock();
+    if (!irBuilder->getBasicBlock()->hasTerminator()) {
+      irBuilder->getBasicBlock()->addSuccessor(while_bb);
+      irBuilder->getBasicBlock()->addSuccessor(next_bb);
+      BranchInst::Create(c, condVal, while_bb, next_bb, irBuilder->getBasicBlock());    
+    }
   }
   irBuilder->setBasicBlock(next_bb);
   irBuilder->setScope(scope_->parent);
@@ -1072,10 +1141,12 @@ void ReturnStatement::generate(IRBuilder *irBuilder) {
 }
 
 void BreakStatement::generate(IRBuilder *irBuilder) {
+  irBuilder->getBasicBlock()->addSuccessor(irBuilder->getNextBlock());
   BranchInst::Create(irBuilder->getContext(),irBuilder->getNextBlock(),irBuilder->getBasicBlock());
 }
 
 void ContinueStatement::generate(IRBuilder *irBuilder) {
+  irBuilder->getBasicBlock()->addSuccessor(irBuilder->getWhileBlock());
   BranchInst::Create(irBuilder->getContext(),irBuilder->getWhileBlock(),irBuilder->getBasicBlock());
 }
 
