@@ -1,4 +1,0 @@
-irs/95_jump_game.ll:27:29: error: invalid getelementptr indices
-  %v25 = getelementptr i32, i32* %v11, i32 0, i32 0
-                            ^
-1 error generated.

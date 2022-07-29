@@ -1,4 +1,0 @@
-irs/080_color.ll:49:116: error: '@dp17' defined with type '<{ [13226976 x i32] }>*' but expected '[18 x [18 x [18 x [18 x [18 x [7 x i32]]]]]]*'
-  %v61 = getelementptr [18 x [18 x [18 x [18 x [18 x [7 x i32]]]]]], [18 x [18 x [18 x [18 x [18 x [7 x i32]]]]]]* @dp17, i32 0, i32 %v55, i32 %v56, i32 %v57, i32 %v58, i32 %v59, i32 %v60
-                                                                                                                   ^
-1 error generated.

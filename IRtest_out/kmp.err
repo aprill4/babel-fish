@@ -1,0 +1,4 @@
+irs/kmp.ll:23:29: error: invalid getelementptr indices
+  %v16 = getelementptr i32, i32* %v10, i32 0, i32 %v15
+                            ^
+1 error generated.

@@ -1,14 +1,14 @@
-/* A Bison parser, made by GNU Bison 2.3.  */
+/* A Bison parser, made by GNU Bison 3.5.1.  */
 
-/* Skeleton interface for Bison's Yacc-like parsers in C
+/* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003, 2004, 2005, 2006
-   Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2020 Free Software Foundation,
+   Inc.
 
-   This program is free software; you can redistribute it and/or modify
+   This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
-   any later version.
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,9 +16,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor,
-   Boston, MA 02110-1301, USA.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 /* As a special exception, you may create a larger work that contains
    part or all of the Bison parser skeleton and distribute that work
@@ -33,95 +31,69 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-/* Tokens.  */
+/* Undocumented macros, especially those whose name start with YY_,
+   are private implementation details.  Do not rely on them.  */
+
+#ifndef YY_YY_SYNTAX_ANALYZER_TAB_H_INCLUDED
+# define YY_YY_SYNTAX_ANALYZER_TAB_H_INCLUDED
+/* Debug traces.  */
+#ifndef YYDEBUG
+# define YYDEBUG 0
+#endif
+#if YYDEBUG
+extern int yydebug;
+#endif
+
+/* Token type.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
-   /* Put the tokens into the symbol table, so that GDB and other debuggers
-      know about them.  */
-   enum yytokentype {
-     ADD = 258,
-     SUB = 259,
-     MUL = 260,
-     DIV = 261,
-     MOD = 262,
-     ASSIGN = 263,
-     EQ = 264,
-     NEQ = 265,
-     LT = 266,
-     LTE = 267,
-     GT = 268,
-     GTE = 269,
-     AND = 270,
-     OR = 271,
-     NOT = 272,
-     IF = 273,
-     ELSE = 274,
-     WHILE = 275,
-     BREAK = 276,
-     CONTINUE = 277,
-     RETURN = 278,
-     CONST = 279,
-     INT = 280,
-     VOID = 281,
-     FLOAT = 282,
-     LEFT_PARENTHESES = 283,
-     RIGHT_PARENTHESES = 284,
-     LEFT_BRACKETS = 285,
-     RIGHT_BRACKETS = 286,
-     LEFT_BRACES = 287,
-     RIGHT_BRACES = 288,
-     COMMA = 289,
-     SEMICOLON = 290,
-     IDENTIFIER = 291,
-     INTEGER = 292,
-     FLOATPOINT = 293
-   };
+  enum yytokentype
+  {
+    ADD = 258,
+    SUB = 259,
+    MUL = 260,
+    DIV = 261,
+    MOD = 262,
+    ASSIGN = 263,
+    EQ = 264,
+    NEQ = 265,
+    LT = 266,
+    LTE = 267,
+    GT = 268,
+    GTE = 269,
+    AND = 270,
+    OR = 271,
+    NOT = 272,
+    IF = 273,
+    ELSE = 274,
+    WHILE = 275,
+    BREAK = 276,
+    CONTINUE = 277,
+    RETURN = 278,
+    CONST = 279,
+    INT = 280,
+    VOID = 281,
+    FLOAT = 282,
+    LEFT_PARENTHESES = 283,
+    RIGHT_PARENTHESES = 284,
+    LEFT_BRACKETS = 285,
+    RIGHT_BRACKETS = 286,
+    LEFT_BRACES = 287,
+    RIGHT_BRACES = 288,
+    COMMA = 289,
+    SEMICOLON = 290,
+    IDENTIFIER = 291,
+    INTEGER = 292,
+    FLOATPOINT = 293
+  };
 #endif
-/* Tokens.  */
-#define ADD 258
-#define SUB 259
-#define MUL 260
-#define DIV 261
-#define MOD 262
-#define ASSIGN 263
-#define EQ 264
-#define NEQ 265
-#define LT 266
-#define LTE 267
-#define GT 268
-#define GTE 269
-#define AND 270
-#define OR 271
-#define NOT 272
-#define IF 273
-#define ELSE 274
-#define WHILE 275
-#define BREAK 276
-#define CONTINUE 277
-#define RETURN 278
-#define CONST 279
-#define INT 280
-#define VOID 281
-#define FLOAT 282
-#define LEFT_PARENTHESES 283
-#define RIGHT_PARENTHESES 284
-#define LEFT_BRACKETS 285
-#define RIGHT_BRACKETS 286
-#define LEFT_BRACES 287
-#define RIGHT_BRACES 288
-#define COMMA 289
-#define SEMICOLON 290
-#define IDENTIFIER 291
-#define INTEGER 292
-#define FLOATPOINT 293
 
-
-
-
+/* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef union YYSTYPE
-#line 19 "syntax_analyzer.y"
+union YYSTYPE
 {
+#line 19 "syntax_analyzer.y"
+
       SysType type;
       std::string *string;
       std::int32_t token;
@@ -138,28 +110,32 @@ typedef union YYSTYPE
       FormalArgumentList* formal_args;
       FormalArgument* formal_arg;
       ActualArgumentList* actual_args;
-}
-/* Line 1529 of yacc.c.  */
-#line 144 "syntax_analyzer.tab.h"
-	YYSTYPE;
-# define yystype YYSTYPE /* obsolescent; will be withdrawn */
-# define YYSTYPE_IS_DECLARED 1
+
+#line 115 "syntax_analyzer.tab.h"
+
+};
+typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
+# define YYSTYPE_IS_DECLARED 1
 #endif
 
-extern YYSTYPE yylval;
-
+/* Location type.  */
 #if ! defined YYLTYPE && ! defined YYLTYPE_IS_DECLARED
-typedef struct YYLTYPE
+typedef struct YYLTYPE YYLTYPE;
+struct YYLTYPE
 {
   int first_line;
   int first_column;
   int last_line;
   int last_column;
-} YYLTYPE;
-# define yyltype YYLTYPE /* obsolescent; will be withdrawn */
+};
 # define YYLTYPE_IS_DECLARED 1
 # define YYLTYPE_IS_TRIVIAL 1
 #endif
 
+
+extern YYSTYPE yylval;
 extern YYLTYPE yylloc;
+int yyparse (void);
+
+#endif /* !YY_YY_SYNTAX_ANALYZER_TAB_H_INCLUDED  */

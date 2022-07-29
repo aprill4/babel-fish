@@ -1,0 +1,4 @@
+irs/shortest_path.ll:20100:39: error: expected value token
+  %bool_30091 = icmp ne i32* %v30073, float 0.00000000
+                                      ^
+1 error generated.

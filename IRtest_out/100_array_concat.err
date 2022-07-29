@@ -1,4 +1,0 @@
-irs/100_array_concat.ll:31:29: error: invalid getelementptr indices
-  %v26 = getelementptr i32, i32* %v14, i32 0, i32 %v25
-                            ^
-1 error generated.

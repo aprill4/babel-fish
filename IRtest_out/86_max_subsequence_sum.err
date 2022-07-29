@@ -1,4 +1,0 @@
-irs/86_max_subsequence_sum.ll:31:29: error: invalid getelementptr indices
-  %v28 = getelementptr i32, i32* %v11, i32 0, i32 0
-                            ^
-1 error generated.

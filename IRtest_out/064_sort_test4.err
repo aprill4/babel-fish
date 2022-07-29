@@ -1,4 +1,0 @@
-irs/064_sort_test4.ll:50:29: error: invalid getelementptr indices
-  %v46 = getelementptr i32, i32* %v13, i32 0, i32 %v45
-                            ^
-1 error generated.

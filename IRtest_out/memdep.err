@@ -1,0 +1,4 @@
+irs/memdep.ll:25:46: error: '@A11' defined with type '<{ [3 x i32] }>*' but expected '[3 x i32]*'
+  %v18 = getelementptr [3 x i32], [3 x i32]* @A11, i32 0, i32 0
+                                             ^
+1 error generated.

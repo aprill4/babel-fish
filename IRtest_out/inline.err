@@ -1,0 +1,5 @@
+warning: overriding the module target triple with x86_64-pc-linux-gnu [-Woverride-module]
+1 warning generated.
+/usr/bin/ld: /usr/bin/../lib/gcc/x86_64-linux-gnu/9/../../../x86_64-linux-gnu/crt1.o: in function `_start':
+(.text+0x24): undefined reference to `main'
+clang: error: linker command failed with exit code 1 (use -v to see invocation)

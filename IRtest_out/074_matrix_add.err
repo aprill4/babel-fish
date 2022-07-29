@@ -1,4 +1,0 @@
-irs/074_matrix_add.ll:41:29: error: invalid getelementptr indices
-  %v44 = getelementptr i32, i32* %v30, i32 0, i32 %v43
-                            ^
-1 error generated.
