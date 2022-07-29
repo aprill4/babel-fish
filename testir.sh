@@ -7,7 +7,7 @@ Yellow='\033[0;33m'
 Blue='\033[0;34m'
 Red='\033[0;31m'
 
-[[ $# -ne 2 ]] && echo -e "Usage: $0 <llir-dir> -g/-t\n<llir-dir> contains generated LLVM IR\n-g --- complie with clang/gcc to get the rigth answers\n-t --- test our compiler" && exit 1
+[[ $# -ne 2 ]] && echo -e "Usage: $0 <testcases-dir> -g/-t\n<testcases-dir> contains generated LLVM IR\n-g --- complie with clang/gcc to get the rigth answers\n-t --- test our compiler" && exit 1
 
 # 
 #bison -d syntax_analyzer.y
