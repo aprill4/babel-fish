@@ -30,10 +30,11 @@ public:
   static BasicBlock *Create(Context &context, const std::string &name,
                             Function *parent);
 
+std::list<Instruction *> instructionList_;
+
 private:
   Function *parent_;
   std::list<BasicBlock *> predecessorBlocks_;
   std::list<BasicBlock *> successorBlocks_;
-  std::list<Instruction *> instructionList_;
   std::set<BasicBlock *> dominators_;
 };

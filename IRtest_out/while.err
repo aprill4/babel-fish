@@ -1,4 +1,0 @@
-irs/while.ll:29:13: error: '@f' defined with type 'void (i32*)*' but expected 'void ([3 x i32])*'
-  call void @f([3 x i32] %v42)
-            ^
-1 error generated.

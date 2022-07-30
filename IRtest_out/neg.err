@@ -1,0 +1,4 @@
+irs/neg.ll:20:15: error: floating point constant invalid for type
+  store float 3.09999990, float* %v21
+              ^
+1 error generated.

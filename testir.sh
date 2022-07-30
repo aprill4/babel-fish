@@ -66,6 +66,13 @@ do
         test_out=${test_elf%.*}.out
         test_err=${test_elf%.*}.err
 
+        if [ ! -s $IRdir/$ir ]
+        then
+            echo -e "${Red}$progress $file generate IR error"
+            current_file_count=$((current_file_count+1))
+            continue
+        fi
+
         clang $IRdir/$ir -x ir -L. -lsysy_x86 -o $test_elf 2> $test_err
 
         compile_status=$?

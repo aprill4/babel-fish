@@ -199,6 +199,26 @@ void Pop::print(FILE *fp) {
    fprintf(fp, "}");
 }
 
-void emit_asm (MachineModule *mm, FILE *fp) {
-    mm->print(fp);
+
+/*
+void emit_bb(BasicBlock *bb, MachineBasicBlock *mbb) {
+    for (auto inst: bb->instructionList_) {
+        auto minst = new MachineInst;
+    }
+}
+*/
+
+
+MachineFunction *emit_func(Function *func) {
+    auto mfunc = new MachineFunction;
+    return mfunc;
+}
+
+MachineModule *emit_asm (Module *IR, FILE *fp) {
+    auto mm = new MachineModule;
+
+    for (auto func: IR->functionList_) {
+        auto mfunc = emit_func(func);
+        mm->functions.emplace_back(mfunc);
+    }
 }

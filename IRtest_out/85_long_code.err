@@ -1,0 +1,4 @@
+irs/85_long_code.ll:124:1: error: expected instruction opcode
+next_entry133:
+^
+1 error generated.

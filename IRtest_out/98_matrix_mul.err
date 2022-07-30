@@ -1,0 +1,4 @@
+irs/98_matrix_mul.ll:46:14: error: invalid operand type for instruction
+  %v65 = mul float %v56, %v64
+             ^
+1 error generated.

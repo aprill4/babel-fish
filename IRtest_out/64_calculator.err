@@ -1,0 +1,4 @@
+irs/64_calculator.ll:77:1: error: expected instruction opcode
+next_entry91:
+^
+1 error generated.

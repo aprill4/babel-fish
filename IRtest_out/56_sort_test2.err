@@ -1,0 +1,4 @@
+irs/56_sort_test2.ll:44:1: error: expected instruction opcode
+next_entry44:
+^
+1 error generated.

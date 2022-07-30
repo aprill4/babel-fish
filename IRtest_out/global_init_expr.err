@@ -1,4 +1,4 @@
-irs/global_init_expr.ll:4:33: error: integer constant must have integer type
-@A20 = constant [3 x [3 x i32]] 1
-                                ^
+irs/global_init_expr.ll:15:58: error: '@C47' defined with type '<{ i32, i32, i32, [6 x i32] }>*' but expected '[3 x [3 x i32]]*'
+  %v55 = getelementptr [3 x [3 x i32]], [3 x [3 x i32]]* @C47, i32 0, i32 0, i32 0
+                                                         ^
 1 error generated.

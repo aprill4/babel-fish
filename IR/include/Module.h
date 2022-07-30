@@ -21,7 +21,6 @@ public:
   void addGlobalVariable(GlobalVariable *globalVariable);
   std::string print();
 
-public:
   Context &context_;
   std::string moduleName_;
   std::set<GlobalVariable *> globalVariableList_;

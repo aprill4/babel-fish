@@ -1,4 +1,0 @@
-irs/fib.ll:22:19: error: '@recur_sum' defined with type 'i32 (i32*, i32)*' but expected 'i32 (i32, i32)*'
-  %v37 = call i32 @recur_sum(i32 %v33, i32 %v36)
-                  ^
-1 error generated.

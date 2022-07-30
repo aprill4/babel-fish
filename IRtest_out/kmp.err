@@ -1,4 +1,0 @@
-irs/kmp.ll:117:20: error: '@str_len' defined with type 'i32 (i32*)*' but expected 'i32 (i32)*'
-  %v120 = call i32 @str_len(i32 %v119)
-                   ^
-1 error generated.
