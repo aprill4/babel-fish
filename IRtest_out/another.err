@@ -1,6 +1,6 @@
 warning: overriding the module target triple with x86_64-pc-linux-gnu [-Woverride-module]
 1 warning generated.
-/usr/bin/ld: /tmp/another-a65440.o: in function `main':
+/usr/bin/ld: /tmp/another-c9b9fa.o: in function `main':
 another.ll:(.text+0xdd): undefined reference to `putint'
 /usr/bin/ld: another.ll:(.text+0xe7): undefined reference to `putch'
 clang: error: linker command failed with exit code 1 (use -v to see invocation)

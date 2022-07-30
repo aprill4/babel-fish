@@ -1,6 +1,6 @@
 warning: overriding the module target triple with x86_64-pc-linux-gnu [-Woverride-module]
 1 warning generated.
-/usr/bin/ld: /tmp/mul_const-1ef22b.o: in function `main':
+/usr/bin/ld: /tmp/mul_const-07fbb7.o: in function `main':
 mul_const.ll:(.text+0x2): undefined reference to `getint'
 /usr/bin/ld: mul_const.ll:(.text+0x10): undefined reference to `putint'
 /usr/bin/ld: mul_const.ll:(.text+0x1a): undefined reference to `putch'

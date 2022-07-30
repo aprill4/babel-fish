@@ -1,15 +1,15 @@
 warning: overriding the module target triple with x86_64-pc-linux-gnu [-Woverride-module]
 1 warning generated.
-/usr/bin/ld: /tmp/associativity-295472.o: in function `f':
+/usr/bin/ld: /tmp/associativity-1477e9.o: in function `f':
 associativity.ll:(.text+0x7): undefined reference to `putint'
 /usr/bin/ld: associativity.ll:(.text+0x11): undefined reference to `putch'
-/usr/bin/ld: /tmp/associativity-295472.o: in function `g':
+/usr/bin/ld: /tmp/associativity-1477e9.o: in function `g':
 associativity.ll:(.text+0x27): undefined reference to `putint'
 /usr/bin/ld: associativity.ll:(.text+0x31): undefined reference to `putch'
-/usr/bin/ld: /tmp/associativity-295472.o: in function `h':
+/usr/bin/ld: /tmp/associativity-1477e9.o: in function `h':
 associativity.ll:(.text+0x47): undefined reference to `putint'
 /usr/bin/ld: associativity.ll:(.text+0x51): undefined reference to `putch'
-/usr/bin/ld: /tmp/associativity-295472.o: in function `i':
+/usr/bin/ld: /tmp/associativity-1477e9.o: in function `i':
 associativity.ll:(.text+0x67): undefined reference to `putint'
 /usr/bin/ld: associativity.ll:(.text+0x71): undefined reference to `putch'
 clang: error: linker command failed with exit code 1 (use -v to see invocation)

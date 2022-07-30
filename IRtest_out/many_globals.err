@@ -1,6 +1,6 @@
 warning: overriding the module target triple with x86_64-pc-linux-gnu [-Woverride-module]
 1 warning generated.
-/usr/bin/ld: /tmp/many_globals-5754b4.o: in function `main':
+/usr/bin/ld: /tmp/many_globals-d9316a.o: in function `main':
 many_globals.ll:(.text+0x838): undefined reference to `putint'
 /usr/bin/ld: many_globals.ll:(.text+0x842): undefined reference to `putch'
 clang: error: linker command failed with exit code 1 (use -v to see invocation)

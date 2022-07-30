@@ -8,4 +8,5 @@ build
 *tab*
 *.elf
 *.ll
+libsysy.o
 _dev_null
