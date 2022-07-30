@@ -409,6 +409,7 @@ void VarDeclare::generate(IRBuilder *irBuilder) {
       if (value_) {
         value_->generate(irBuilder);
         auto val = irBuilder->getTmpVal(); 
+        cout << val->print() << endl;
         StoreInst::Create(context, val, value, irBuilder->getBasicBlock());
         if (val->getType()->isPointerType()) {
           throw Exception("var init_val isn't const");
@@ -421,7 +422,7 @@ void VarDeclare::generate(IRBuilder *irBuilder) {
           value = ConstantFloat::get(context, init_val);
         }
       } else {
-          value = ConstantZero::get(context, type); 
+        value = ConstantZero::get(context, type); 
       }
     } else {
       value = AllocaInst::Create(context, type, irBuilder->getBasicBlock());
@@ -497,41 +498,46 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
                                    irBuilder->getModule());
   }
   else {
-    BasicBlock *bb = irBuilder->getBasicBlock();
-    value = AllocaInst::Create(context, arrType, irBuilder->getBasicBlock());
-    vector<Value*> idxList;
-    for (int i = 0; i < len; i++) {
-      idxList.emplace_back(ConstantInt::get(context, context.Int32Type,0));
-    }
-    // TODO : call the memset function in C
-    Value* tmp;
-    for(int u = 0; u < total; u++) {
-      idxList.insert(idxList.begin(), ConstantInt::get(context, context.Int32Type, 0));
-      tmp = GetElementPtrInst::Create(context, value, idxList, bb);
-      idxList.erase(idxList.begin());
-      auto temp_val = vals[u];
-      if (temp_val->getType()->isPointerType()) {
-        temp_val = LoadInst::Create(context, temp_val, bb);
+    if (isConst_) {
+      AllocaInst::Create(context, arrType, irBuilder->getBasicBlock());
+      value = ConstantArray::get(context, arrType, vals, dimensions);
+    } else {      
+      BasicBlock *bb = irBuilder->getBasicBlock();
+      value = AllocaInst::Create(context, arrType, irBuilder->getBasicBlock());
+      vector<Value*> idxList;
+      for (int i = 0; i < len; i++) {
+        idxList.emplace_back(ConstantInt::get(context, context.Int32Type,0));
       }
-      if (temp_val->getType() != type) {
-        if (type->isIntegerType()) {
-          temp_val = FpToSiInst::Create(context, context.Int32Type, temp_val, irBuilder->getBasicBlock());
-        } else {
-          temp_val = SiToFpInst::Create(context, context.FloatType, temp_val, irBuilder->getBasicBlock());
+      // TODO : call the memset function in C
+      Value* tmp;
+      for(int u = 0; u < total; u++) {
+        idxList.insert(idxList.begin(), ConstantInt::get(context, context.Int32Type, 0));
+        tmp = GetElementPtrInst::Create(context, value, idxList, bb);
+        idxList.erase(idxList.begin());
+        auto temp_val = vals[u];
+        if (temp_val->getType()->isPointerType()) {
+          temp_val = LoadInst::Create(context, temp_val, bb);
         }
-      }
-      StoreInst::Create(context, temp_val, tmp, bb);
-      bool incr = true;
-      // whether need to adjust the order e.g. the idxList a[1][2][3] = {3,2,1} to avoid minus operation
-      for(int u = len - 1; u >= 0 && incr ; u--) {
-        int curr = dynamic_cast<ConstantInt*>(idxList[u])->getValue();
-        if(curr + 1 == dimensions[u]) 
-          curr = 0;
-        else {
-          curr++;
-          incr = false;
+        if (temp_val->getType() != type) {
+          if (type->isIntegerType()) {
+            temp_val = FpToSiInst::Create(context, context.Int32Type, temp_val, irBuilder->getBasicBlock());
+          } else {
+            temp_val = SiToFpInst::Create(context, context.FloatType, temp_val, irBuilder->getBasicBlock());
+          }
         }
-        dynamic_cast<ConstantInt*>(idxList[u])->setValue(curr);
+        StoreInst::Create(context, temp_val, tmp, bb);
+        bool incr = true;
+        // whether need to adjust the order e.g. the idxList a[1][2][3] = {3,2,1} to avoid minus operation
+        for(int u = len - 1; u >= 0 && incr ; u--) {
+          int curr = dynamic_cast<ConstantInt*>(idxList[u])->getValue();
+          if(curr + 1 == dimensions[u]) 
+            curr = 0;
+          else {
+            curr++;
+            incr = false;
+          }
+          dynamic_cast<ConstantInt*>(idxList[u])->setValue(curr);
+        }
       }
     }
   }
@@ -637,6 +643,8 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
     }
     is_float = force_trans(irBuilder, lhs, rhs);
   }
+  // cout << lhs->print() << endl;
+  // cout << rhs->print() << endl;
   switch(op_) {
 			case BinaryOp::ADD:
 				if(is_float) {
@@ -993,35 +1001,61 @@ void LValExpression::generate(IRBuilder *irBuilder) {
         }
         irBuilder->setTmpVal(arr->getElementValue(idx));
       }
-    } else {      
-      bool fun_arr_ptr = false;
-      if (ptr->getType()->isPointerType() && ptr->getType()->getPtrElementType()->isPointerType()) {
-        ptr = LoadInst::Create(context, ptr, irBuilder->getBasicBlock());
-        fun_arr_ptr = true;
-      }
-      if(!(identifier_->dimension_.empty())){
-        vector<Value *> idxList;
-        int size = identifier_->dimension_.size();
-        for (int i = 0; i < size; i++) {
-          auto idx = identifier_->dimension_[i];
-          idx->generate(irBuilder);
-          auto tmp = irBuilder->getTmpVal();
-          if (tmp->getType()->isFloatType()) {
-            throw Exception("array dimension isn't float in Function " + irBuilder->getFunction()->getName());
-          } else if (tmp->getType()->isPointerType()) {
-            tmp = LoadInst::Create(context, tmp, irBuilder->getBasicBlock());
+    } else {
+      if (dynamic_cast<Constant*>(ptr)) {
+        if (dynamic_cast<ConstantArray*>(ptr)) {
+          auto arr = dynamic_cast<ConstantArray*>(ptr);
+          vector<int> indice;
+          for(auto& idx : identifier_->dimension_) {
+            idx->generate(irBuilder);
+            auto temp = irBuilder->getTmpVal();
+            if (dynamic_cast<GlobalVariable*>(temp)) {
+              temp = dynamic_cast<GlobalVariable*>(temp)->getInitValue();
+            }
+            if (!temp->getType()->isIntegerType()) {
+              throw Exception("array dimension isn't float in global");
+            }
+            indice.emplace_back(dynamic_cast<ConstantInt*>(temp)->getValue());
           }
-          idxList.emplace_back(tmp);
-          if (fun_arr_ptr && i == 0) {
-            ptr = GetElementPtrInst::Create(context, ptr, idxList, irBuilder->getBasicBlock());
-            idxList.pop_back();
+          int len = arr->dimension_.size(), leng = indice.size(), acc = 1, idx = 0;
+          //calculate the location of the multi-dimensions element
+          for(int u = leng - 1; u >= 0; u--) {
+            idx += acc * indice[u];
+            acc *= arr->dimension_[u];
           }
+          ptr = arr->getElementValue(idx);
         }
-        idxList.insert(idxList.begin(), ConstantInt::get(context, context.Int32Type, 0));
-        ptr = GetElementPtrInst::Create(context, 
-                                        ptr, 
-                                        idxList,
-                                        irBuilder->getBasicBlock());
+      } else {      
+        bool fun_arr_ptr = false;
+        if (ptr->getType()->isPointerType() && ptr->getType()->getPtrElementType()->isPointerType()) {
+          ptr = LoadInst::Create(context, ptr, irBuilder->getBasicBlock());
+          cout << ptr->print() << endl;
+          fun_arr_ptr = true;
+        }
+        if(!(identifier_->dimension_.empty())){
+          vector<Value *> idxList;
+          int size = identifier_->dimension_.size();
+          for (int i = 0; i < size; i++) {
+            auto idx = identifier_->dimension_[i];
+            idx->generate(irBuilder);
+            auto tmp = irBuilder->getTmpVal();
+            if (tmp->getType()->isFloatType()) {
+              throw Exception("array dimension isn't float in Function " + irBuilder->getFunction()->getName());
+            } else if (tmp->getType()->isPointerType()) {
+              tmp = LoadInst::Create(context, tmp, irBuilder->getBasicBlock());
+            }
+            idxList.emplace_back(tmp);
+            if (fun_arr_ptr && i == 0) {
+              ptr = GetElementPtrInst::Create(context, ptr, idxList, irBuilder->getBasicBlock());
+              idxList.pop_back();
+            }
+          }
+          idxList.insert(idxList.begin(), ConstantInt::get(context, context.Int32Type, 0));
+          ptr = GetElementPtrInst::Create(context, 
+                                          ptr, 
+                                          idxList,
+                                          irBuilder->getBasicBlock());
+        }
       }
       irBuilder->setTmpVal(ptr);
     }
@@ -1209,7 +1243,7 @@ void FuncCallExpression::generate(IRBuilder *irBuilder) {
   for(int u = 0, len = funcType->getArgumentsNum(); u < len; u++) {
     actualArgs_->list_[u]->generate(irBuilder);
     auto val = irBuilder->getTmpVal();
-    if (val->getType()->isPointerType()) {
+    if (val->getType()->isPointerType() && !val->getType()->getPtrElementType()->isArrayType()) {
       val = LoadInst::Create(context, val, irBuilder->getBasicBlock());
     }
     if(dynamic_cast<ConstantInt*>(val) && funcType->getArgumentType(u) == context.FloatType)
