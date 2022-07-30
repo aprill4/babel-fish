@@ -332,8 +332,11 @@ void Number::generate(IRBuilder *irBuilder) {
 void addLibFn(IRBuilder *irBuilder, string name,Scope* scope_,Type * returnType,std::vector<Type *>argsType){
   Context& c = irBuilder->getContext();
 
-  auto funty = FunctionType::get(returnType,argsType);
-  string parms[1] = {"i"};
+  auto funty = FunctionType::get(returnType, argsType);
+  string parms[10]; 
+  for (int i = 0; i < argsType.size(); i++) {
+    parms[i] = "i";
+  }
   auto fl = new FormalArgumentList();
   string *s = new string("i");
   auto id = new Identifier(s);
@@ -356,10 +359,10 @@ void Root::generate(IRBuilder *irBuilder) {
   irBuilder->setScope(scope_);
   addLibFn(irBuilder, "putint" , scope_, Type::getVoidType(c),{Type::getInt32Type(c)});
   addLibFn(irBuilder, "putch" , scope_, Type::getVoidType(c),{Type::getInt32Type(c)});
-  // addLibFn(irBuilder, "putarray" , scope_, Type::getVoidType(c),{Type::getInt32Type(c),Type::getArrayType(c,Type::getInt32Type(c),1)});
+  addLibFn(irBuilder, "putarray" , scope_, Type::getVoidType(c),{Type::getInt32Type(c), PointerType::get(c,c.Int32Type)});
   addLibFn(irBuilder, "getint" , scope_, Type::getInt32Type(c),{});
   addLibFn(irBuilder, "getch" , scope_, Type::getInt32Type(c),{});
-  // addLibFn(irBuilder, "getarray" , scope_, Type::getArrayType(c,Type::getInt32Type(c),1),{});
+  addLibFn(irBuilder, "getarray" , scope_, Type::getInt32Type(c),{PointerType::get(c, c.Int32Type)});
   for (auto &decl : this->declareStatement_) {
     decl->generate(irBuilder);
   }
