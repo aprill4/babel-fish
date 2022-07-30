@@ -1,4 +1,4 @@
-irs/bang.ll:19:13: error: '@putint' defined with type 'void (i32)*' but expected 'void (i1)*'
+irs/bang.ll:21:13: error: '@putint' defined with type 'void (i32)*' but expected 'void (i1)*'
   call void @putint(i1 %v33)
             ^
 1 error generated.

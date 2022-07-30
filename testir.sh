@@ -10,8 +10,8 @@ Red='\033[0;31m'
 [[ $# -ne 2 ]] && echo -e "Usage: $0 <testcases-dir> -g/-t\n<testcases-dir> contains generated LLVM IR\n-g --- complie with clang/gcc to get the rigth answers\n-t --- test our compiler" && exit 1
 
 # 
-#bison -d syntax_analyzer.y
-#flex lexical_analyzer.l
+bison -d syntax_analyzer.y
+flex lexical_analyzer.l
 
 if [ -d "./build" ]; then
     echo "directory \"./build\" exists"
@@ -60,13 +60,13 @@ do
         progress="[$current_file_count/$file_num]"
 
         ir=${file%.*}.ll
-        ./build/check.out < $srcdir/$file > $IRdir/$ir
+        ./build/check.out < $srcdir/$file > $IRdir/$ir 2>> /dev/null
         
         test_elf=$TestOutDir/${ir%.*}.elf
         test_out=${test_elf%.*}.out
         test_err=${test_elf%.*}.err
 
-        clang libsysy.a -x ir $IRdir/$ir -o $test_elf 2> $test_err
+        clang $IRdir/$ir -x ir -L. -lsysy_x86 -o $test_elf 2> $test_err
 
         compile_status=$?
         if [ $compile_status -eq 0 ] 
@@ -80,13 +80,17 @@ do
             run_status=$?
             echo $run_status >> $test_out
 
-            diff $test_out $correct_out > _dev_null
-            diff_status=$?
-
             if [ $run_status -eq 124 ]
             then
                 echo -e "${Blue}${progress} ${file} timeout, details saved to ${test_err}"
-            elif [ $diff_status -eq 0 ]
+                current_file_count=`expr $current_file_count + 1`
+                continue
+            fi
+
+            diff $test_out $correct_out > /dev/null
+            diff_status=$?
+
+            if [ $diff_status -eq 0 ]
             then
                 echo -e "${Green}${progress} ${file} passed"
                 rm -f $test_err
