@@ -968,36 +968,63 @@ void LValExpression::generate(IRBuilder *irBuilder) {
     }
   } else {
     Value *ptr = find_symbol(scope, identifier_->id_, true);
-    bool fun_arr_ptr = false;
-    if (ptr->getType()->isPointerType() && ptr->getType()->getPtrElementType()->isPointerType()) {
-      ptr = LoadInst::Create(context, ptr, irBuilder->getBasicBlock());
-      fun_arr_ptr = true;
-    }
-    if(!(identifier_->dimension_.empty())){
-      vector<Value *> idxList;
-      int size = identifier_->dimension_.size();
-      for (int i = 0; i < size; i++) {
-        auto idx = identifier_->dimension_[i];
-        idx->generate(irBuilder);
-        auto tmp = irBuilder->getTmpVal();
-        if (tmp->getType()->isFloatType()) {
-          throw Exception("array dimension isn't float in Function " + irBuilder->getFunction()->getName());
-        } else if (tmp->getType()->isPointerType()) {
-          tmp = LoadInst::Create(context, tmp, irBuilder->getBasicBlock());
+    if (dynamic_cast<GlobalVariable*>(ptr) && dynamic_cast<GlobalVariable*>(ptr)->isConst()) {
+      if(identifier_->dimension_.empty()) {
+        irBuilder->setTmpVal(ptr);
+      } else {
+        auto arr = dynamic_cast<ConstantArray*>(dynamic_cast<GlobalVariable*>(ptr)->getInitValue());
+        vector<int> indice;
+        for(auto& idx : identifier_->dimension_) {
+          idx->generate(irBuilder);
+          auto temp = irBuilder->getTmpVal();
+          if (dynamic_cast<GlobalVariable*>(temp)) {
+            temp = dynamic_cast<GlobalVariable*>(temp)->getInitValue();
+          }
+          if (!temp->getType()->isIntegerType()) {
+            throw Exception("array dimension isn't float in global");
+          }
+          indice.emplace_back(dynamic_cast<ConstantInt*>(temp)->getValue());
         }
-        idxList.emplace_back(tmp);
-        if (fun_arr_ptr && i == 0) {
-          ptr = GetElementPtrInst::Create(context, ptr, idxList, irBuilder->getBasicBlock());
-          idxList.pop_back();
+        int len = arr->dimension_.size(), leng = indice.size(), acc = 1, idx = 0;
+        //calculate the location of the multi-dimensions element
+        for(int u = leng - 1; u >= 0; u--) {
+          idx += acc * indice[u];
+          acc *= arr->dimension_[u];
         }
+        irBuilder->setTmpVal(arr->getElementValue(idx));
       }
-      idxList.insert(idxList.begin(), ConstantInt::get(context, context.Int32Type, 0));
-      ptr = GetElementPtrInst::Create(context, 
-                                      ptr, 
-                                      idxList,
-                                      irBuilder->getBasicBlock());
+    } else {      
+      bool fun_arr_ptr = false;
+      if (ptr->getType()->isPointerType() && ptr->getType()->getPtrElementType()->isPointerType()) {
+        ptr = LoadInst::Create(context, ptr, irBuilder->getBasicBlock());
+        fun_arr_ptr = true;
+      }
+      if(!(identifier_->dimension_.empty())){
+        vector<Value *> idxList;
+        int size = identifier_->dimension_.size();
+        for (int i = 0; i < size; i++) {
+          auto idx = identifier_->dimension_[i];
+          idx->generate(irBuilder);
+          auto tmp = irBuilder->getTmpVal();
+          if (tmp->getType()->isFloatType()) {
+            throw Exception("array dimension isn't float in Function " + irBuilder->getFunction()->getName());
+          } else if (tmp->getType()->isPointerType()) {
+            tmp = LoadInst::Create(context, tmp, irBuilder->getBasicBlock());
+          }
+          idxList.emplace_back(tmp);
+          if (fun_arr_ptr && i == 0) {
+            ptr = GetElementPtrInst::Create(context, ptr, idxList, irBuilder->getBasicBlock());
+            idxList.pop_back();
+          }
+        }
+        idxList.insert(idxList.begin(), ConstantInt::get(context, context.Int32Type, 0));
+        ptr = GetElementPtrInst::Create(context, 
+                                        ptr, 
+                                        idxList,
+                                        irBuilder->getBasicBlock());
+      }
+      irBuilder->setTmpVal(ptr);
     }
-    irBuilder->setTmpVal(ptr);
   }
 }
 
