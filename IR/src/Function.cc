@@ -69,7 +69,7 @@ std::string Function::print() {
     auto arg = arguments_[i];
     func_ir += arg->getType()->getTypeName();
     func_ir += " ";
-    // func_ir += arg->print();
+    func_ir += print_as_op(arg);
 
     if (args_num-1 > i){
       func_ir += ", ";

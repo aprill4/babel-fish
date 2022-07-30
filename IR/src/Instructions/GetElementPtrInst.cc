@@ -43,10 +43,18 @@ Type *GetElementPtrInst::computeElementType(Value *ptr,
   Type *elementType = ptr->getType()->getPtrElementType();
   assert("GetElementPtrInst ptr is wrong type" &&
          (elementType->isArrayType() || elementType->isIntegerType() ||
-          elementType->isFloatType()));
+          elementType->isFloatType() || elementType->isPointerType() ));
   if (elementType->isArrayType()) {
     ArrayType *arr_ty = static_cast<ArrayType *>(elementType);
-    for (int i = 0; i < idxList.size(); i++) {
+    for (int i = 1; i < idxList.size(); i++) {
+      elementType = arr_ty->getElementType();
+      if (elementType->isArrayType()) {
+        arr_ty = static_cast<ArrayType *>(elementType);
+      }
+    }
+  } else if (elementType->isPointerType()) {
+    ArrayType *arr_ty = static_cast<ArrayType *>(elementType->getPtrElementType());
+    for (int i = 1; i < idxList.size(); i++) {
       elementType = arr_ty->getElementType();
       if (elementType->isArrayType()) {
         arr_ty = static_cast<ArrayType *>(elementType);
@@ -72,9 +80,6 @@ std::string GetElementPtrInst::print() {
       IR += ", ";
     IR += getOperand(i)->getType()->getTypeName() + " " +
           print_as_op(getOperand(i));
-    if (i == 0) {
-      IR += ", i32 0";
-    }
   }
   return IR;
 }

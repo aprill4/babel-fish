@@ -505,7 +505,9 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
     // TODO : call the memset function in C
     Value* tmp;
     for(int u = 0; u < total; u++) {
+      idxList.insert(idxList.begin(), ConstantInt::get(context, context.Int32Type, 0));
       tmp = GetElementPtrInst::Create(context, value, idxList, bb);
+      idxList.erase(idxList.begin());
       auto temp_val = vals[u];
       if (temp_val->getType()->isPointerType()) {
         temp_val = LoadInst::Create(context, temp_val, bb);
@@ -553,17 +555,11 @@ void FunctionDefinition::generate(IRBuilder *irBuilder) {
         }
       }
       if (dimension.size() != 0) {
-        // argsType.emplace_back( PointerType::get(context, 
-        //     ArrayType::get(context, check_sys_type(arg->type_, context),
-        //                    dimension)));
-        argsType.emplace_back(
+        argsType.emplace_back(PointerType::get(context,
             ArrayType::get(context, check_sys_type(arg->type_, context),
-                           dimension));
+                           dimension)));
       } else {
         argsType.emplace_back(PointerType::get(context, check_sys_type(arg->type_, context)));
-        // argsType.emplace_back(ArrayType::get(
-        //       context, check_sys_type(arg->type_, context),
-        //       -1)); //-1 mean the actual dimensions is trivial to the program
       }
     }
     args_name[idx] = arg->identifier_->id_;
@@ -584,16 +580,21 @@ void FunctionDefinition::generate(IRBuilder *irBuilder) {
   irBuilder->setScope(body_->scope_);
   for(int u = 0, len = formalArgs_->list_.size(); u< len; u++){
     Value *ptr;
-    if(argsType[u]->isArrayType()){
+    if (argsType[u]->isArrayType()) {
       ptr = AllocaInst::Create(context, static_cast<ArrayType*>(argsType[u]), 
                                irBuilder->getBasicBlock());
-    }
-    else {
+      StoreInst::Create(context, irBuilder->getFunction()->getArgument(u), ptr, irBuilder->getBasicBlock());
+    } else if (argsType[u]->isPointerType()){
+      ptr = AllocaInst::Create(context, static_cast<PointerType*>(argsType[u]), 
+                               irBuilder->getBasicBlock());
+      StoreInst::Create(context, irBuilder->getFunction()->getArgument(u), ptr, irBuilder->getBasicBlock());
+    } else {
       ptr = AllocaInst::Create(context,
                                argsType[u]->isFloatType() ? context.FloatType : context.Int32Type,
                                irBuilder->getBasicBlock());
+      StoreInst::Create(context, irBuilder->getFunction()->getArgument(u), ptr, irBuilder->getBasicBlock());
     } 
-    irBuilder->getScope()->DeclIR[formalArgs_->list_[u]->identifier_->id_] = ptr;
+    irBuilder->getScope()->DeclIR[args_name[u]] = ptr;
   }
   body_->generate(irBuilder);
   if (!irBuilder->getBasicBlock()->hasTerminator()) {
@@ -966,9 +967,16 @@ void LValExpression::generate(IRBuilder *irBuilder) {
     }
   } else {
     Value *ptr = find_symbol(scope, identifier_->id_, true);
+    bool fun_arr_ptr = false;
+    if (ptr->getType()->isPointerType() && ptr->getType()->getPtrElementType()->isPointerType()) {
+      ptr = LoadInst::Create(context, ptr, irBuilder->getBasicBlock());
+      fun_arr_ptr = true;
+    }
     if(!(identifier_->dimension_.empty())){
       vector<Value *> idxList;
-      for(auto&idx : identifier_->dimension_) {
+      int size = identifier_->dimension_.size();
+      for (int i = 0; i < size; i++) {
+        auto idx = identifier_->dimension_[i];
         idx->generate(irBuilder);
         auto tmp = irBuilder->getTmpVal();
         if (tmp->getType()->isFloatType()) {
@@ -977,7 +985,12 @@ void LValExpression::generate(IRBuilder *irBuilder) {
           tmp = LoadInst::Create(context, tmp, irBuilder->getBasicBlock());
         }
         idxList.emplace_back(tmp);
+        if (fun_arr_ptr && i == 0) {
+          ptr = GetElementPtrInst::Create(context, ptr, idxList, irBuilder->getBasicBlock());
+          idxList.pop_back();
+        }
       }
+      idxList.insert(idxList.begin(), ConstantInt::get(context, context.Int32Type, 0));
       ptr = GetElementPtrInst::Create(context, 
                                       ptr, 
                                       idxList,
@@ -1006,7 +1019,7 @@ void AssignStatement::generate(IRBuilder *irBuilder) {
   rhs_->generate(irBuilder);
   auto rval = irBuilder->getTmpVal();
   if (rval->getType()->isPointerType()) {
-    rval = LoadInst::Create(irBuilder->getContext(), rval->getType()->getPtrElementType(), rval, irBuilder->getBasicBlock());
+    rval = LoadInst::Create(irBuilder->getContext(), rval, irBuilder->getBasicBlock());
   }
   StoreInst::Create(irBuilder->getContext(), rval, lval, irBuilder->getBasicBlock());
 }
