@@ -409,7 +409,7 @@ void VarDeclare::generate(IRBuilder *irBuilder) {
       if (value_) {
         value_->generate(irBuilder);
         auto val = irBuilder->getTmpVal(); 
-        cout << val->print() << endl;
+        // cout << val->print() << endl;
         StoreInst::Create(context, val, value, irBuilder->getBasicBlock());
         if (val->getType()->isPointerType()) {
           throw Exception("var init_val isn't const");
@@ -562,10 +562,14 @@ void FunctionDefinition::generate(IRBuilder *irBuilder) {
         }
       }
       if (dimension.size() != 0) {
+        // argsType.emplace_back(context,
+        //     ArrayType::get(context, check_sys_type(arg->type_, context),
+        //                    dimension));
         argsType.emplace_back(PointerType::get(context,
             ArrayType::get(context, check_sys_type(arg->type_, context),
                            dimension)));
       } else {
+        // argsType.emplace_back(ArrayType::get(context, check_sys_type(arg->type_, context), -1));
         argsType.emplace_back(PointerType::get(context, check_sys_type(arg->type_, context)));
       }
     }
@@ -1029,7 +1033,7 @@ void LValExpression::generate(IRBuilder *irBuilder) {
         bool fun_arr_ptr = false;
         if (ptr->getType()->isPointerType() && ptr->getType()->getPtrElementType()->isPointerType()) {
           ptr = LoadInst::Create(context, ptr, irBuilder->getBasicBlock());
-          cout << ptr->print() << endl;
+          // cout << ptr->print() << endl;
           fun_arr_ptr = true;
         }
         if(!(identifier_->dimension_.empty())){
@@ -1243,14 +1247,15 @@ void FuncCallExpression::generate(IRBuilder *irBuilder) {
   for(int u = 0, len = funcType->getArgumentsNum(); u < len; u++) {
     actualArgs_->list_[u]->generate(irBuilder);
     auto val = irBuilder->getTmpVal();
-    if (val->getType()->isPointerType() && !val->getType()->getPtrElementType()->isArrayType()) {
+    if (val->getType()->isPointerType() && (val->getType()->getPtrElementType()->isArrayType() || val->getType()->getPtrElementType()->isPointerType())) {
+      val = GetElementPtrInst::Create(context, val, {ConstantInt::get(context, context.Int32Type, 0),ConstantInt::get(context, context.Int32Type, 0)}, irBuilder->getBasicBlock());
+    } else if (val->getType()->isPointerType() && !val->getType()->getPtrElementType()->isArrayType() && !dynamic_cast<LoadInst*>(val)) {
       val = LoadInst::Create(context, val, irBuilder->getBasicBlock());
-    }
-    if (val->getType() != funcType->getArgumentType(u)) {
+      // cout << val->print() << endl;
+    } else if (val->getType() != funcType->getArgumentType(u)) {
         val = ZextInst::Create(context, funcType->getArgumentType(u), val, irBuilder->getBasicBlock());
     }
     if(dynamic_cast<ConstantInt*>(val) && funcType->getArgumentType(u) == context.FloatType)
-      //SiToFpInst::Create(context, context.FloatType, val, irBuilder->getBasicBlock()); godbolt transform number without explicit instructions
       funcArgs.emplace_back(ConstantFloat::get(context, static_cast<float>(dynamic_cast<ConstantInt*>(val)->getValue())));
     else if(dynamic_cast<ConstantFloat*>(val) && funcType->getArgumentType(u) != context.FloatType) 
       funcArgs.emplace_back(ConstantInt::get(context, 
