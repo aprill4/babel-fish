@@ -16,6 +16,5 @@ public:
     return new ConstantInt(c, type, value);
   }
 
-private:
   int32_t value_;
 };

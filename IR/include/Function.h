@@ -30,7 +30,6 @@ public:
                           Module *parent, bool is_decl = false);
   bool is_declaration;
 
-private:
   Module *parent_;
   std::list<BasicBlock *> basicBlocks_;
   std::vector<Argument *> arguments_; // formalArgs

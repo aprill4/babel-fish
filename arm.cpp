@@ -1,5 +1,5 @@
 #include "arm.h"
-#include "IR.h"
+#include "IR/include/IR.h"
 
 
 void MachineModule::print(FILE *fp) {
@@ -9,6 +9,7 @@ void MachineModule::print(FILE *fp) {
 }
 
 void MachineFunction::print(FILE *fp) {
+    fprintf(fp, "%s:\n", name);
     for (auto bb: basic_blocks) {
         bb->print(fp);
     }
@@ -93,8 +94,8 @@ void FCmp::print(FILE *fp) {
 
 void IMov::print(FILE *fp) {
     if (dynamic_cast<Symbol *>(src)) {
-        fprintf(fp, "movw%s %s, #:lower:%s", dst->print(), src->print());
-        fprintf(fp, "movt%s %s, #:upper:%s", dst->print(), src->print());
+        fprintf(fp, "movw%s %s, #:lower:%s", get_cond(), dst->print(), src->print());
+        fprintf(fp, "movt%s %s, #:upper:%s", get_cond(), dst->print(), src->print());
     } else {
         fprintf(fp, "mov%s %s, %s", get_cond(), dst->print(), src->print());
     }
@@ -102,8 +103,8 @@ void IMov::print(FILE *fp) {
 
 void FMov::print(FILE *fp) {
     if (dynamic_cast<Symbol *>(src)) {
-        fprintf(fp, "movw%s %s, #:lower:%s", dst->print(), src->print());
-        fprintf(fp, "movt%s %s, #:upper:%s", dst->print(), src->print());
+        fprintf(fp, "movw%s %s, #:lower:%s", get_cond(), dst->print(), src->print());
+        fprintf(fp, "movt%s %s, #:upper:%s", get_cond(), dst->print(), src->print());
     } else {
         fprintf(fp, "vmov.f32%s %s, %s", get_cond(), dst->print(), src->print());
     }
@@ -208,9 +209,46 @@ void emit_bb(BasicBlock *bb, MachineBasicBlock *mbb) {
 }
 */
 
+IMov *emit_imov(Instruction *inst) {
+    auto imv = new IMov;
+    if (dynamic_cast<ReturnInst *> (inst)) {
+        imv->dst = new Mreg {.reg = Mreg::r0};
+        if (dynamic_cast<ConstantInt *> (inst->operands_[0])) {
+            imv->src = new IImm {inst->operands_[0]->value_};
+        }
+    }
+
+    return IMov;
+}
+
+MachineBasicBlock *emit_bb(BasicBlock *bb) {
+    for (auto inst: bb->instructionList_) {
+        if (dynamic_cast<ReturnInst *> (inst)) {
+            auto ret = emit_imov(inst);
+            ret->print();
+            Return::print();
+        }
+    }
+}
 
 MachineFunction *emit_func(Function *func) {
     auto mfunc = new MachineFunction;
+    
+    std::map<BasicBlock *, MachineBasicBlock *> bb_map;
+
+    for (auto bb: func->basicBlocks_) {
+        auto mbb = new MachineBasicBlock;
+        mfunc->basic_blocks.emplace_back(mbb);
+        bb_map[bb] = mbb;
+    }
+
+    for (auto bb: func->basicBlocks_) {
+        for (auto suc: bb->successorBlocks_) {
+            bb_map[bb]->sucs.emplace_back(bb_map[suc]);
+            bb_map[suc]->pres.emplace_back(bb_map[bb]);
+        }
+    }
+
     return mfunc;
 }
 
@@ -221,4 +259,9 @@ MachineModule *emit_asm (Module *IR, FILE *fp) {
         auto mfunc = emit_func(func);
         mm->functions.emplace_back(mfunc);
     }
+    return mm;
+}
+
+int main() {
+    return 0;
 }

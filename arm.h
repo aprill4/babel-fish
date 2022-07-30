@@ -18,6 +18,7 @@ struct MachineModule {
 };
 
 struct MachineFunction {
+    string name;
     std::vector<MachineBasicBlock *> basic_blocks;
     void print(FILE *fp);
 };
@@ -32,7 +33,7 @@ struct MachineInst {
     enum Cond { NoCond, Le, Lt, Ge, Gt, Eq, Ne };
     Cond cond = NoCond;
 
-    virtual void print(FILE *fp);
+    virtual void print(FILE *fp) {};
     void newline(FILE *fp);
     char *get_cond();
 };
@@ -154,7 +155,7 @@ struct MachineOperand {
 
     char* get_shift();
 
-    virtual char *print();
+    virtual char *print() {};
 };
 
 struct IImm : MachineOperand { 

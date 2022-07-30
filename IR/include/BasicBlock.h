@@ -32,7 +32,6 @@ public:
 
 std::list<Instruction *> instructionList_;
 
-private:
   Function *parent_;
   std::list<BasicBlock *> predecessorBlocks_;
   std::list<BasicBlock *> successorBlocks_;

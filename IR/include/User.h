@@ -16,7 +16,7 @@ public:
   std::string getOperandTypeName(std::size_t idx);
 
   void setOperand(Value* value, std::size_t idx);
-private:
+
   std::vector<Value *> operands_;
   std::size_t operandNum_;
 };
