@@ -1,0 +1,7 @@
+differences between test_out and correct_out:
+1c1,3
+< 139
+---
+> 43
+> 6
+> 0

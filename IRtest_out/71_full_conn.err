@@ -1,0 +1,11 @@
+differences between test_out and correct_out:
+1c1,7
+< 139
+---
+> dog
+> cat
+> dog
+> dog
+> cat
+> cat
+> 0

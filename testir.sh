@@ -94,7 +94,8 @@ do
                 continue
             fi
 
-            diff $test_out $correct_out > /dev/null
+            echo "differences between test_out and correct_out:" >> $test_err
+            diff $test_out $correct_out >> $test_err
             diff_status=$?
 
             if [ $diff_status -eq 0 ]
@@ -102,8 +103,11 @@ do
                 echo -e "${Green}${progress} ${file} passed"
                 rm -f $test_err
                 [ ! -s $test_out ] && rm -f $test_out
-            else
+            elif [ $run_status -eq 139 ]
+            then
                 echo -e "${Yellow}${progress} ${file} runtime error, details saved to ${test_err}"
+            else
+                echo -e "${Yellow}${progress} ${file} wrong answer, details saved to ${test_err}"
             fi
         else
             echo -e "${Red}${progress} ${file} compile error, details saved to ${test_err}"
