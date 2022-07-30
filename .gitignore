@@ -8,3 +8,4 @@ build
 *tab*
 *.elf
 *.ll
+_dev_null

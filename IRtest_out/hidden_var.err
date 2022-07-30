@@ -1,2 +1,12 @@
 warning: overriding the module target triple with x86_64-pc-linux-gnu [-Woverride-module]
 1 warning generated.
+/usr/bin/ld: /tmp/hidden_var-326e8b.o: in function `bar':
+hidden_var.ll:(.text+0x9): undefined reference to `putint'
+/usr/bin/ld: hidden_var.ll:(.text+0x13): undefined reference to `putch'
+/usr/bin/ld: hidden_var.ll:(.text+0x2a): undefined reference to `putint'
+/usr/bin/ld: hidden_var.ll:(.text+0x34): undefined reference to `putch'
+/usr/bin/ld: hidden_var.ll:(.text+0x45): undefined reference to `putint'
+/usr/bin/ld: hidden_var.ll:(.text+0x4f): undefined reference to `putch'
+/usr/bin/ld: hidden_var.ll:(.text+0x66): undefined reference to `putint'
+/usr/bin/ld: hidden_var.ll:(.text+0x70): undefined reference to `putch'
+clang: error: linker command failed with exit code 1 (use -v to see invocation)

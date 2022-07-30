@@ -1,2 +1,23 @@
 warning: overriding the module target triple with x86_64-pc-linux-gnu [-Woverride-module]
 1 warning generated.
+/usr/bin/ld: /tmp/mul_const-1ef22b.o: in function `main':
+mul_const.ll:(.text+0x2): undefined reference to `getint'
+/usr/bin/ld: mul_const.ll:(.text+0x10): undefined reference to `putint'
+/usr/bin/ld: mul_const.ll:(.text+0x1a): undefined reference to `putch'
+/usr/bin/ld: mul_const.ll:(.text+0x28): undefined reference to `putint'
+/usr/bin/ld: mul_const.ll:(.text+0x32): undefined reference to `putch'
+/usr/bin/ld: mul_const.ll:(.text+0x3c): undefined reference to `putint'
+/usr/bin/ld: mul_const.ll:(.text+0x46): undefined reference to `putch'
+/usr/bin/ld: mul_const.ll:(.text+0x59): undefined reference to `putint'
+/usr/bin/ld: mul_const.ll:(.text+0x63): undefined reference to `putch'
+/usr/bin/ld: mul_const.ll:(.text+0x76): undefined reference to `putint'
+/usr/bin/ld: mul_const.ll:(.text+0x80): undefined reference to `putch'
+/usr/bin/ld: mul_const.ll:(.text+0x95): undefined reference to `putint'
+/usr/bin/ld: mul_const.ll:(.text+0x9f): undefined reference to `putch'
+/usr/bin/ld: mul_const.ll:(.text+0xac): undefined reference to `putint'
+/usr/bin/ld: mul_const.ll:(.text+0xb6): undefined reference to `putch'
+/usr/bin/ld: mul_const.ll:(.text+0xc3): undefined reference to `putint'
+/usr/bin/ld: mul_const.ll:(.text+0xcd): undefined reference to `putch'
+/usr/bin/ld: mul_const.ll:(.text+0xda): undefined reference to `putint'
+/usr/bin/ld: mul_const.ll:(.text+0xe4): undefined reference to `putch'
+clang: error: linker command failed with exit code 1 (use -v to see invocation)

@@ -1,2 +1,8 @@
 warning: overriding the module target triple with x86_64-pc-linux-gnu [-Woverride-module]
 1 warning generated.
+/usr/bin/ld: /tmp/swap-8b6e21.o: in function `main':
+swap.ll:(.text+0xa2): undefined reference to `getint'
+/usr/bin/ld: swap.ll:(.text+0xab): undefined reference to `getint'
+/usr/bin/ld: swap.ll:(.text+0xbd): undefined reference to `putint'
+/usr/bin/ld: swap.ll:(.text+0xc7): undefined reference to `putch'
+clang: error: linker command failed with exit code 1 (use -v to see invocation)

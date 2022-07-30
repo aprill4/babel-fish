@@ -1,2 +1,13 @@
 warning: overriding the module target triple with x86_64-pc-linux-gnu [-Woverride-module]
 1 warning generated.
+/usr/bin/ld: /tmp/spill-6e3e71.o: in function `func':
+spill.ll:(.text+0xcc): undefined reference to `getint'
+/usr/bin/ld: spill.ll:(.text+0xd8): undefined reference to `getint'
+/usr/bin/ld: spill.ll:(.text+0xe4): undefined reference to `getint'
+/usr/bin/ld: spill.ll:(.text+0xf0): undefined reference to `getint'
+/usr/bin/ld: spill.ll:(.text+0xfc): undefined reference to `getint'
+/usr/bin/ld: /tmp/spill-6e3e71.o:spill.ll:(.text+0x108): more undefined references to `getint' follow
+/usr/bin/ld: /tmp/spill-6e3e71.o: in function `main':
+spill.ll:(.text+0x333): undefined reference to `putint'
+/usr/bin/ld: spill.ll:(.text+0x33d): undefined reference to `putch'
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
