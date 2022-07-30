@@ -42,44 +42,47 @@ std::string ConstantArray::print() {
     }
     const_ir += " ]";     
   } else {
-    const_ir += getType()->getTypeName();
-    const_ir += " ";
-    const_ir += getElementValue(0)->print();
-    // const_ir += "<{ ";
-    // for (int i = 0; i < value_.size(); i++) {
-    //   if (dynamic_cast<ConstantZero*>(getElementValue(i))) {
-    //     const_ir += "[";
-    //     const_ir += std::to_string(value_.size() - i);
-    //     const_ir += " x ";
-    //     const_ir += getElementValue(i)->getType()->getTypeName();
-    //     const_ir += "]";
-    //     break;
-    //   }
-    //   const_ir += getElementValue(i)->getType()->getTypeName();
-    //   if (i < value_.size() - 1) {
-    //     const_ir += ", ";
-    //   }
-    // }  
-    // const_ir += " }> ";
-    // const_ir += "<{ ";
-    // for (int i = 0; i < value_.size(); i++) {
-    //   if (dynamic_cast<ConstantZero*>(getElementValue(i))) {
-    //     const_ir += "[";
-    //     const_ir += std::to_string(value_.size() - i);
-    //     const_ir += " x ";
-    //     const_ir += getElementValue(i)->getType()->getTypeName();
-    //     const_ir += "] ";
-    //     const_ir += getElementValue(i)->print();
-    //     break;
-    //   }
-    //   const_ir += getElementValue(i)->getType()->getTypeName();
-    //   const_ir += " ";
-    //   const_ir += getElementValue(i)->print();
-    //   if (i < value_.size() - 1) {
-    //     const_ir += ", ";
-    //   }
-    // }
-    // const_ir += " }>"; 
+    if (dynamic_cast<ConstantZero*>(getElementValue(0))) {    
+      const_ir += getType()->getTypeName();
+      const_ir += " ";
+      const_ir += getElementValue(0)->print();
+    }else {      
+      const_ir += "<{ ";
+      for (int i = 0; i < value_.size(); i++) {
+        if (dynamic_cast<ConstantZero*>(getElementValue(i))) {
+          const_ir += "[";
+          const_ir += std::to_string(value_.size() - i);
+          const_ir += " x ";
+          const_ir += getElementValue(i)->getType()->getTypeName();
+          const_ir += "]";
+          break;
+        }
+        const_ir += getElementValue(i)->getType()->getTypeName();
+        if (i < value_.size() - 1) {
+          const_ir += ", ";
+        }
+      }  
+      const_ir += " }> ";
+      const_ir += "<{ ";
+      for (int i = 0; i < value_.size(); i++) {
+        if (dynamic_cast<ConstantZero*>(getElementValue(i))) {
+          const_ir += "[";
+          const_ir += std::to_string(value_.size() - i);
+          const_ir += " x ";
+          const_ir += getElementValue(i)->getType()->getTypeName();
+          const_ir += "] ";
+          const_ir += getElementValue(i)->print();
+          break;
+        }
+        const_ir += getElementValue(i)->getType()->getTypeName();
+        const_ir += " ";
+        const_ir += getElementValue(i)->print();
+        if (i < value_.size() - 1) {
+          const_ir += ", ";
+        }
+      }
+      const_ir += " }>"; 
+    }
   }
   return const_ir;
 }
