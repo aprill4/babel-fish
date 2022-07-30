@@ -1246,6 +1246,9 @@ void FuncCallExpression::generate(IRBuilder *irBuilder) {
     if (val->getType()->isPointerType() && !val->getType()->getPtrElementType()->isArrayType()) {
       val = LoadInst::Create(context, val, irBuilder->getBasicBlock());
     }
+    if (val->getType() != funcType->getArgumentType(u)) {
+        val = ZextInst::Create(context, funcType->getArgumentType(u), val, irBuilder->getBasicBlock());
+    }
     if(dynamic_cast<ConstantInt*>(val) && funcType->getArgumentType(u) == context.FloatType)
       //SiToFpInst::Create(context, context.FloatType, val, irBuilder->getBasicBlock()); godbolt transform number without explicit instructions
       funcArgs.emplace_back(ConstantFloat::get(context, static_cast<float>(dynamic_cast<ConstantInt*>(val)->getValue())));
