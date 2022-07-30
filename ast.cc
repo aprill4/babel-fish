@@ -329,8 +329,9 @@ void Number::generate(IRBuilder *irBuilder) {
   }
 }
 
-void addPut(IRBuilder *irBuilder, string name,Scope* scope_,Type * returnType,std::vector<Type *>argsType){
+void addLibFn(IRBuilder *irBuilder, string name,Scope* scope_,Type * returnType,std::vector<Type *>argsType){
   Context& c = irBuilder->getContext();
+
   auto funty = FunctionType::get(returnType,argsType);
   string parms[1] = {"i"};
   auto fl = new FormalArgumentList();
@@ -340,7 +341,7 @@ void addPut(IRBuilder *irBuilder, string name,Scope* scope_,Type * returnType,st
   string *s2 = new string(name);
   auto id2 = new Identifier(s);
   FunctionDefinition* fde = new FunctionDefinition(SysType::VOID,id2,fl, nullptr);
-  auto x =   Function::Create(c, funty, parms, name, irBuilder->getModule());
+  auto x =   Function::Create(c, funty, parms, name, irBuilder->getModule(), true);
   scope_->funcIR[fde] = x;
   BasicBlock* bb = BasicBlock::Create(c, name, x);
   if (returnType->isVoidType()) {
@@ -353,12 +354,12 @@ void addPut(IRBuilder *irBuilder, string name,Scope* scope_,Type * returnType,st
 void Root::generate(IRBuilder *irBuilder) {
   Context&c = irBuilder->getContext();
   irBuilder->setScope(scope_);
-  addPut(irBuilder, "putint" , scope_, Type::getVoidType(c),{Type::getInt32Type(c)});
-  addPut(irBuilder, "putch" , scope_, Type::getVoidType(c),{Type::getInt32Type(c)});
-  // addPut(irBuilder, "putarray" , scope_, Type::getVoidType(c),{Type::getInt32Type(c),Type::getArrayType(c,Type::getInt32Type(c),1)});
-  addPut(irBuilder, "getint" , scope_, Type::getInt32Type(c),{});
-  addPut(irBuilder, "getch" , scope_, Type::getInt32Type(c),{});
-  // addPut(irBuilder, "getarray" , scope_, Type::getArrayType(c,Type::getInt32Type(c),1),{});
+  addLibFn(irBuilder, "putint" , scope_, Type::getVoidType(c),{Type::getInt32Type(c)});
+  addLibFn(irBuilder, "putch" , scope_, Type::getVoidType(c),{Type::getInt32Type(c)});
+  // addLibFn(irBuilder, "putarray" , scope_, Type::getVoidType(c),{Type::getInt32Type(c),Type::getArrayType(c,Type::getInt32Type(c),1)});
+  addLibFn(irBuilder, "getint" , scope_, Type::getInt32Type(c),{});
+  addLibFn(irBuilder, "getch" , scope_, Type::getInt32Type(c),{});
+  // addLibFn(irBuilder, "getarray" , scope_, Type::getArrayType(c,Type::getInt32Type(c),1),{});
   for (auto &decl : this->declareStatement_) {
     decl->generate(irBuilder);
   }

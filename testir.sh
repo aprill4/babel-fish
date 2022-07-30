@@ -66,7 +66,7 @@ do
         test_out=${test_elf%.*}.out
         test_err=${test_elf%.*}.err
 
-        clang $IRdir/$ir -x ir -o $test_elf 2> $test_err
+        clang libsysy.a -x ir $IRdir/$ir -o $test_elf 2> $test_err
 
         compile_status=$?
         if [ $compile_status -eq 0 ] 

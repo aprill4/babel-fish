@@ -1,2 +1,6 @@
 warning: overriding the module target triple with x86_64-pc-linux-gnu [-Woverride-module]
 1 warning generated.
+/usr/bin/ld: /tmp/mvn-a23f16.o: in function `main':
+mvn.ll:(.text+0xb): undefined reference to `putint'
+/usr/bin/ld: mvn.ll:(.text+0x15): undefined reference to `putch'
+clang: error: linker command failed with exit code 1 (use -v to see invocation)

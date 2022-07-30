@@ -1,2 +1,16 @@
 warning: overriding the module target triple with x86_64-pc-linux-gnu [-Woverride-module]
 1 warning generated.
+/usr/bin/ld: /tmp/literal-cbbbfc.o: in function `main':
+literal.ll:(.text+0x7): undefined reference to `putint'
+/usr/bin/ld: literal.ll:(.text+0x11): undefined reference to `putch'
+/usr/bin/ld: literal.ll:(.text+0x1b): undefined reference to `putint'
+/usr/bin/ld: literal.ll:(.text+0x25): undefined reference to `putch'
+/usr/bin/ld: literal.ll:(.text+0x33): undefined reference to `putint'
+/usr/bin/ld: literal.ll:(.text+0x3d): undefined reference to `putch'
+/usr/bin/ld: literal.ll:(.text+0x47): undefined reference to `putint'
+/usr/bin/ld: literal.ll:(.text+0x51): undefined reference to `putch'
+/usr/bin/ld: literal.ll:(.text+0x5b): undefined reference to `putint'
+/usr/bin/ld: literal.ll:(.text+0x65): undefined reference to `putch'
+/usr/bin/ld: literal.ll:(.text+0x6f): undefined reference to `putint'
+/usr/bin/ld: literal.ll:(.text+0x79): undefined reference to `putch'
+clang: error: linker command failed with exit code 1 (use -v to see invocation)

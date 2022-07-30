@@ -9,7 +9,7 @@ class FunctionType;
 
 class Function : public Value {
 public:
-  Function(Context &c, FunctionType *funcType, const std::string args_name[], const std::string &funcName, Module *parent);
+  Function(Context &c, FunctionType *funcType, const std::string args_name[], const std::string &funcName, Module *parent, bool is_decl = false);
 
   Module *getModule();
   Type *getReturnType();
@@ -27,7 +27,8 @@ public:
 
 public:
   static Function *Create(Context &c, FunctionType *funcType, const std::string args_name[], const std::string &funcName,
-                          Module *parent);
+                          Module *parent, bool is_decl = false);
+  bool is_declaration;
 
 private:
   Module *parent_;

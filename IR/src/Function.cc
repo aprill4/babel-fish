@@ -7,7 +7,7 @@
 #include <cassert>
 
 Function::Function(Context &c, FunctionType *funcType, const std::string args_name[], const std::string &funcName,
-                   Module *parent)
+                   Module *parent, bool is_decl)
     : Value(funcType, funcName), parent_(parent) {
   assert(parent != nullptr);
   parent_->addFuntion(this);
@@ -16,12 +16,13 @@ Function::Function(Context &c, FunctionType *funcType, const std::string args_na
     arguments_.emplace_back(
         new Argument(c, funcType->getArgumentType(i), args_name[i], this, i));
   }
+  is_declaration = is_decl;
 }
 
 Function *Function::Create(Context &c, FunctionType *funcType, const std::string args_name[], const std::string &funcName,
-                           Module *parent) {
+                           Module *parent, bool is_decl) {
   assert(parent != nullptr);
-  return new Function(c ,funcType, args_name, funcName, parent);
+  return new Function(c ,funcType, args_name, funcName, parent, is_decl);
 }
 
 Module *Function::getModule() { return parent_; }
@@ -53,11 +54,11 @@ Argument *Function::getArgument(size_t idx) {
 std::string Function::print() {
   std::string func_ir;
   // set_instr_name();
-  // if (this->is_declaration()) {
-  //   func_ir += "declare ";
-  // } else {
+  if (this->is_declaration) {
+     func_ir += "declare ";
+   } else {
   func_ir += "define ";
-  // }
+  }
 
   func_ir += getReturnType()->getTypeName();
   func_ir += " ";
@@ -78,8 +79,6 @@ std::string Function::print() {
 
   func_ir += ")";
   // // print arg
-  // if (this->is_declaration()) {
-  //   for (int i = 0; i < this->get_num_of_args(); i++) {
   //     if (i)
   //       func_ir += ", ";
   //     func_ir += static_cast<FunctionType *>(this->get_type())
@@ -100,6 +99,7 @@ std::string Function::print() {
   // if (this->is_declaration()) {
   //   func_ir += "\n";
   // } else {
+  if (is_declaration) { return func_ir; }
   func_ir += " {";
   func_ir += "\n";
   for (auto bb : basicBlocks_) {
