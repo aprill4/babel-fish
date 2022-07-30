@@ -1196,6 +1196,23 @@ void WhileStatement::generate(IRBuilder *irBuilder) {
     if (!irBuilder->getBasicBlock()->hasTerminator()) {
       irBuilder->getBasicBlock()->addSuccessor(while_bb);
       irBuilder->getBasicBlock()->addSuccessor(next_bb);
+      irBuilder->setLoopBlock(while_bb, next_bb);
+      cond_->generate(irBuilder);
+      irBuilder->popLoopBlock();
+      auto tmpVal = irBuilder->getTmpVal();
+      if (tmpVal->getType()->isPointerType()) {
+        tmpVal = LoadInst::Create(c,tmpVal,irBuilder->getBasicBlock());
+      }    
+      if (tmpVal->getType()->isIntegerType()) {
+        condVal = IcmpInst::Create(
+            c, IcmpInst::IcmpOp::NEQ, tmpVal,
+            ConstantInt::get(c, tmpVal->getType(), 0),
+            irBuilder->getBasicBlock());
+      } else {
+        condVal = IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
+                                  ConstantFloat::get(c, 0),
+                                  irBuilder->getBasicBlock());
+      }
       BranchInst::Create(c, condVal, while_bb, next_bb, irBuilder->getBasicBlock());    
     }
   }
