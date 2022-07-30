@@ -1044,6 +1044,9 @@ void IfElseStatement::generate(IRBuilder *irBuilder) {
   irBuilder->popLoopBlock();
   auto tmpVal = irBuilder->getTmpVal();
   if (tmpVal) {
+    if (tmpVal->getType()->isPointerType()) {
+      tmpVal = LoadInst::Create(c,tmpVal,irBuilder->getBasicBlock());
+    }
     Value *condVal;
     if (tmpVal->getType()->isIntegerType()) {
       if (static_cast<IntegerType*>(tmpVal->getType())->getBitsNum() != 1) {    
@@ -1100,7 +1103,10 @@ void WhileStatement::generate(IRBuilder *irBuilder) {
   cond_->generate(irBuilder);
   irBuilder->popLoopBlock();
   auto tmpVal = irBuilder->getTmpVal();
-  if (tmpVal) {    
+  if (tmpVal) {
+    if (tmpVal->getType()->isPointerType()) {
+      tmpVal = LoadInst::Create(c,tmpVal,irBuilder->getBasicBlock());
+    }    
     Value* condVal;
     if (tmpVal->getType()->isIntegerType()) {
       condVal = IcmpInst::Create(
