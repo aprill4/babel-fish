@@ -1087,7 +1087,9 @@ void LValExpression::generate(IRBuilder *irBuilder) {
 void Block::generate(IRBuilder *irBuilder) {
   irBuilder->setScope(scope_);
   for (auto& stateItem : statements_) {
-    stateItem->generate(irBuilder);
+    if (stateItem) {
+      stateItem->generate(irBuilder);
+    }
   }
   irBuilder->setScope(scope_->parent);
 }

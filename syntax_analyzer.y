@@ -295,18 +295,20 @@ Block: LEFT_BRACES RIGHT_BRACES { $$ = new Block();
             $$ = $2; 
             if($$->scope_ == nullptr) $$->scope_ = new Scope();
             for(auto&stmt : $2->statements_) {
-                if(stmt->statement_type() == StmtType::BLOCK) {
-                  dynamic_cast<Block*>(stmt)->scope_->parent = $$->scope_;
-                }
-                else if(stmt->statement_type() == StmtType::IFELSE) {
-                  auto ifelse_stmt = dynamic_cast<IfElseStatement*>(stmt);
-                  ifelse_stmt->scope_->parent = $$->scope_;
-                }
-                else if(stmt->statement_type() == StmtType::WHILE) {
-                  auto while_stmt = dynamic_cast<WhileStatement*>(stmt);
-                  while_stmt->scope_->parent = $$->scope_;
-                }
-                else continue;
+                if (stmt){
+                  if(stmt->statement_type() == StmtType::BLOCK) {
+                        dynamic_cast<Block*>(stmt)->scope_->parent = $$->scope_;
+                  }
+                  else if(stmt->statement_type() == StmtType::IFELSE) {
+                        auto ifelse_stmt = dynamic_cast<IfElseStatement*>(stmt);
+                        ifelse_stmt->scope_->parent = $$->scope_;
+                  }
+                  else if(stmt->statement_type() == StmtType::WHILE) {
+                        auto while_stmt = dynamic_cast<WhileStatement*>(stmt);
+                        while_stmt->scope_->parent = $$->scope_;
+                  }
+                  else continue;
+               }
             }
       }
      ;
