@@ -15,18 +15,10 @@ public:
   Scope *getScope() { return scope_; }
   BasicBlock *getBasicBlock() { return basicblock_; }
   BasicBlock *getWhileBlock() {
-    if (loop_.size() <= 1) {
-      return loop_.back().first;
-    } else {
-      return (loop_.end() - 2)->first;
-    }
+    return loop_.back().first;
   }
   BasicBlock *getNextBlock() {
-    if (loop_.size() <= 1) {
-      return loop_.back().second;
-    } else {
-      return (loop_.end() - 2)->second;
-    }
+    return loop_.back().second;
   }
   Value *getTmpVal() { return val_; }
   Function *getFunction() { return func_; }
@@ -36,7 +28,7 @@ public:
   void setTmpVal(Value *val) { val_ = val; }
   void setFunction(Function *func) { func_ = func; }
   void setLoopBlock(BasicBlock *whileBlock, BasicBlock *nextBlock) {
-    loop_.emplace_back(whileBlock, nextBlock);
+    loop_.emplace_back(std::make_pair(whileBlock, nextBlock));
   }
   void popLoopBlock() { loop_.pop_back(); }
   std::size_t loopBlockSize() { return loop_.size(); }
