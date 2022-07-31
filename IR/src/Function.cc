@@ -7,9 +7,11 @@
 #include <cassert>
 
 Function::Function(Context &c, FunctionType *funcType, const std::string args_name[], const std::string &funcName,
-                   Module *parent, bool is_decl)
+                   Module *parent, bool is_decl, bool inLib)
     : Value(funcType, funcName), parent_(parent) {
   assert(parent != nullptr);
+  name_ = funcName;
+
   parent_->addFuntion(this);
   parent_->symbolTable_[funcName] = this;
   for (int i = 0; i < getArgumentsNum(); i++) {
@@ -17,12 +19,13 @@ Function::Function(Context &c, FunctionType *funcType, const std::string args_na
         new Argument(c, funcType->getArgumentType(i), args_name[i], this, i));
   }
   is_declaration = is_decl;
+  is_libFn = inLib;
 }
 
 Function *Function::Create(Context &c, FunctionType *funcType, const std::string args_name[], const std::string &funcName,
-                           Module *parent, bool is_decl) {
+                           Module *parent, bool is_decl, bool inLib) {
   assert(parent != nullptr);
-  return new Function(c ,funcType, args_name, funcName, parent, is_decl);
+  return new Function(c ,funcType, args_name, funcName, parent, is_decl, inLib);
 }
 
 Module *Function::getModule() { return parent_; }

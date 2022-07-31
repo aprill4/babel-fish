@@ -344,7 +344,7 @@ void addLibFn(IRBuilder *irBuilder, string name,Scope* scope_,Type * returnType,
   string *s2 = new string(name);
   auto id2 = new Identifier(s);
   FunctionDefinition* fde = new FunctionDefinition(SysType::VOID,id2,fl, nullptr);
-  auto x =   Function::Create(c, funty, parms, name, irBuilder->getModule(), true);
+  auto x =   Function::Create(c, funty, parms, name, irBuilder->getModule(), true, true);
   scope_->funcIR[fde] = x;
   BasicBlock* bb = BasicBlock::Create(c, name, x);
   if (returnType->isVoidType()) {

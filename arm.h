@@ -1,4 +1,5 @@
 #pragma once
+#include "IR/include/IR.h"
 
 #include <list>
 #include <vector>
@@ -35,7 +36,7 @@ struct MachineInst {
 
     virtual void print(FILE *fp) {};
     void newline(FILE *fp);
-    char *get_cond();
+    const char *get_cond();
 };
 
 struct Binary : MachineInst {
@@ -153,24 +154,25 @@ struct MachineOperand {
     FlexibleShift shift_type = NoShift;
     int shift_length;
 
-    char* get_shift();
+    const char* get_shift();
 
-    virtual char *print() {};
+    virtual const char *print(){ return nullptr; }
 };
 
 struct IImm : MachineOperand { 
     int value; 
-    char *print();
+    IImm(int v): value(v) {}
+    const char *print();
 };
 
 struct FImm : MachineOperand { 
     float value; 
-    char *print();
+    const char *print();
 };
 
 struct VReg : MachineOperand { 
     int id;
-    char *print();
+    const char *print();
 };
 
 struct MReg : MachineOperand {
@@ -178,10 +180,20 @@ struct MReg : MachineOperand {
                s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, 
                fp = r11, ip = r12, sp = r13, lr = r14, pc = r15, };
     Reg reg;
-    char *print();
+    MReg(Reg r): reg(r) {}
+
+    const char *print();
 };
 
 struct Symbol : MachineOperand {
     std::string name;
-    char *print();
+    const char *print();
 };
+
+MachineModule *emit_asm(Module *IR);
+MachineFunction *emit_func(Function *func);
+MachineBasicBlock *emit_bb(BasicBlock *bb);
+MachineInst *emit_inst(Instruction *inst);
+
+IMov *emit_ret(Instruction *inst);
+IMov *emit_imov(Instruction *inst);

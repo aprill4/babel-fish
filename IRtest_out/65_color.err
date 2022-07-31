@@ -1,3 +1,4 @@
+timeout: the monitored command dumped core
 differences between test_out and correct_out:
 1c1,2
 < 139

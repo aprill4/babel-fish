@@ -1,6 +1,5 @@
 #include "arm.h"
-#include "IR/include/IR.h"
-
+#include <assert.h>
 
 void MachineModule::print(FILE *fp) {
     for (auto func: functions) {
@@ -9,7 +8,7 @@ void MachineModule::print(FILE *fp) {
 }
 
 void MachineFunction::print(FILE *fp) {
-    fprintf(fp, "%s:\n", name);
+    fprintf(fp, "%s:\n", name.c_str());
     for (auto bb: basic_blocks) {
         bb->print(fp);
     }
@@ -18,11 +17,12 @@ void MachineFunction::print(FILE *fp) {
 void MachineBasicBlock::print(FILE *fp) {
     for (auto inst: insts) {
         inst->print(fp);
+        inst->newline(fp);
     }
 }
 
-char* MachineOperand::get_shift() {
-    char *shift_str[] = {
+const char* MachineOperand::get_shift() {
+    const char *shift_str[] = {
         "", "lsl", "lsr", "asr", "ror"
     };
 
@@ -35,26 +35,26 @@ char* MachineOperand::get_shift() {
     return "";
 }
 
-char *IImm::print() {
+const char *IImm::print() {
     char *str = new char[12];
     sprintf(str, "#%d", value);
     return str;
 }
 
-char *FImm::print() {
+const char *FImm::print() {
     char *str = new char[20];
     sprintf(str, "#%e", value);
     return str;
 }
 
-char *VReg::print() {
+const char *VReg::print() {
     char *str = new char[12];
     sprintf(str, "v%d", id);
     return str;
 }
 
-char *MReg::print() {
-    char *mreg_str[] = {
+const char *MReg::print() {
+    const char *mreg_str[] = {
         "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
         "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12", "s13", "s14", "s15",
     };
@@ -62,23 +62,23 @@ char *MReg::print() {
     return mreg_str[reg];
 }
 
-char *Symbol::print() {
-    return (char *)name.c_str();
+const char *Symbol::print() {
+    return name.c_str();
 }
 
 void MachineInst::newline(FILE *fp) {
     fprintf(fp, "\n");
 }
 
-char *MachineInst::get_cond() {
-    char *cond_str[] = {
+const char *MachineInst::get_cond() {
+    const char *cond_str[] = {
         "", "le", "lt", "ge", "gt", "eq", "ne"
     };
     return cond_str[cond];
 }
 
 void Binary::print(FILE *fp) {
-    char *op_str[] = {
+    const char *op_str[] = {
         "add", "sub", "mul", "div", "fadd", "fsub", "fmul", "fdiv", "lsl", "lsr", "asl", "asr"
     };
     fprintf(fp, "%s%s %s, %s, %s", op_str[kind], get_cond(), dst->print(), lhs->print(), rhs->print());
@@ -201,43 +201,57 @@ void Pop::print(FILE *fp) {
 }
 
 
-/*
-void emit_bb(BasicBlock *bb, MachineBasicBlock *mbb) {
-    for (auto inst: bb->instructionList_) {
-        auto minst = new MachineInst;
+IMov *emit_ret(Instruction *inst) {
+    auto mi = new IMov;
+
+    mi->dst = new MReg(MReg::r0);
+
+    auto value = inst->operands_[0];
+    if (auto const_int = dynamic_cast<ConstantInt *>(value)) {
+        mi->src = new IImm(const_int->value_);
     }
+
+    return mi;
 }
-*/
 
 IMov *emit_imov(Instruction *inst) {
     auto imv = new IMov;
-    if (dynamic_cast<ReturnInst *> (inst)) {
-        imv->dst = new Mreg {.reg = Mreg::r0};
-        if (dynamic_cast<ConstantInt *> (inst->operands_[0])) {
-            imv->src = new IImm {(ConstantInt *)inst->operands_[0]->value_};
-        }
-    }
 
     return imv;
 }
 
+MachineInst *emit_inst(Instruction *inst) {
+    
+    if (inst->isRet()) { return emit_ret(inst); }
+    assert(false && "illegal instrustion");
+    return nullptr;
+}
+
 MachineBasicBlock *emit_bb(BasicBlock *bb) {
+    auto mbb = new MachineBasicBlock;
+
     for (auto inst: bb->instructionList_) {
-        if (dynamic_cast<ReturnInst *> (inst)) {
-            auto ret = emit_imov(inst);
-            ret->print();
-            Return::print();
+        if (inst->isCall()) {
+            //insert `push {lr}` at the head of the instruction list
+            continue;
+        }
+
+        mbb->insts.emplace_back(emit_inst(inst));
+        if (inst->isRet()) {
+            mbb->insts.emplace_back(new Return);
         }
     }
+    return mbb;
 }
 
 MachineFunction *emit_func(Function *func) {
     auto mfunc = new MachineFunction;
     
-    mfunc->name = func->parent_->symbolTable_[func];
+    mfunc->name = func->name_;
+
     std::map<BasicBlock *, MachineBasicBlock *> bb_map;
     for (auto bb: func->basicBlocks_) {
-        auto mbb = new MachineBasicBlock;
+        auto mbb = emit_bb(bb);
         mfunc->basic_blocks.emplace_back(mbb);
         bb_map[bb] = mbb;
     }
@@ -252,10 +266,11 @@ MachineFunction *emit_func(Function *func) {
     return mfunc;
 }
 
-MachineModule *emit_asm (Module *IR, FILE *fp) {
+MachineModule *emit_asm (Module *IR) {
     auto mm = new MachineModule;
 
     for (auto func: IR->functionList_) {
+        if (func->is_libFn) { continue; }
         auto mfunc = emit_func(func);
         mm->functions.emplace_back(mfunc);
     }

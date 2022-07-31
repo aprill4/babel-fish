@@ -596,8 +596,8 @@ static const yytype_int16 yyrline[] =
      222,   223,   226,   227,   228,   231,   232,   233,   234,   237,
      238,   241,   244,   245,   246,   249,   252,   255,   258,   263,
      267,   273,   274,   277,   281,   287,   288,   291,   294,   316,
-     320,   326,   327,   330,   331,   332,   333,   334,   343,   358,
-     367,   368,   369,   370
+     320,   326,   327,   330,   331,   332,   333,   334,   345,   364,
+     375,   376,   377,   378
 };
 #endif
 
@@ -2252,77 +2252,85 @@ yyreduce:
   case 87:
 #line 334 "syntax_analyzer.y"
                                                           { 
-            (yyval.stmt) = new IfElseStatement((yyvsp[-2].expr), (yyvsp[0].stmt), nullptr); 
-            if ((yyvsp[0].stmt)->statement_type() == StmtType::BLOCK)
-               dynamic_cast<Block*>((yyvsp[0].stmt))->scope_->parent = dynamic_cast<IfElseStatement*>((yyval.stmt))->scope_;   
-            else if ((yyvsp[0].stmt)->statement_type() == StmtType::IFELSE)
-               dynamic_cast<IfElseStatement*>((yyvsp[0].stmt))->scope_->parent = dynamic_cast<IfElseStatement*>((yyval.stmt))->scope_;   
-            else if ((yyvsp[0].stmt)->statement_type() == StmtType::WHILE)
-               dynamic_cast<WhileStatement*>((yyvsp[0].stmt))->scope_->parent = dynamic_cast<IfElseStatement*>((yyval.stmt))->scope_;   
+            (yyval.stmt) = new IfElseStatement((yyvsp[-2].expr), (yyvsp[0].stmt), nullptr);
+            if ((yyvsp[0].stmt)) {
+              if ((yyvsp[0].stmt)->statement_type() == StmtType::BLOCK)
+              dynamic_cast<Block*>((yyvsp[0].stmt))->scope_->parent = dynamic_cast<IfElseStatement*>((yyval.stmt))->scope_;   
+              else if ((yyvsp[0].stmt)->statement_type() == StmtType::IFELSE)
+              dynamic_cast<IfElseStatement*>((yyvsp[0].stmt))->scope_->parent = dynamic_cast<IfElseStatement*>((yyval.stmt))->scope_;   
+              else if ((yyvsp[0].stmt)->statement_type() == StmtType::WHILE)
+              dynamic_cast<WhileStatement*>((yyvsp[0].stmt))->scope_->parent = dynamic_cast<IfElseStatement*>((yyval.stmt))->scope_;   
+            }
       }
-#line 2264 "syntax_analyzer.tab.c"
+#line 2266 "syntax_analyzer.tab.c"
     break;
 
   case 88:
-#line 343 "syntax_analyzer.y"
+#line 345 "syntax_analyzer.y"
                                                                     { 
             (yyval.stmt) = new IfElseStatement((yyvsp[-4].expr), (yyvsp[-2].stmt), (yyvsp[0].stmt)); 
-            if ((yyvsp[-2].stmt)->statement_type() == StmtType::BLOCK)
-               dynamic_cast<Block*>((yyvsp[-2].stmt))->scope_->parent = dynamic_cast<IfElseStatement*>((yyval.stmt))->scope_;   
-            else if ((yyvsp[-2].stmt)->statement_type() == StmtType::IFELSE)
-               dynamic_cast<IfElseStatement*>((yyvsp[-2].stmt))->scope_->parent = dynamic_cast<IfElseStatement*>((yyval.stmt))->scope_;   
-            else if ((yyvsp[-2].stmt)->statement_type() == StmtType::WHILE)
-               dynamic_cast<WhileStatement*>((yyvsp[-2].stmt))->scope_->parent = dynamic_cast<IfElseStatement*>((yyval.stmt))->scope_;   
-            if ((yyvsp[0].stmt)->statement_type() == StmtType::BLOCK)
-               dynamic_cast<Block*>((yyvsp[0].stmt))->scope_->parent = dynamic_cast<IfElseStatement*>((yyval.stmt))->scope_;   
-            else if ((yyvsp[0].stmt)->statement_type() == StmtType::IFELSE)
-               dynamic_cast<IfElseStatement*>((yyvsp[0].stmt))->scope_->parent = dynamic_cast<IfElseStatement*>((yyval.stmt))->scope_;   
-            else if ((yyvsp[0].stmt)->statement_type() == StmtType::WHILE)
-               dynamic_cast<WhileStatement*>((yyvsp[0].stmt))->scope_->parent = dynamic_cast<IfElseStatement*>((yyval.stmt))->scope_;   
+            if ((yyvsp[-2].stmt)) {
+              if ((yyvsp[-2].stmt)->statement_type() == StmtType::BLOCK)
+                 dynamic_cast<Block*>((yyvsp[-2].stmt))->scope_->parent = dynamic_cast<IfElseStatement*>((yyval.stmt))->scope_;   
+              else if ((yyvsp[-2].stmt)->statement_type() == StmtType::IFELSE)
+                 dynamic_cast<IfElseStatement*>((yyvsp[-2].stmt))->scope_->parent = dynamic_cast<IfElseStatement*>((yyval.stmt))->scope_;   
+              else if ((yyvsp[-2].stmt)->statement_type() == StmtType::WHILE)
+                 dynamic_cast<WhileStatement*>((yyvsp[-2].stmt))->scope_->parent = dynamic_cast<IfElseStatement*>((yyval.stmt))->scope_;   
+            }
+            if ((yyvsp[0].stmt)) {
+              if ((yyvsp[0].stmt)->statement_type() == StmtType::BLOCK)
+                 dynamic_cast<Block*>((yyvsp[0].stmt))->scope_->parent = dynamic_cast<IfElseStatement*>((yyval.stmt))->scope_;   
+              else if ((yyvsp[0].stmt)->statement_type() == StmtType::IFELSE)
+                 dynamic_cast<IfElseStatement*>((yyvsp[0].stmt))->scope_->parent = dynamic_cast<IfElseStatement*>((yyval.stmt))->scope_;   
+              else if ((yyvsp[0].stmt)->statement_type() == StmtType::WHILE)
+                 dynamic_cast<WhileStatement*>((yyvsp[0].stmt))->scope_->parent = dynamic_cast<IfElseStatement*>((yyval.stmt))->scope_;   
+            }
       }
-#line 2284 "syntax_analyzer.tab.c"
+#line 2290 "syntax_analyzer.tab.c"
     break;
 
   case 89:
-#line 358 "syntax_analyzer.y"
+#line 364 "syntax_analyzer.y"
                                                              { 
             (yyval.stmt) = new WhileStatement((yyvsp[-2].expr), (yyvsp[0].stmt)); 
-            if ((yyvsp[0].stmt)->statement_type() == StmtType::BLOCK)
-               dynamic_cast<Block*>((yyvsp[0].stmt))->scope_->parent = dynamic_cast<WhileStatement*>((yyval.stmt))->scope_;   
-            else if ((yyvsp[0].stmt)->statement_type() == StmtType::IFELSE)
-               dynamic_cast<IfElseStatement*>((yyvsp[0].stmt))->scope_->parent = dynamic_cast<WhileStatement*>((yyval.stmt))->scope_;   
-            else if ((yyvsp[0].stmt)->statement_type() == StmtType::WHILE)
-               dynamic_cast<WhileStatement*>((yyvsp[0].stmt))->scope_->parent = dynamic_cast<WhileStatement*>((yyval.stmt))->scope_;   
+            if ((yyvsp[0].stmt)) {
+              if ((yyvsp[0].stmt)->statement_type() == StmtType::BLOCK)
+                 dynamic_cast<Block*>((yyvsp[0].stmt))->scope_->parent = dynamic_cast<WhileStatement*>((yyval.stmt))->scope_;   
+              else if ((yyvsp[0].stmt)->statement_type() == StmtType::IFELSE)
+                 dynamic_cast<IfElseStatement*>((yyvsp[0].stmt))->scope_->parent = dynamic_cast<WhileStatement*>((yyval.stmt))->scope_;   
+              else if ((yyvsp[0].stmt)->statement_type() == StmtType::WHILE)
+                 dynamic_cast<WhileStatement*>((yyvsp[0].stmt))->scope_->parent = dynamic_cast<WhileStatement*>((yyval.stmt))->scope_;   
+            }
       }
-#line 2298 "syntax_analyzer.tab.c"
+#line 2306 "syntax_analyzer.tab.c"
     break;
 
   case 90:
-#line 367 "syntax_analyzer.y"
+#line 375 "syntax_analyzer.y"
                         { (yyval.stmt) = new BreakStatement(); }
-#line 2304 "syntax_analyzer.tab.c"
+#line 2312 "syntax_analyzer.tab.c"
     break;
 
   case 91:
-#line 368 "syntax_analyzer.y"
+#line 376 "syntax_analyzer.y"
                            { (yyval.stmt) = new ContinueStatement(); }
-#line 2310 "syntax_analyzer.tab.c"
+#line 2318 "syntax_analyzer.tab.c"
     break;
 
   case 92:
-#line 369 "syntax_analyzer.y"
+#line 377 "syntax_analyzer.y"
                          { (yyval.stmt) = new ReturnStatement(); }
-#line 2316 "syntax_analyzer.tab.c"
+#line 2324 "syntax_analyzer.tab.c"
     break;
 
   case 93:
-#line 370 "syntax_analyzer.y"
+#line 378 "syntax_analyzer.y"
                                 { (yyval.stmt) = new ReturnStatement((yyvsp[-1].expr)); }
-#line 2322 "syntax_analyzer.tab.c"
+#line 2330 "syntax_analyzer.tab.c"
     break;
 
 
-#line 2326 "syntax_analyzer.tab.c"
+#line 2334 "syntax_analyzer.tab.c"
 
       default: break;
     }
