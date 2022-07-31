@@ -358,11 +358,15 @@ void Root::generate(IRBuilder *irBuilder) {
   Context&c = irBuilder->getContext();
   irBuilder->setScope(scope_);
   addLibFn(irBuilder, "putint" , scope_, Type::getVoidType(c),{Type::getInt32Type(c)});
+  addLibFn(irBuilder, "putfloat" , scope_, Type::getVoidType(c),{Type::getFloatType(c)});
   addLibFn(irBuilder, "putch" , scope_, Type::getVoidType(c),{Type::getInt32Type(c)});
   addLibFn(irBuilder, "putarray" , scope_, Type::getVoidType(c),{Type::getInt32Type(c), PointerType::get(c,c.Int32Type)});
+  addLibFn(irBuilder, "putfarray" , scope_, Type::getVoidType(c),{Type::getInt32Type(c), PointerType::get(c,c.FloatType)});
   addLibFn(irBuilder, "getint" , scope_, Type::getInt32Type(c),{});
+  addLibFn(irBuilder, "getfloat" , scope_, Type::getFloatType(c),{});
   addLibFn(irBuilder, "getch" , scope_, Type::getInt32Type(c),{});
   addLibFn(irBuilder, "getarray" , scope_, Type::getInt32Type(c),{PointerType::get(c, c.Int32Type)});
+  addLibFn(irBuilder, "getfarray" , scope_, Type::getInt32Type(c),{PointerType::get(c, c.FloatType)});
   for (auto &decl : this->declareStatement_) {
     decl->generate(irBuilder);
   }
