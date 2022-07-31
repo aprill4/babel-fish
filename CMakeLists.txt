@@ -24,8 +24,10 @@ set_source_files_properties(lex.yy.c PROPERTIES LANGUAGE CXX)
 set_source_files_properties(syntax_analyzer.tab.c PROPERTIES LANGUAGE CXX)
 
 add_executable(check.out ast.h syntax_analyzer.tab.h lex.yy.c syntax_analyzer.tab.c ast.cc check.cc arm.cpp)
+add_executable(arm_test ast.h syntax_analyzer.tab.h lex.yy.c syntax_analyzer.tab.c ast.cc arm_test.cc arm.cpp)
 
 target_link_libraries(check.out PUBLIC IR)
+target_link_libraries(arm_test PUBLIC IR)
 
 target_link_libraries(IRtest.out PUBLIC IR)
 #target_link_libraries(dominator_tree.out PUBLIC IR)

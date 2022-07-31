@@ -16,8 +16,5 @@ int main(void) {
 
   cout << m->print() << endl;
 
-  auto mm = emit_asm(m);
-
-  mm->print(stdout);
   return 0;
 }
