@@ -15,8 +15,8 @@ inline Type *check_sys_type(SysType type, Context &context) {
 }
 
 //return true if more than one of the operands' type is float
-bool force_trans(IRBuilder *irBuilder, Value* lhs, Value* rhs) {
-  bool is_global = irBuilder->getScope()->parent == nullptr;
+bool force_trans(IRBuilder *irBuilder, Value*& lhs, Value*& rhs) {
+  bool is_global = irBuilder->getScope()->inGlobal();
   bool is_float = lhs->getType()->isFloatType() || rhs->getType()->isFloatType();
   Context &context =irBuilder->getContext();
   if(is_float) {
@@ -24,10 +24,10 @@ bool force_trans(IRBuilder *irBuilder, Value* lhs, Value* rhs) {
       if(auto tmp = dynamic_cast<ConstantInt*>(lhs)) {
         // whether we need to delete the old constantInt
         //e.g. delete lhs;
-        lhs = new ConstantFloat(context, context.FloatType, static_cast<float>(tmp->getValue()));
+        lhs = new ConstantFloat(context, context.FloatType, tmp->getValue());
       } 
       if(auto tmp = dynamic_cast<ConstantInt*>(rhs)) {
-        rhs = new ConstantFloat(context, context.FloatType, static_cast<float>(tmp->getValue()));
+        rhs = new ConstantFloat(context, context.FloatType, tmp->getValue());
       }
     } 
     else {
@@ -412,7 +412,6 @@ void VarDeclare::generate(IRBuilder *irBuilder) {
       if (value_) {
         value_->generate(irBuilder);
         auto val = irBuilder->getTmpVal(); 
-        // cout << val->print() << endl;
         StoreInst::Create(context, val, value, irBuilder->getBasicBlock());
         if (val->getType()->isPointerType()) {
           throw Exception("var init_val isn't const");
@@ -650,8 +649,6 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
     }
     is_float = force_trans(irBuilder, lhs, rhs);
   }
-  // cout << lhs->print() << endl;
-  // cout << rhs->print() << endl;
   switch(op_) {
 			case BinaryOp::ADD:
 				if(is_float) {
@@ -1028,89 +1025,130 @@ void LValExpression::generate(IRBuilder *irBuilder) {
     }
   } else {
     Value *ptr = find_symbol(scope, identifier_->id_, true);
-    if (dynamic_cast<GlobalVariable*>(ptr) && dynamic_cast<GlobalVariable*>(ptr)->isConst()) {
-      if(identifier_->dimension_.empty()) {
-        irBuilder->setTmpVal(ptr);
-      } else {
-        auto arr = dynamic_cast<ConstantArray*>(dynamic_cast<GlobalVariable*>(ptr)->getInitValue());
-        vector<int> indice;
-        for(auto& idx : identifier_->dimension_) {
+    vector<Value*> indice;
+    bool is_array = false;
+    bool dimension_is_const = true;
+    const int size = identifier_->dimension_.size();
+    if (!identifier_->dimension_.empty()) {
+        is_array = true;
+        for (auto idx : identifier_->dimension_) {
           idx->generate(irBuilder);
-          auto temp = irBuilder->getTmpVal();
-          if (dynamic_cast<GlobalVariable*>(temp)) {
-            temp = dynamic_cast<GlobalVariable*>(temp)->getInitValue();
+          auto tmpVal = irBuilder->getTmpVal();
+          if (dynamic_cast<GlobalVariable*>(tmpVal) && dynamic_cast<GlobalVariable*>(tmpVal)->isConst()) {
+            tmpVal = dynamic_cast<GlobalVariable*>(tmpVal)->getInitValue();
           }
-          if (!temp->getType()->isIntegerType()) {
-            throw Exception("array dimension isn't float in global");
+          if (tmpVal->getType()->isFloatType()) {
+            throw Exception(string("array dimension isn't float ") + __FILE__ + to_string(__LINE__));
           }
-          indice.emplace_back(dynamic_cast<ConstantInt*>(temp)->getValue());
+          if (tmpVal->getType()->isPointerType()) {
+            dimension_is_const = false;
+            tmpVal = LoadInst::Create(context, tmpVal, irBuilder->getBasicBlock());
+          } else if (!dynamic_cast<Constant*>(tmpVal)) {
+            dimension_is_const = false;            
+          }
+          indice.emplace_back(tmpVal);
         }
-        int len = arr->dimension_.size(), leng = indice.size(), acc = 1, idx = 0;
-        //calculate the location of the multi-dimensions element
-        for(int u = leng - 1; u >= 0; u--) {
-          idx += acc * indice[u];
-          acc *= arr->dimension_[u];
-        }
-        irBuilder->setTmpVal(arr->getElementValue(idx));
+    }
+    bool is_func_array = false;
+    if (ptr->getType()->isPointerType()) {
+      if (ptr->getType()->getPtrElementType()->isPointerType()){
+        is_array = true;
+        is_func_array = true;
+        ptr = LoadInst::Create(context, ptr, irBuilder->getBasicBlock());
+      } else if (ptr->getType()->getPtrElementType()->isArrayType()){
+        is_array = true;
       }
-    } else {
-      if (dynamic_cast<Constant*>(ptr)) {
-        if (dynamic_cast<ConstantArray*>(ptr)) {
-          auto arr = dynamic_cast<ConstantArray*>(ptr);
-          vector<int> indice;
-          for(auto& idx : identifier_->dimension_) {
-            idx->generate(irBuilder);
-            auto temp = irBuilder->getTmpVal();
-            if (dynamic_cast<GlobalVariable*>(temp)) {
-              temp = dynamic_cast<GlobalVariable*>(temp)->getInitValue();
-            }
-            if (!temp->getType()->isIntegerType()) {
-              throw Exception("array dimension isn't float in global");
-            }
-            indice.emplace_back(dynamic_cast<ConstantInt*>(temp)->getValue());
-          }
+    }
+    if (is_array) {
+      if (dimension_is_const && size != 0) {
+        ConstantArray* arr;
+        bool is_const = false;
+        if (dynamic_cast<GlobalVariable*>(ptr) && dynamic_cast<GlobalVariable*>(ptr)->isConst()) {
+          is_const = true;
+          arr = dynamic_cast<ConstantArray*>(dynamic_cast<GlobalVariable*>(ptr)->getInitValue());
+        } else if (dynamic_cast<ConstantArray*>(ptr)) {
+          is_const = true;
+          arr = dynamic_cast<ConstantArray*>(ptr);
+        }
+        if (is_const) {        
           int len = arr->dimension_.size(), leng = indice.size(), acc = 1, idx = 0;
-          //calculate the location of the multi-dimensions element
           for(int u = leng - 1; u >= 0; u--) {
-            idx += acc * indice[u];
+            idx += acc * dynamic_cast<ConstantInt*>(indice[u])->getValue();
             acc *= arr->dimension_[u];
           }
           ptr = arr->getElementValue(idx);
-        }
-      } else {      
-        bool fun_arr_ptr = false;
-        if (ptr->getType()->isPointerType() && ptr->getType()->getPtrElementType()->isPointerType()) {
-          ptr = LoadInst::Create(context, ptr, irBuilder->getBasicBlock());
-          // cout << ptr->print() << endl;
-          fun_arr_ptr = true;
-        }
-        if(!(identifier_->dimension_.empty())){
-          vector<Value *> idxList;
-          int size = identifier_->dimension_.size();
-          for (int i = 0; i < size; i++) {
-            auto idx = identifier_->dimension_[i];
-            idx->generate(irBuilder);
-            auto tmp = irBuilder->getTmpVal();
-            if (tmp->getType()->isFloatType()) {
-              throw Exception("array dimension isn't float in Function " + irBuilder->getFunction()->getName());
-            } else if (tmp->getType()->isPointerType()) {
-              tmp = LoadInst::Create(context, tmp, irBuilder->getBasicBlock());
+        } else {
+          if (size == 1) {
+            if (is_func_array){
+              ptr = GetElementPtrInst::Create(context, ptr, { *indice.begin() }, irBuilder->getBasicBlock());
+            } else {
+              ptr = GetElementPtrInst::Create(context, ptr, {ConstantInt::get(context, context.Int32Type, 0), *indice.begin() }, irBuilder->getBasicBlock());
             }
-            idxList.emplace_back(tmp);
-            if (fun_arr_ptr && i == 0) {
-              ptr = GetElementPtrInst::Create(context, ptr, idxList, irBuilder->getBasicBlock());
-              idxList.pop_back();
+          } else if (size >= 2) {
+            if (is_func_array) {
+              ptr = GetElementPtrInst::Create(context, ptr, { *indice.begin() }, irBuilder->getBasicBlock());
+              indice.erase(indice.begin());
+              indice.insert(indice.begin(), ConstantInt::get(context, context.Int32Type, 0));
+              ptr = GetElementPtrInst::Create(context, 
+                                      ptr, 
+                                      indice,
+                                      irBuilder->getBasicBlock());
+            } else {
+              indice.insert(indice.begin(), ConstantInt::get(context, context.Int32Type, 0));
+              ptr = GetElementPtrInst::Create(context, 
+                                      ptr, 
+                                      indice,
+                                      irBuilder->getBasicBlock());
+              
             }
           }
-          idxList.insert(idxList.begin(), ConstantInt::get(context, context.Int32Type, 0));
-          ptr = GetElementPtrInst::Create(context, 
-                                          ptr, 
-                                          idxList,
-                                          irBuilder->getBasicBlock());
+        }
+      } else {
+        if (size == 0) {
+          if (is_func_array){
+            ptr = GetElementPtrInst::Create(context, ptr, {ConstantInt::get(context, context.Int32Type, 0)}, 
+                      irBuilder->getBasicBlock());
+          } else {
+            ptr = GetElementPtrInst::Create(context, ptr, {
+                  ConstantInt::get(context, context.Int32Type, 0),
+                  ConstantInt::get(context, context.Int32Type, 0)}, 
+                  irBuilder->getBasicBlock());
+
+          }
+        } else if (size == 1) {
+          if (is_func_array){
+            ptr = GetElementPtrInst::Create(context, ptr, { *indice.begin() }, irBuilder->getBasicBlock());
+          } else {
+            ptr = GetElementPtrInst::Create(context, ptr, {ConstantInt::get(context, context.Int32Type, 0), *indice.begin() }, irBuilder->getBasicBlock());
+          }
+        } else if (size >= 2) {
+          if (is_func_array) {
+            ptr = GetElementPtrInst::Create(context, ptr, { *indice.begin() }, irBuilder->getBasicBlock());
+            indice.erase(indice.begin());
+            indice.insert(indice.begin(), ConstantInt::get(context, context.Int32Type, 0));
+            ptr = GetElementPtrInst::Create(context, 
+                                    ptr, 
+                                    indice,
+                                    irBuilder->getBasicBlock());
+          } else {
+            indice.insert(indice.begin(), ConstantInt::get(context, context.Int32Type, 0));
+            ptr = GetElementPtrInst::Create(context, 
+                                    ptr, 
+                                    indice,
+                                    irBuilder->getBasicBlock());
+          }
         }
       }
-      irBuilder->setTmpVal(ptr);
+    } else {
+      bool is_const = false;
+      if (dynamic_cast<GlobalVariable*>(ptr) && dynamic_cast<GlobalVariable*>(ptr)->isConst()) {
+        is_const = true;
+        ptr = dynamic_cast<GlobalVariable*>(ptr)->getInitValue();
+      } else if (dynamic_cast<Constant*>(ptr)) {
+        is_const = true;        
+      }
     }
+    irBuilder->setTmpVal(ptr);
   }
 }
 
@@ -1330,13 +1368,21 @@ void FuncCallExpression::generate(IRBuilder *irBuilder) {
   for(int u = 0, len = funcType->getArgumentsNum(); u < len; u++) {
     actualArgs_->list_[u]->generate(irBuilder);
     auto val = irBuilder->getTmpVal();
-    if (val->getType()->isPointerType() && (val->getType()->getPtrElementType()->isArrayType() || val->getType()->getPtrElementType()->isPointerType())) {
-      val = GetElementPtrInst::Create(context, val, {ConstantInt::get(context, context.Int32Type, 0),ConstantInt::get(context, context.Int32Type, 0)}, irBuilder->getBasicBlock());
-    } else if (val->getType()->isPointerType() && !val->getType()->getPtrElementType()->isArrayType() && !dynamic_cast<LoadInst*>(val)) {
-      val = LoadInst::Create(context, val, irBuilder->getBasicBlock());
-      // cout << val->print() << endl;
+    if (val->getType()->isPointerType()) {
+      if (!dynamic_cast<GetElementPtrInst*>(val)){
+        val = LoadInst::Create(context, val, irBuilder->getBasicBlock());
+      } else{
+        if (!funcType->getArgumentType(u)->isPointerType()) {          
+          val = LoadInst::Create(context, val, irBuilder->getBasicBlock());
+        } else if (val->getType() != funcType->getArgumentType(u)){
+          val = GetElementPtrInst::Create(context, val, {
+            ConstantInt::get(context, context.Int32Type, 0),
+            ConstantInt::get(context, context.Int32Type, 0)
+          }, irBuilder->getBasicBlock());
+        }
+      }
     } else if (val->getType() != funcType->getArgumentType(u)) {
-        val = ZextInst::Create(context, funcType->getArgumentType(u), val, irBuilder->getBasicBlock());
+      val = ZextInst::Create(context, funcType->getArgumentType(u), val, irBuilder->getBasicBlock());
     }
     if(dynamic_cast<ConstantInt*>(val) && funcType->getArgumentType(u) == context.FloatType)
       funcArgs.emplace_back(ConstantFloat::get(context, static_cast<float>(dynamic_cast<ConstantInt*>(val)->getValue())));
