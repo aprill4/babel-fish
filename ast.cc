@@ -384,13 +384,20 @@ void VarDeclare::generate(IRBuilder *irBuilder) {
       if (dynamic_cast<GlobalVariable*>(val)) {
         val = dynamic_cast<GlobalVariable*>(val)->getInitValue();
       }
-      auto init_val = val->getType()->isIntegerType()
-                          ? dynamic_cast<ConstantInt *>(val)->getValue()
-                          : dynamic_cast<ConstantFloat *>(val)->getValue();
-      if (type_ == SysType::INT) {
-        constant = new ConstantInt(context, context.Int32Type, init_val);
+      if (val->getType()->isIntegerType()) {
+        int32_t init_val = dynamic_cast<ConstantInt *>(val)->getValue();
+        if (type_ == SysType::INT) {
+          constant = new ConstantInt(context, context.Int32Type, init_val);
+        } else {
+          constant = new ConstantFloat(context, context.FloatType, init_val);
+        }
       } else {
-        constant = new ConstantFloat(context, context.FloatType, init_val);
+        float init_val = dynamic_cast<ConstantFloat *>(val)->getValue();
+        if (type_ == SysType::INT) {
+          constant = new ConstantInt(context, context.Int32Type, init_val);
+        } else {
+          constant = new ConstantFloat(context, context.FloatType, init_val);
+        }
       }
       value = GlobalVariable::Create(
               context,
