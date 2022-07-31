@@ -1,4 +1,0 @@
-irs/96_matrix_add.ll:55:18: error: invalid operand type for instruction
-  %v69 = add nsw float %v61, %v68
-                 ^
-1 error generated.

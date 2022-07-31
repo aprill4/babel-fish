@@ -595,9 +595,9 @@ static const yytype_int16 yyrline[] =
      206,   207,   210,   211,   214,   215,   216,   219,   220,   221,
      222,   223,   226,   227,   228,   231,   232,   233,   234,   237,
      238,   241,   244,   245,   246,   249,   252,   255,   258,   263,
-     267,   273,   274,   277,   281,   287,   288,   291,   294,   314,
-     318,   324,   325,   328,   329,   330,   331,   332,   341,   356,
-     365,   366,   367,   368
+     267,   273,   274,   277,   281,   287,   288,   291,   294,   316,
+     320,   326,   327,   330,   331,   332,   333,   334,   343,   358,
+     367,   368,   369,   370
 };
 #endif
 
@@ -2176,79 +2176,81 @@ yyreduce:
             (yyval.block) = (yyvsp[-1].block); 
             if((yyval.block)->scope_ == nullptr) (yyval.block)->scope_ = new Scope();
             for(auto&stmt : (yyvsp[-1].block)->statements_) {
-                if(stmt->statement_type() == StmtType::BLOCK) {
-                  dynamic_cast<Block*>(stmt)->scope_->parent = (yyval.block)->scope_;
-                }
-                else if(stmt->statement_type() == StmtType::IFELSE) {
-                  auto ifelse_stmt = dynamic_cast<IfElseStatement*>(stmt);
-                  ifelse_stmt->scope_->parent = (yyval.block)->scope_;
-                }
-                else if(stmt->statement_type() == StmtType::WHILE) {
-                  auto while_stmt = dynamic_cast<WhileStatement*>(stmt);
-                  while_stmt->scope_->parent = (yyval.block)->scope_;
-                }
-                else continue;
+                if (stmt){
+                  if(stmt->statement_type() == StmtType::BLOCK) {
+                        dynamic_cast<Block*>(stmt)->scope_->parent = (yyval.block)->scope_;
+                  }
+                  else if(stmt->statement_type() == StmtType::IFELSE) {
+                        auto ifelse_stmt = dynamic_cast<IfElseStatement*>(stmt);
+                        ifelse_stmt->scope_->parent = (yyval.block)->scope_;
+                  }
+                  else if(stmt->statement_type() == StmtType::WHILE) {
+                        auto while_stmt = dynamic_cast<WhileStatement*>(stmt);
+                        while_stmt->scope_->parent = (yyval.block)->scope_;
+                  }
+                  else continue;
+               }
             }
       }
-#line 2194 "syntax_analyzer.tab.c"
+#line 2196 "syntax_analyzer.tab.c"
     break;
 
   case 79:
-#line 314 "syntax_analyzer.y"
+#line 316 "syntax_analyzer.y"
                       { 
             (yyval.block) = new Block(); 
             if ((yyvsp[0].stmt) != nullptr) (yyval.block)->statements_.emplace_back((yyvsp[0].stmt)); 
       }
-#line 2203 "syntax_analyzer.tab.c"
+#line 2205 "syntax_analyzer.tab.c"
     break;
 
   case 80:
-#line 318 "syntax_analyzer.y"
+#line 320 "syntax_analyzer.y"
                              { 
             (yyval.block) = (yyvsp[-1].block); 
             if ((yyvsp[-1].block) != nullptr) (yyval.block)->statements_.emplace_back((yyvsp[0].stmt)); 
       }
-#line 2212 "syntax_analyzer.tab.c"
+#line 2214 "syntax_analyzer.tab.c"
     break;
 
   case 81:
-#line 324 "syntax_analyzer.y"
+#line 326 "syntax_analyzer.y"
                 { (yyval.stmt) = (yyvsp[0].declare_statement); }
-#line 2218 "syntax_analyzer.tab.c"
+#line 2220 "syntax_analyzer.tab.c"
     break;
 
   case 82:
-#line 325 "syntax_analyzer.y"
+#line 327 "syntax_analyzer.y"
              { (yyval.stmt) = (yyvsp[0].stmt); }
-#line 2224 "syntax_analyzer.tab.c"
+#line 2226 "syntax_analyzer.tab.c"
     break;
 
   case 83:
-#line 328 "syntax_analyzer.y"
+#line 330 "syntax_analyzer.y"
                                    { (yyval.stmt) = new AssignStatement((yyvsp[-3].expr), (yyvsp[-1].expr)); }
-#line 2230 "syntax_analyzer.tab.c"
+#line 2232 "syntax_analyzer.tab.c"
     break;
 
   case 84:
-#line 329 "syntax_analyzer.y"
+#line 331 "syntax_analyzer.y"
                   { (yyval.stmt) = nullptr; }
-#line 2236 "syntax_analyzer.tab.c"
+#line 2238 "syntax_analyzer.tab.c"
     break;
 
   case 85:
-#line 330 "syntax_analyzer.y"
+#line 332 "syntax_analyzer.y"
                          { (yyval.stmt) = new EvalStatement((yyvsp[-1].expr)); }
-#line 2242 "syntax_analyzer.tab.c"
+#line 2244 "syntax_analyzer.tab.c"
     break;
 
   case 86:
-#line 331 "syntax_analyzer.y"
+#line 333 "syntax_analyzer.y"
               { (yyval.stmt) = (yyvsp[0].block); }
-#line 2248 "syntax_analyzer.tab.c"
+#line 2250 "syntax_analyzer.tab.c"
     break;
 
   case 87:
-#line 332 "syntax_analyzer.y"
+#line 334 "syntax_analyzer.y"
                                                           { 
             (yyval.stmt) = new IfElseStatement((yyvsp[-2].expr), (yyvsp[0].stmt), nullptr); 
             if ((yyvsp[0].stmt)->statement_type() == StmtType::BLOCK)
@@ -2258,11 +2260,11 @@ yyreduce:
             else if ((yyvsp[0].stmt)->statement_type() == StmtType::WHILE)
                dynamic_cast<WhileStatement*>((yyvsp[0].stmt))->scope_->parent = dynamic_cast<IfElseStatement*>((yyval.stmt))->scope_;   
       }
-#line 2262 "syntax_analyzer.tab.c"
+#line 2264 "syntax_analyzer.tab.c"
     break;
 
   case 88:
-#line 341 "syntax_analyzer.y"
+#line 343 "syntax_analyzer.y"
                                                                     { 
             (yyval.stmt) = new IfElseStatement((yyvsp[-4].expr), (yyvsp[-2].stmt), (yyvsp[0].stmt)); 
             if ((yyvsp[-2].stmt)->statement_type() == StmtType::BLOCK)
@@ -2278,11 +2280,11 @@ yyreduce:
             else if ((yyvsp[0].stmt)->statement_type() == StmtType::WHILE)
                dynamic_cast<WhileStatement*>((yyvsp[0].stmt))->scope_->parent = dynamic_cast<IfElseStatement*>((yyval.stmt))->scope_;   
       }
-#line 2282 "syntax_analyzer.tab.c"
+#line 2284 "syntax_analyzer.tab.c"
     break;
 
   case 89:
-#line 356 "syntax_analyzer.y"
+#line 358 "syntax_analyzer.y"
                                                              { 
             (yyval.stmt) = new WhileStatement((yyvsp[-2].expr), (yyvsp[0].stmt)); 
             if ((yyvsp[0].stmt)->statement_type() == StmtType::BLOCK)
@@ -2292,35 +2294,35 @@ yyreduce:
             else if ((yyvsp[0].stmt)->statement_type() == StmtType::WHILE)
                dynamic_cast<WhileStatement*>((yyvsp[0].stmt))->scope_->parent = dynamic_cast<WhileStatement*>((yyval.stmt))->scope_;   
       }
-#line 2296 "syntax_analyzer.tab.c"
+#line 2298 "syntax_analyzer.tab.c"
     break;
 
   case 90:
-#line 365 "syntax_analyzer.y"
+#line 367 "syntax_analyzer.y"
                         { (yyval.stmt) = new BreakStatement(); }
-#line 2302 "syntax_analyzer.tab.c"
+#line 2304 "syntax_analyzer.tab.c"
     break;
 
   case 91:
-#line 366 "syntax_analyzer.y"
+#line 368 "syntax_analyzer.y"
                            { (yyval.stmt) = new ContinueStatement(); }
-#line 2308 "syntax_analyzer.tab.c"
+#line 2310 "syntax_analyzer.tab.c"
     break;
 
   case 92:
-#line 367 "syntax_analyzer.y"
+#line 369 "syntax_analyzer.y"
                          { (yyval.stmt) = new ReturnStatement(); }
-#line 2314 "syntax_analyzer.tab.c"
+#line 2316 "syntax_analyzer.tab.c"
     break;
 
   case 93:
-#line 368 "syntax_analyzer.y"
+#line 370 "syntax_analyzer.y"
                                 { (yyval.stmt) = new ReturnStatement((yyvsp[-1].expr)); }
-#line 2320 "syntax_analyzer.tab.c"
+#line 2322 "syntax_analyzer.tab.c"
     break;
 
 
-#line 2324 "syntax_analyzer.tab.c"
+#line 2326 "syntax_analyzer.tab.c"
 
       default: break;
     }

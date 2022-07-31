@@ -1,4 +1,0 @@
-irs/68_brainfk.ll:161:16: error: expected fcmp predicate (e.g. 'oeq')
-  %v171 = fcmp ne i32* %v169, zeroinitializer
-               ^
-1 error generated.

@@ -214,11 +214,11 @@ IMov *emit_imov(Instruction *inst) {
     if (dynamic_cast<ReturnInst *> (inst)) {
         imv->dst = new Mreg {.reg = Mreg::r0};
         if (dynamic_cast<ConstantInt *> (inst->operands_[0])) {
-            imv->src = new IImm {inst->operands_[0]->value_};
+            imv->src = new IImm {(ConstantInt *)inst->operands_[0]->value_};
         }
     }
 
-    return IMov;
+    return imv;
 }
 
 MachineBasicBlock *emit_bb(BasicBlock *bb) {
@@ -234,8 +234,8 @@ MachineBasicBlock *emit_bb(BasicBlock *bb) {
 MachineFunction *emit_func(Function *func) {
     auto mfunc = new MachineFunction;
     
+    mfunc->name = func->parent_->symbolTable_[func];
     std::map<BasicBlock *, MachineBasicBlock *> bb_map;
-
     for (auto bb: func->basicBlocks_) {
         auto mbb = new MachineBasicBlock;
         mfunc->basic_blocks.emplace_back(mbb);
@@ -260,8 +260,4 @@ MachineModule *emit_asm (Module *IR, FILE *fp) {
         mm->functions.emplace_back(mfunc);
     }
     return mm;
-}
-
-int main() {
-    return 0;
 }

@@ -1,4 +1,0 @@
-irs/97_matrix_sub.ll:54:18: error: invalid operand type for instruction
-  %v69 = sub nsw float %v61, %v68
-                 ^
-1 error generated.

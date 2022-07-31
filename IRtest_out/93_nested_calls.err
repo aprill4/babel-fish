@@ -1,4 +1,0 @@
-irs/93_nested_calls.ll:112:16: error: expected fcmp predicate (e.g. 'oeq')
-  %v108 = fcmp ne i32* %v100, zeroinitializer
-               ^
-1 error generated.

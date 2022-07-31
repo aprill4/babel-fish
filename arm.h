@@ -18,7 +18,7 @@ struct MachineModule {
 };
 
 struct MachineFunction {
-    string name;
+    std::string name;
     std::vector<MachineBasicBlock *> basic_blocks;
     void print(FILE *fp);
 };

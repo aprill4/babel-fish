@@ -1,4 +1,0 @@
-irs/99_matrix_tran.ll:195:9: error: stored value and pointer type do not match
-  store i32 %v352, float* %v351
-        ^
-1 error generated.
