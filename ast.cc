@@ -15,9 +15,9 @@ inline Type *check_sys_type(SysType type, Context &context) {
 }
 
 //return true if more than one of the operands' type is float
-bool force_trans(IRBuilder *irBuilder, Value* &lhs, Value* &rhs) {
+bool force_trans(IRBuilder *irBuilder, Value* lhs, Value* rhs) {
   bool is_global = irBuilder->getScope()->parent == nullptr;
-  bool is_float = dynamic_cast<ConstantFloat*>(lhs) || dynamic_cast<ConstantFloat*>(rhs);
+  bool is_float = lhs->getType()->isFloatType() || rhs->getType()->isFloatType();
   Context &context =irBuilder->getContext();
   if(is_float) {
     if(is_global) {
@@ -31,10 +31,10 @@ bool force_trans(IRBuilder *irBuilder, Value* &lhs, Value* &rhs) {
       }
     } 
     else {
-      if(auto tmp = dynamic_cast<ConstantInt*>(lhs)) 
-          lhs = SiToFpInst::Create(context, context.FloatType, tmp, irBuilder->getBasicBlock());
-      if(auto tmp = dynamic_cast<ConstantInt*>(rhs)) 
-          rhs = SiToFpInst::Create(context, context.FloatType, tmp, irBuilder->getBasicBlock());
+      if(lhs->getType()->isIntegerType()) 
+          lhs = SiToFpInst::Create(context, context.FloatType, lhs, irBuilder->getBasicBlock());
+      if(rhs->getType()->isIntegerType()) 
+          rhs = SiToFpInst::Create(context, context.FloatType, rhs, irBuilder->getBasicBlock());
     }
   }
   return is_float;
@@ -826,8 +826,12 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
           BranchInst::Create(context, irBuilder->getNextBlock(), rb);
           irBuilder->setLoopBlock(lb, irBuilder->getNextBlock());
           lhs_->generate(irBuilder);
+          irBuilder->popLoopBlock();
           lhs = irBuilder->getTmpVal();
           if (lhs != nullptr) {
+            if (lhs->getType()->isPointerType()) {
+              lhs = LoadInst::Create(context, lhs, irBuilder->getBasicBlock());
+            }
             if (lhs->getType()->isIntegerType()){
               lhs = IcmpInst::Create(context, IcmpInst::IcmpOp::NEQ, lhs, ConstantZero::get(context, lhs->getType()), irBuilder->getBasicBlock());
             } else {
@@ -841,6 +845,9 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
           rhs_->generate(irBuilder);
           rhs = irBuilder->getTmpVal();
           if (rhs != nullptr){
+            if (rhs->getType()->isPointerType()) {
+              rhs = LoadInst::Create(context, rhs, irBuilder->getBasicBlock());
+            }
             if (rhs->getType()->isIntegerType()){
               rhs = IcmpInst::Create(context, IcmpInst::IcmpOp::NEQ, rhs, ConstantZero::get(context, rhs->getType()), irBuilder->getBasicBlock());
             } else {
@@ -851,7 +858,6 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
             BranchInst::Create(context, rhs, irBuilder->getWhileBlock(), rb, irBuilder->getBasicBlock());
           }
           irBuilder->setBasicBlock(lb);
-          irBuilder->popLoopBlock();
         }
         break;
 			case BinaryOp::OR: {
@@ -861,8 +867,12 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
           BranchInst::Create(context, irBuilder->getWhileBlock(), lb);
           irBuilder->setLoopBlock(irBuilder->getWhileBlock(), rb);
           lhs_->generate(irBuilder);
+          irBuilder->popLoopBlock();
           lhs = irBuilder->getTmpVal();
           if (lhs != nullptr) {
+            if (lhs->getType()->isPointerType()) {
+              lhs = LoadInst::Create(context, lhs, irBuilder->getBasicBlock());
+            }
             if (lhs->getType()->isIntegerType()){
               lhs = IcmpInst::Create(context, IcmpInst::IcmpOp::NEQ, lhs, ConstantZero::get(context, lhs->getType()), irBuilder->getBasicBlock());
             } else {
@@ -871,12 +881,18 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
             irBuilder->getBasicBlock()->addSuccessor(lb);
             irBuilder->getBasicBlock()->addSuccessor(rb);
             BranchInst::Create(context, lhs, lb, rb, irBuilder->getBasicBlock());
-
           }
           irBuilder->setBasicBlock(rb);
+          if (dynamic_cast<BinaryExpression*>(rhs_) && dynamic_cast<BinaryExpression*>(rhs_)->op_ == BinaryOp::AND){
+            irBuilder->setLoopBlock(irBuilder->getWhileBlock(), irBuilder->getNextBlock());
+          } else irBuilder->setLoopBlock(irBuilder->getWhileBlock(), rb);
           rhs_->generate(irBuilder);
+          irBuilder->popLoopBlock();
           rhs = irBuilder->getTmpVal();
           if (rhs != nullptr){
+            if (rhs->getType()->isPointerType()) {
+              rhs = LoadInst::Create(context, rhs, irBuilder->getBasicBlock());
+            }
             if (rhs->getType()->isIntegerType()){
               rhs = IcmpInst::Create(context, IcmpInst::IcmpOp::NEQ, rhs, ConstantZero::get(context, rhs->getType()), irBuilder->getBasicBlock());
             } else {
@@ -887,7 +903,6 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
             BranchInst::Create(context, rhs, lb, irBuilder->getNextBlock(), irBuilder->getBasicBlock());
           }
           irBuilder->setBasicBlock(rb);
-          irBuilder->popLoopBlock();
         }
         break;
       default: break;
@@ -1074,6 +1089,7 @@ void Block::generate(IRBuilder *irBuilder) {
   for (auto& stateItem : statements_) {
     stateItem->generate(irBuilder);
   }
+  irBuilder->setScope(scope_->parent);
 }
 
 void DeclareStatement::generate(IRBuilder *irBuilder) {
@@ -1083,12 +1099,20 @@ void DeclareStatement::generate(IRBuilder *irBuilder) {
 }
 
 void AssignStatement::generate(IRBuilder *irBuilder) {
+  Context& c = irBuilder->getContext();
   lhs_->generate(irBuilder);
   auto lval = irBuilder->getTmpVal();
   rhs_->generate(irBuilder);
   auto rval = irBuilder->getTmpVal();
   if (rval->getType()->isPointerType()) {
     rval = LoadInst::Create(irBuilder->getContext(), rval, irBuilder->getBasicBlock());
+  }
+  if (lval->getType()->getPtrElementType() != rval->getType()){
+    if (lval->getType()->getPtrElementType()->isIntegerType()){
+      rval = FpToSiInst::Create(c, lval->getType()->getPtrElementType(), rval, irBuilder->getBasicBlock());
+    } else if (lval->getType()->getPtrElementType()->isFloatType()){
+      rval = SiToFpInst::Create(c, lval->getType()->getPtrElementType(), rval, irBuilder->getBasicBlock());    
+    }
   }
   StoreInst::Create(irBuilder->getContext(), rval, lval, irBuilder->getBasicBlock());
 }
@@ -1189,17 +1213,20 @@ void WhileStatement::generate(IRBuilder *irBuilder) {
     irBuilder->getBasicBlock()->addSuccessor(while_bb);
     irBuilder->getBasicBlock()->addSuccessor(next_bb);
     BranchInst::Create(c, condVal, while_bb, next_bb, irBuilder->getBasicBlock());    
-    irBuilder->setBasicBlock(while_bb);
+  }
+  irBuilder->setBasicBlock(while_bb);
+  irBuilder->setLoopBlock(while_bb, next_bb);
+  doStmt_->generate(irBuilder); 
+  irBuilder->popLoopBlock();
+  if (!irBuilder->getBasicBlock()->hasTerminator()) {
+    irBuilder->getBasicBlock()->addSuccessor(while_bb);
+    irBuilder->getBasicBlock()->addSuccessor(next_bb);
     irBuilder->setLoopBlock(while_bb, next_bb);
-    doStmt_->generate(irBuilder); 
+    cond_->generate(irBuilder);
     irBuilder->popLoopBlock();
-    if (!irBuilder->getBasicBlock()->hasTerminator()) {
-      irBuilder->getBasicBlock()->addSuccessor(while_bb);
-      irBuilder->getBasicBlock()->addSuccessor(next_bb);
-      irBuilder->setLoopBlock(while_bb, next_bb);
-      cond_->generate(irBuilder);
-      irBuilder->popLoopBlock();
-      auto tmpVal = irBuilder->getTmpVal();
+    auto tmpVal = irBuilder->getTmpVal();
+    if (tmpVal) {    
+      Value* condVal;
       if (tmpVal->getType()->isPointerType()) {
         tmpVal = LoadInst::Create(c,tmpVal,irBuilder->getBasicBlock());
       }    
