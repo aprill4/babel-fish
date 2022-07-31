@@ -332,37 +332,45 @@ Stmt: LVal ASSIGN AddExp SEMICOLON { $$ = new AssignStatement($1, $3); }
       | AddExp SEMICOLON { $$ = new EvalStatement($1); }
       | Block { $$ = $1; }
       | IF LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt { 
-            $$ = new IfElseStatement($3, $5, nullptr); 
-            if ($5->statement_type() == StmtType::BLOCK)
-               dynamic_cast<Block*>($5)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
-            else if ($5->statement_type() == StmtType::IFELSE)
-               dynamic_cast<IfElseStatement*>($5)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
-            else if ($5->statement_type() == StmtType::WHILE)
-               dynamic_cast<WhileStatement*>($5)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
+            $$ = new IfElseStatement($3, $5, nullptr);
+            if ($5) {
+              if ($5->statement_type() == StmtType::BLOCK)
+              dynamic_cast<Block*>($5)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
+              else if ($5->statement_type() == StmtType::IFELSE)
+              dynamic_cast<IfElseStatement*>($5)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
+              else if ($5->statement_type() == StmtType::WHILE)
+              dynamic_cast<WhileStatement*>($5)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
+            }
       }
       | IF LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt ELSE Stmt { 
             $$ = new IfElseStatement($3, $5, $7); 
-            if ($5->statement_type() == StmtType::BLOCK)
-               dynamic_cast<Block*>($5)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
-            else if ($5->statement_type() == StmtType::IFELSE)
-               dynamic_cast<IfElseStatement*>($5)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
-            else if ($5->statement_type() == StmtType::WHILE)
-               dynamic_cast<WhileStatement*>($5)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
-            if ($7->statement_type() == StmtType::BLOCK)
-               dynamic_cast<Block*>($7)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
-            else if ($7->statement_type() == StmtType::IFELSE)
-               dynamic_cast<IfElseStatement*>($7)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
-            else if ($7->statement_type() == StmtType::WHILE)
-               dynamic_cast<WhileStatement*>($7)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
+            if ($5) {
+              if ($5->statement_type() == StmtType::BLOCK)
+                 dynamic_cast<Block*>($5)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
+              else if ($5->statement_type() == StmtType::IFELSE)
+                 dynamic_cast<IfElseStatement*>($5)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
+              else if ($5->statement_type() == StmtType::WHILE)
+                 dynamic_cast<WhileStatement*>($5)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
+            }
+            if ($7) {
+              if ($7->statement_type() == StmtType::BLOCK)
+                 dynamic_cast<Block*>($7)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
+              else if ($7->statement_type() == StmtType::IFELSE)
+                 dynamic_cast<IfElseStatement*>($7)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
+              else if ($7->statement_type() == StmtType::WHILE)
+                 dynamic_cast<WhileStatement*>($7)->scope_->parent = dynamic_cast<IfElseStatement*>($$)->scope_;   
+            }
       }
       | WHILE LEFT_PARENTHESES LOrExp RIGHT_PARENTHESES Stmt { 
             $$ = new WhileStatement($3, $5); 
-            if ($5->statement_type() == StmtType::BLOCK)
-               dynamic_cast<Block*>($5)->scope_->parent = dynamic_cast<WhileStatement*>($$)->scope_;   
-            else if ($5->statement_type() == StmtType::IFELSE)
-               dynamic_cast<IfElseStatement*>($5)->scope_->parent = dynamic_cast<WhileStatement*>($$)->scope_;   
-            else if ($5->statement_type() == StmtType::WHILE)
-               dynamic_cast<WhileStatement*>($5)->scope_->parent = dynamic_cast<WhileStatement*>($$)->scope_;   
+            if ($5) {
+              if ($5->statement_type() == StmtType::BLOCK)
+                 dynamic_cast<Block*>($5)->scope_->parent = dynamic_cast<WhileStatement*>($$)->scope_;   
+              else if ($5->statement_type() == StmtType::IFELSE)
+                 dynamic_cast<IfElseStatement*>($5)->scope_->parent = dynamic_cast<WhileStatement*>($$)->scope_;   
+              else if ($5->statement_type() == StmtType::WHILE)
+                 dynamic_cast<WhileStatement*>($5)->scope_->parent = dynamic_cast<WhileStatement*>($$)->scope_;   
+            }
       }
       | BREAK SEMICOLON { $$ = new BreakStatement(); }
       | CONTINUE SEMICOLON { $$ = new ContinueStatement(); }

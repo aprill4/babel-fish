@@ -797,8 +797,23 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
             res = ConstantInt::get(context, context.Int1Type,
                   dynamic_cast<ConstantFloat*>(lhs)->getValue() == dynamic_cast<ConstantFloat*>(rhs)->getValue());
         } else {
-          if(irBuilder->getScope()->parent) 
+          if(irBuilder->getScope()->parent) {
+            if (lhs->getType() != rhs->getType()) {
+              if (dynamic_cast<ConstantInt*>(lhs)) {
+                lhs = ConstantInt::get(context, rhs->getType(), dynamic_cast<ConstantInt*>(lhs)->getValue());
+              } else if (dynamic_cast<ConstantInt*>(rhs)) {
+                rhs = ConstantInt::get(context, lhs->getType(), dynamic_cast<ConstantInt*>(rhs)->getValue());              
+              } else {
+                if (lhs->getType()->isIntegerType() && static_cast<IntegerType*>(lhs->getType())->getBitsNum() == 1) {
+                  lhs = ZextInst::Create(context, context.Int32Type, lhs, irBuilder->getBasicBlock());
+                }
+                else if (rhs->getType()->isIntegerType() && static_cast<IntegerType*>(rhs->getType())->getBitsNum() == 1) {
+                  rhs = ZextInst::Create(context, context.Int32Type, rhs, irBuilder->getBasicBlock());
+                }
+              }
+            }
             res = IcmpInst::Create(context, IcmpInst::IcmpOp::EQ, lhs, rhs, irBuilder->getBasicBlock());
+          }
           else 
             res = ConstantInt::get(context, context.Int1Type,
                   dynamic_cast<ConstantInt*>(lhs)->getValue() == dynamic_cast<ConstantInt*>(rhs)->getValue());
@@ -812,8 +827,23 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
             res = ConstantInt::get(context, context.Int1Type,
                   dynamic_cast<ConstantFloat*>(lhs)->getValue() != dynamic_cast<ConstantFloat*>(rhs)->getValue());
         } else {
-          if(irBuilder->getScope()->parent) 
+          if(irBuilder->getScope()->parent) {
+            if (lhs->getType() != rhs->getType()) {
+              if (dynamic_cast<ConstantInt*>(lhs)) {
+                lhs = ConstantInt::get(context, rhs->getType(), dynamic_cast<ConstantInt*>(lhs)->getValue());
+              } else if (dynamic_cast<ConstantInt*>(rhs)) {
+                rhs = ConstantInt::get(context, lhs->getType(), dynamic_cast<ConstantInt*>(rhs)->getValue());              
+              } else {
+                if (lhs->getType()->isIntegerType() && static_cast<IntegerType*>(lhs->getType())->getBitsNum() == 1) {
+                  lhs = ZextInst::Create(context, context.Int32Type, lhs, irBuilder->getBasicBlock());
+                }
+                else if (rhs->getType()->isIntegerType() && static_cast<IntegerType*>(rhs->getType())->getBitsNum() == 1) {
+                  rhs = ZextInst::Create(context, context.Int32Type, rhs, irBuilder->getBasicBlock());
+                }
+              }
+            }
             res = IcmpInst::Create(context, IcmpInst::IcmpOp::NEQ, lhs, rhs, irBuilder->getBasicBlock());
+          }
           else 
             res = ConstantInt::get(context, context.Int1Type,
                   dynamic_cast<ConstantInt*>(lhs)->getValue() != dynamic_cast<ConstantInt*>(rhs)->getValue());
@@ -1168,7 +1198,9 @@ void IfElseStatement::generate(IRBuilder *irBuilder) {
     }
   }
   irBuilder->setBasicBlock(true_bb);
-  thenStmt_->generate(irBuilder);
+  if (thenStmt_) {
+    thenStmt_->generate(irBuilder);
+  }
   if (!irBuilder->getBasicBlock()->hasTerminator()) {
     irBuilder->getBasicBlock()->addSuccessor(next_bb);
     BranchInst::Create(c, next_bb, irBuilder->getBasicBlock());
@@ -1218,7 +1250,9 @@ void WhileStatement::generate(IRBuilder *irBuilder) {
   }
   irBuilder->setBasicBlock(while_bb);
   irBuilder->setLoopBlock(while_bb, next_bb);
-  doStmt_->generate(irBuilder); 
+  if (doStmt_) {
+    doStmt_->generate(irBuilder); 
+  }
   irBuilder->popLoopBlock();
   if (!irBuilder->getBasicBlock()->hasTerminator()) {
     irBuilder->getBasicBlock()->addSuccessor(while_bb);
