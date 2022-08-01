@@ -47,7 +47,7 @@ struct Binary : MachineInst {
     enum Tag { Int, Float };
     Tag tag;
 
-    Binary() {}
+    Binary(Tag t, Op k): tag(t), kind(k) {}
     Binary(Tag t, Op k, MachineOperand *d, MachineOperand *l, MachineOperand *r): tag(t), kind(k), dst(d), lhs(l), rhs(r) {}
     void print(FILE *fp);
 };
@@ -67,11 +67,12 @@ struct Mov : MachineInst {
     Tag tag;
     Mov() {}
     Mov(Tag t): tag(t) {}
+    Mov(Tag t, MachineOperand *d, MachineOperand *s): tag(t), dst(d), src(s) {}
     void print(FILE *fp);
 };
 
 struct Ld_St : MachineInst {
-    MachineOperand *dst, *base, *offset, *index;
+    MachineOperand *d_s, *base, *offset, *index;
     // PostIndex adds index_length to the base after addressing
     // PreIndex adds index_length to the base before addressing
     enum Index { NoIndex, PostIndex, PreIndex };
@@ -80,6 +81,7 @@ struct Ld_St : MachineInst {
 
     enum Tag { IntLdr, IntStr, FloatLdr, FloatStr };
     Tag tag;
+    Ld_St(Tag t, MachineOperand *ds, MachineOperand *b, MachineOperand *o): tag(t), d_s(ds), base(b), offset(o) {}
     void print(FILE *fp);
 };
 
