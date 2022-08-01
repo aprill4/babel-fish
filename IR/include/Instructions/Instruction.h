@@ -7,7 +7,7 @@ class Module;
 
 class Instruction : public User {
 public:
-  enum class InstId {
+  enum InstId {
     Ret,
     Br,
     Add,
@@ -81,7 +81,6 @@ public:
   bool isBinary();
   bool isTerminator();
 
-private:
   BasicBlock *parent_;
   InstId instId_;
 };

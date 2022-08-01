@@ -11,7 +11,7 @@ class PointerType;
 
 class Type {
 public:
-  enum class TypeId {
+  enum TypeId {
     VoidTypeId,
     FloatTypeId,
     IntegerTypeId,
@@ -49,6 +49,5 @@ public:
                                  std::size_t elementNum);
   // static PointerType *getFloatPtrType(Context& context);
 
-private:
   TypeId typeId_;
 };

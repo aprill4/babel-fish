@@ -15,6 +15,5 @@ public:
 public:
   static ConstantFloat *get(Context &context, float value);
 
-private:
   float value_;
 };

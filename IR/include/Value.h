@@ -26,7 +26,6 @@ public:
 
   size_t getNO();
 
-private:
   Type *type_;
   std::string name_;
   std::list<Use> useList_;

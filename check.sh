@@ -8,12 +8,12 @@ if [ -d "./build" ]; then
     echo "directory \"./build\" exists"
     cd build || exit
     cmake ..
-    make -j4
+    make -j$(nproc)
 else 
     mkdir build
     cd build || exit
     cmake ..
-    make -j4
+    make -j$(nproc)
 fi
 
 cp check.out ../check.out

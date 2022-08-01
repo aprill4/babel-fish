@@ -43,65 +43,43 @@ struct Binary : MachineInst {
     enum Op { IAdd, ISub, IMul, IDiv, FAdd, FSub, FMul, FDiv, ILsl, ILsr, IAsl, IAsr };
     Op kind;
     MachineOperand *dst, *lhs, *rhs;
+
+    enum Tag { Int, Float };
+    Tag tag;
+
+    Binary() {}
+    Binary(Tag t, Op k, MachineOperand *d, MachineOperand *l, MachineOperand *r): tag(t), kind(k), dst(d), lhs(l), rhs(r) {}
     void print(FILE *fp);
 };
 
-struct ICmp : MachineInst {
+struct Cmp : MachineInst {
     MachineOperand *lhs, *rhs;
+    enum Tag { Int, Float };
+    Tag tag;
+    Cmp(Tag t, MachineOperand *l , MachineOperand *r): tag(t), lhs(l), rhs(r) {}
+    //if tag is Float, `add vmrs APSR_nzcv, FPSCR`
     void print(FILE *fp);
 };
 
-struct FCmp : MachineInst {
-    MachineOperand *lhs, *rhs;
-    void print(FILE *fp);
-    // add vmrs APSR_nzcv, FPSCR
-};
-
-struct IMov : MachineInst {
+struct Mov : MachineInst {
     MachineOperand *dst, *src;
+    enum Tag { I2I, F2F, F2I, I2F };
+    Tag tag;
+    Mov() {}
+    Mov(Tag t): tag(t) {}
     void print(FILE *fp);
 };
 
-struct FMov : MachineInst {
-    MachineOperand *dst, *src;
-    void print(FILE *fp);
-};
-
-struct ILoad : MachineInst {
+struct Ld_St : MachineInst {
     MachineOperand *dst, *base, *offset, *index;
     // PostIndex adds index_length to the base after addressing
     // PreIndex adds index_length to the base before addressing
     enum Index { NoIndex, PostIndex, PreIndex };
     Index index_type = NoIndex;
     int index_length;
-    void print(FILE *fp);
-};
 
-struct IStore : MachineInst {
-    MachineOperand *src, *base, *offset, *index;
-    // PostIndex adds index_length to the base after addressing
-    // PreIndex adds index_length to the base before addressing
-    enum Index { NoIndex, PostIndex, PreIndex };
-    Index index_type = NoIndex;
-    void print(FILE *fp);
-};
-
-struct FLoad : MachineInst {
-    MachineOperand *dst, *base, *offset, *index;
-    // PostIndex adds index_length to the base after addressing
-    // PreIndex adds index_length to the base before addressing
-    enum Index { NoIndex, PostIndex, PreIndex };
-    Index index_type = NoIndex;
-    void print(FILE *fp);
-};
-
-struct FStore : MachineInst {
-    MachineOperand *src, *base, *offset, *index;
-    // PostIndex adds index_length to the base after addressing
-    // PreIndex adds index_length to the base before addressing
-    enum Index { NoIndex, PostIndex, PreIndex };
-    Index index_type = NoIndex;
-    int index_length;
+    enum Tag { IntLdr, IntStr, FloatLdr, FloatStr };
+    Tag tag;
     void print(FILE *fp);
 };
 
@@ -115,13 +93,10 @@ struct FNeg : MachineInst {
     void print(FILE *fp);
 };
 
-struct F2ICvt : MachineInst {
+struct Cvt : MachineInst {
     MachineOperand *dst, *src;
-    void print(FILE *fp);
-};
-
-struct I2FCvt : MachineInst {
-    MachineOperand *dst, *src;
+    enum Tag { S2F, F2S };
+    Tag tag;
     void print(FILE *fp);
 };
 
@@ -139,13 +114,10 @@ struct Return : MachineInst {
     void print(FILE *fp);
 };
 
-struct Push : MachineInst {
+struct Push_Pop : MachineInst {
     std::vector<MReg *> regs;
-    void print(FILE *fp);
-};
-
-struct Pop : MachineInst {
-    std::vector<MReg *> regs;
+    enum Tag { Push, Pop };
+    Tag tag;
     void print(FILE *fp);
 };
 
@@ -167,11 +139,13 @@ struct IImm : MachineOperand {
 
 struct FImm : MachineOperand { 
     float value; 
+    FImm(float v): value(v) {}
     const char *print();
 };
 
 struct VReg : MachineOperand { 
     int id;
+    VReg(int i): id(i) {}
     const char *print();
 };
 
@@ -191,9 +165,3 @@ struct Symbol : MachineOperand {
 };
 
 MachineModule *emit_asm(Module *IR);
-MachineFunction *emit_func(Function *func);
-MachineBasicBlock *emit_bb(BasicBlock *bb);
-MachineInst *emit_inst(Instruction *inst);
-
-IMov *emit_ret(Instruction *inst);
-IMov *emit_imov(Instruction *inst);
