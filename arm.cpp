@@ -158,7 +158,7 @@ std::map<Value*, MachineOperand*> v_m;
 static int vreg_id = 0;
 
 MachineOperand *make_operand(Value *v, bool isVreg = false) {
-    if (v_m[v]) { return v_m[v]; }
+    if (v_m.find(v) != v_m.end()) { return v_m[v]; }
     else if (auto const_int = dynamic_cast<ConstantInt *>(v)) {
         auto iimm = new IImm(const_int->value_); 
         v_m[v] = iimm;
@@ -166,6 +166,7 @@ MachineOperand *make_operand(Value *v, bool isVreg = false) {
     } else if (auto const_float = dynamic_cast<ConstantFloat *>(v)) {
         auto fimm = new FImm(const_float->value_);
         v_m[v] = fimm;
+        return fimm;
     } else {
         auto vreg = new VReg(vreg_id++);
         v_m[v] = vreg;
