@@ -105,16 +105,16 @@ void Ld_St::print(FILE *fp) {
     const char *ld_st_inst[] = { "ldr", "str", "vldr", "vstr" };
     switch (index_type) {
         case PreIndex:
-            fprintf(fp, "%s%s %s, [%s, %s%s]!", ld_st_inst[tag], get_cond(), dst->print(), base->print(), index->print(), index->get_shift());
+            fprintf(fp, "%s%s %s, [%s, %s%s]!", ld_st_inst[tag], get_cond(), d_s->print(), base->print(), index->print(), index->get_shift());
             break;
         case PostIndex:
-            fprintf(fp, "%s%s %s, [%s], %s%s", ld_st_inst[tag], get_cond(), dst->print(), base->print(), index->print(), index->get_shift());
+            fprintf(fp, "%s%s %s, [%s], %s%s", ld_st_inst[tag], get_cond(), d_s->print(), base->print(), index->print(), index->get_shift());
             break;
         case NoIndex: {
                 if (offset) {
-                    fprintf(fp, "%s%s %s, [%s, %s]", ld_st_inst[tag], get_cond(), dst->print(), base->print(), offset->print());
+                    fprintf(fp, "%s%s %s, [%s, %s]", ld_st_inst[tag], get_cond(), d_s->print(), base->print(), offset->print());
                 } else {
-                    fprintf(fp, "%s%s %s, [%s]", ld_st_inst[tag], get_cond(), dst->print(), base->print());
+                    fprintf(fp, "%s%s %s, [%s]", ld_st_inst[tag], get_cond(), d_s->print(), base->print());
                 }
             }
             break;
@@ -156,10 +156,23 @@ void Push_Pop::print(FILE *fp) {
 }
 
 std::map<Value*, MachineOperand*> v_m;
-static int vreg_id = 0;
+int vreg_id = 0;
+size_t stack_offset = 0;
+std::map<Value*, size_t> val_offset;
+
+size_t allocate(size_t size) {
+    size_t before_alloca = stack_offset;
+    stack_offset += size;
+    return before_alloca;
+}
 
 MachineOperand *make_operand(Value *v, bool isVreg = false) {
     if (v_m.find(v) != v_m.end()) { return v_m[v]; }
+    else if (isVreg) {
+        auto vreg = new VReg(vreg_id++);
+        v_m[v] = vreg;
+        return vreg;
+    }
     else if (auto const_int = dynamic_cast<ConstantInt *>(v)) {
         auto iimm = new IImm(const_int->value_); 
         v_m[v] = iimm;
@@ -177,25 +190,89 @@ MachineOperand *make_operand(Value *v, bool isVreg = false) {
     return nullptr;
 }
 
-void emit_binary(BinaryInst *inst, MachineBasicBlock *mbb) {
-    auto const_l = dynamic_cast<Constant *>(inst->operands_[0]);
-    auto const_r = dynamic_cast<Constant *>(inst->operands_[1]);
-    bool both_const = const_l && const_r;
+void handle_alloca(AllocaInst *inst, MachineBasicBlock *mbb) {
+    switch(inst->allocaType_->typeId_) {
+        case Type::IntegerTypeId: 
+        case Type::FloatTypeId: {
+            auto dst = new MReg(MReg::sp);
+            auto lhs = new MReg(MReg::sp);
+            auto rhs = new IImm(4);
+            auto alloca = new Binary(Binary::Int, Binary::ISub, dst, lhs, rhs);
+            val_offset[inst] = allocate(4);
+            mbb->insts.emplace_back(alloca);
+        }
+    }
+}
 
-    auto binary_inst = new Binary;
-    binary_inst->dst = make_operand(inst);
+void emit_ld_st(Instruction *inst, MachineBasicBlock *mbb) {
+    if (dynamic_cast<LoadInst *>(inst)) {
+        switch (inst->type_->typeId_) {
+            case Type::IntegerTypeId: {
+                if (auto global = dynamic_cast<GlobalVariable *>(inst->operands_[0])) {
+                    assert(false && "don't support loading global so far");
+                } else {
+                    auto base = new MReg(MReg::sp);
+                    auto offset = new IImm(val_offset[inst->operands_[0]]);
+                    auto dst = make_operand(inst);
+                    auto ld = new Ld_St(Ld_St::IntLdr, dst, base, offset);
+                    mbb->insts.emplace_back(ld);
+                }
+            } break;
+            default: assert(false && "don't support another type except intetger");
+        }
+    } else {
+        switch (inst->operands_[0]->type_->typeId_) {
+            case Type::IntegerTypeId: {
+                if (auto global = dynamic_cast<GlobalVariable *>(inst->operands_[0])) {
+                    assert(false && "don't support loading global so far");
+                } else {
+                    auto base = new MReg(MReg::sp);
+                    auto offset = new IImm(val_offset[inst->operands_[1]]);
+                    auto src = make_operand(inst->operands_[0]);
+                    auto st = new Ld_St(Ld_St::IntStr, src, base, offset);
+                    mbb->insts.emplace_back(st);
+                }
+            } break;
+            default: assert(false && "don't support another type except intetger");
+        }
+    }
+}
+
+void emit_binary(BinaryInst *inst, MachineBasicBlock *mbb) {
+
+    auto lhs = make_operand(inst->operands_[0]);
+    auto rhs = make_operand(inst->operands_[1]);
+    auto dst = make_operand(inst);
+
     switch(inst->instId_) {
         case Instruction::Add: {
-            auto src = make_operand(inst);
+            auto binary_inst = new Binary(Binary::Int, Binary::IAdd);
+            binary_inst->dst = dst;
 
-            auto lhs = make_operand(inst->operands_[0]);
-            auto rhs = make_operand(inst->operands_[1]);
+            if (dynamic_cast<IImm *>(lhs)) {
+                binary_inst->lhs = rhs;
+                binary_inst->rhs = lhs;
+            } else {
+                binary_inst->lhs = lhs;
+                binary_inst->rhs = rhs;
+            }
 
-
+            mbb->insts.emplace_back(binary_inst);
         } break;
 
         case Instruction::Sub: {
+            auto binary_inst = new Binary(Binary::Int, Binary::ISub);
+            binary_inst->dst = dst;
 
+            if (dynamic_cast<IImm *>(lhs)) {
+                binary_inst->lhs = rhs;
+                binary_inst->rhs = lhs;
+            } else {
+                binary_inst->lhs = lhs;
+                binary_inst->rhs = rhs;
+            }
+
+            mbb->insts.emplace_back(binary_inst);
         } break;
 
         case Instruction::Mul: {
@@ -260,12 +337,23 @@ void emit_ret(ReturnInst *inst, MachineBasicBlock *mbb) {
     it--;
     mbb->insts.insert(it, mv);
 }
+/*
+void emit_mov(Value *src, MachineBasicBlock *mbb, Value *dst = nullptr) {
+    auto mv = new Mov;
+    if (dst){
+        //from src to dst
+    }
 
-void emit_mov(Instruction *inst, MachineBasicBlock *mbb) {
+    switch(src->type_->typeId_) {
+        case Type::IntegerTypeId: {
+            auto src = make_operand(src);
+            auto dst = make_operand(src)
 
+        }
+    }
     
 }
-
+*/
 std::vector<Branch *> emit_br(Instruction *inst) {
   if (!inst->isBr()) {
     throw Exception("Inst isn't BranchInst");
@@ -336,6 +424,8 @@ void emit_inst(Instruction *inst, MachineBasicBlock *mbb) {
     
     if (auto ret_inst = dynamic_cast<ReturnInst *>(inst)) { emit_ret(ret_inst, mbb); return; }
     else if (auto binary_inst = dynamic_cast<BinaryInst *>(inst)) { emit_binary(binary_inst, mbb); return; }
+    else if (auto alloca_inst = dynamic_cast<AllocaInst *>(inst)) { handle_alloca(alloca_inst, mbb); return; }
+    else if (dynamic_cast<LoadInst *>(inst) || dynamic_cast<StoreInst *>(inst)) { emit_ld_st(inst, mbb); return; }
     assert(false && "illegal instrustion");
 }
 
@@ -361,6 +451,11 @@ MachineFunction *emit_func(Function *func) {
     auto mfunc = new MachineFunction;
     
     mfunc->name = func->name_;
+
+    int i = 0;
+    for (auto arg: func->arguments_) {
+        make_operand(arg);
+    }
 
     std::map<BasicBlock *, MachineBasicBlock *> bb_map;
     for (auto bb: func->basicBlocks_) {
