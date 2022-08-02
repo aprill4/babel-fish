@@ -16,6 +16,7 @@ void MachineFunction::print(FILE *fp) {
 }
 
 void MachineBasicBlock::print(FILE *fp) {
+    fprintf(fp, "%s:\n", block_name.c_str());
     for (auto inst: insts) {
         inst->print(fp);
         inst->newline(fp);
@@ -354,14 +355,14 @@ void emit_mov(Value *src, MachineBasicBlock *mbb, Value *dst = nullptr) {
     
 }
 */
-std::vector<Branch *> emit_br(Instruction *inst) {
+void emit_br(Instruction *inst, MachineBasicBlock *mbb) {
   if (!inst->isBr()) {
     throw Exception(std::string("Inst isn't BranchInst in ") + __FILE__ + " " + std::to_string(__LINE__));
   }  
   if (inst->getOperandNum() == 1) {
     auto br = new Branch();
     br->label = dynamic_cast<BranchInst *>(inst)->getOperand(0)->getLLVM_Name();
-    return { br };
+    mbb->insts.emplace_back(br);
   } else if (inst->getOperandNum() == 3) {
     auto br1 = new Branch(), br2 = new Branch();
     auto cond = dynamic_cast<BranchInst *>(inst)->getOperand(0);
@@ -414,13 +415,15 @@ std::vector<Branch *> emit_br(Instruction *inst) {
         break;
       }
     }
-    return { br1, br2 };
+    mbb->insts.emplace_back(br1);
+    mbb->insts.emplace_back(br2);
+  } else {  
+    throw Exception("BranchInst's operandNums isn't 1 or 3 and BranchInst's name: " + 
+            dynamic_cast<BranchInst *>(inst)->getLLVM_Name()+ __FILE__ + " " + std::to_string(__LINE__));
   }
-  throw Exception("BranchInst's operandNums isn't 1 or 3 and BranchInst's name: " + 
-        dynamic_cast<BranchInst *>(inst)->getLLVM_Name());
 }
 
-Cmp *emit_cmp(Instruction *inst) {
+void emit_cmp(Instruction *inst, MachineBasicBlock* mbb) {
   if (!inst->isIcmp() && !inst->isFcmp()) {
     throw Exception(std::string("Inst isn't IcmpInst or FcmpInst in ") + __FILE__ + " " + std::to_string(__LINE__));
   }
@@ -432,7 +435,7 @@ Cmp *emit_cmp(Instruction *inst) {
   }
   cmp->lhs = make_operand(inst->getOperand(0));
   cmp->rhs = make_operand(inst->getOperand(1));
-  return cmp;
+  mbb->insts.emplace_back(cmp);
 }
 
 void emit_inst(Instruction *inst, MachineBasicBlock *mbb) {
@@ -441,12 +444,15 @@ void emit_inst(Instruction *inst, MachineBasicBlock *mbb) {
     else if (auto binary_inst = dynamic_cast<BinaryInst *>(inst)) { emit_binary(binary_inst, mbb); return; }
     else if (auto alloca_inst = dynamic_cast<AllocaInst *>(inst)) { handle_alloca(alloca_inst, mbb); return; }
     else if (dynamic_cast<LoadInst *>(inst) || dynamic_cast<StoreInst *>(inst)) { emit_ld_st(inst, mbb); return; }
+    else if (auto icmp_inst = dynamic_cast<IcmpInst *>(inst)) { emit_cmp(icmp_inst, mbb); return; }
+    else if (auto fcmp_inst = dynamic_cast<FcmpInst *>(inst)) { emit_cmp(fcmp_inst, mbb); return; }
+    else if (auto br_inst = dynamic_cast<BranchInst *>(inst)) { emit_br(br_inst, mbb); return; }
     assert(false && "illegal instrustion");
 }
 
 MachineBasicBlock *emit_bb(BasicBlock *bb) {
     auto mbb = new MachineBasicBlock;
-
+    mbb->block_name = bb->getLLVM_Name();
     for (auto inst: bb->instructionList_) {
         emit_inst(inst, mbb);
         /*

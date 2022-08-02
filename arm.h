@@ -25,6 +25,7 @@ struct MachineFunction {
 };
 
 struct MachineBasicBlock {
+    std::string block_name;
     std::vector<MachineBasicBlock *> pres, sucs;
     std::list<MachineInst *> insts;
     void print(FILE *fp);
