@@ -40,14 +40,14 @@ struct MachineInst {
 };
 
 struct Binary : MachineInst {
-    enum Op { IAdd, ISub, IMul, IDiv, FAdd, FSub, FMul, FDiv, ILsl, ILsr, IAsl, IAsr };
+    enum Op { IAdd, ISub, IMul, IDiv, Mod, FAdd, FSub, FMul, FDiv, ILsl, ILsr, IAsl, IAsr };
     Op kind;
     MachineOperand *dst, *lhs, *rhs;
 
     enum Tag { Int, Float };
     Tag tag;
 
-    Binary(Tag t, Op k): tag(t), kind(k) {}
+    Binary(MachineOperand *d, MachineOperand *l, MachineOperand *r): dst(d), lhs(l), rhs(r) {}
     Binary(Tag t, Op k, MachineOperand *d, MachineOperand *l, MachineOperand *r): tag(t), kind(k), dst(d), lhs(l), rhs(r) {}
     void print(FILE *fp);
 };

@@ -85,7 +85,7 @@ const char *MachineInst::get_cond() {
 
 void Binary::print(FILE *fp) {
     const char *op_str[] = {
-        "add", "sub", "mul", "div", "vadd.f32", "vsub.f32", "vmul.f32", "vdiv.f32", "lsl", "lsr", "asl", "asr"
+        "add", "sub", "mul", "div", "", "vadd.f32", "vsub.f32", "vmul.f32", "vdiv.f32", "lsl", "lsr", "asl", "asr"
     };
     fprintf(fp, "%s%s %s, %s, %s", op_str[kind], get_cond(), dst->print(), lhs->print(), rhs->print());
 }
@@ -270,43 +270,37 @@ void emit_binary(BinaryInst *inst, MachineBasicBlock *mbb) {
     auto lhs = make_operand(inst->operands_[0]);
     auto rhs = make_operand(inst->operands_[1]);
     auto dst = make_operand(inst);
+    Binary *binary_inst;
+
+    if (dynamic_cast<Constant *>(inst->operands_[0])) {
+        binary_inst = new Binary(dst, rhs, lhs);
+    } else {
+        binary_inst = new Binary(dst, lhs, rhs);
+    }
 
     switch(inst->instId_) {
         case Instruction::Add: {
-            auto binary_inst = new Binary(Binary::Int, Binary::IAdd);
-            binary_inst->dst = dst;
-
-            if (dynamic_cast<IImm *>(lhs)) {
-                binary_inst->lhs = rhs;
-                binary_inst->rhs = lhs;
-            } else {
-                binary_inst->lhs = lhs;
-                binary_inst->rhs = rhs;
-            }
-
+            binary_inst->tag = Binary::Int;
+            binary_inst->kind = Binary::IAdd;
             mbb->insts.emplace_back(binary_inst);
         } break;
 
         case Instruction::Sub: {
-            auto binary_inst = new Binary(Binary::Int, Binary::ISub);
-            binary_inst->dst = dst;
-
-            if (dynamic_cast<IImm *>(lhs)) {
-                binary_inst->lhs = rhs;
-                binary_inst->rhs = lhs;
-            } else {
-                binary_inst->lhs = lhs;
-                binary_inst->rhs = rhs;
-            }
-
+            binary_inst->tag = Binary::Int;
+            binary_inst->kind = Binary::ISub;
             mbb->insts.emplace_back(binary_inst);
         } break;
 
         case Instruction::Mul: {
-
+            binary_inst->tag = Binary::Int;
+            binary_inst->kind = Binary::IMul;
+            mbb->insts.emplace_back(binary_inst);
         } break;
 
         case Instruction::Sdiv: {
+            binary_inst->tag = Binary::Int;
+            binary_inst->kind = Binary::IDiv;
+            mbb->insts.emplace_back(binary_inst);
 
         } break;
         
@@ -315,27 +309,27 @@ void emit_binary(BinaryInst *inst, MachineBasicBlock *mbb) {
         } break;
 
         case Instruction::Fadd: {
-
+            binary_inst->tag = Binary::Float;
+            binary_inst->kind = Binary::FAdd;
+            mbb->insts.emplace_back(binary_inst);
         } break;
 
         case Instruction::Fsub: {
-
+            binary_inst->tag = Binary::Float;
+            binary_inst->kind = Binary::FSub;
+            mbb->insts.emplace_back(binary_inst);
         }
 
         case Instruction::Fmul: {
-
+            binary_inst->tag = Binary::Float;
+            binary_inst->kind = Binary::FMul;
+            mbb->insts.emplace_back(binary_inst);
         } break;
 
         case Instruction::Fdiv: {
-
-        } break;
-
-        case Instruction::And: {
-
-        } break;
-         
-        case Instruction::Or: {
-
+            binary_inst->tag = Binary::Float;
+            binary_inst->kind = Binary::FDiv;
+            mbb->insts.emplace_back(binary_inst);
         } break;
 
         default: assert(false && "illegal binary instruction");
