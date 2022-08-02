@@ -1,4 +1,5 @@
 #include "arm.h"
+#include "Exception.h"
 #include <assert.h>
 
 void MachineModule::print(FILE *fp) {
@@ -263,6 +264,72 @@ void emit_ret(ReturnInst *inst, MachineBasicBlock *mbb) {
 void emit_mov(Instruction *inst, MachineBasicBlock *mbb) {
 
     
+}
+
+std::vector<Branch *> emit_br(Instruction *inst) {
+  if (!inst->isBr()) {
+    throw Exception("Inst isn't BranchInst");
+  }  
+  if (inst->getOperandNum() == 1) {
+    auto br = new Branch();
+    br->label = dynamic_cast<BranchInst *>(inst)->getOperand(0)->getLLVM_Name();
+    return { br };
+  } else if (inst->getOperandNum() == 3) {
+    auto br1 = new Branch(), br2 = new Branch();
+    auto cond = dynamic_cast<BranchInst *>(inst)->getOperand(0);
+    br1->label =
+        dynamic_cast<BranchInst *>(inst)->getOperand(1)->getLLVM_Name();
+    br2->label =
+        dynamic_cast<BranchInst *>(inst)->getOperand(2)->getLLVM_Name();
+    if (dynamic_cast<IcmpInst *>(cond)) {
+      auto condOp = dynamic_cast<IcmpInst *>(cond)->getIcmpOp();
+      switch (condOp) {
+      case IcmpInst::IcmpOp::EQ:
+        br1->cond = MachineInst::Eq;
+        break; 
+      case IcmpInst::IcmpOp::NEQ:
+        br1->cond = MachineInst::Ne;
+        break;
+      case IcmpInst::IcmpOp::GT:
+        br1->cond = MachineInst::Gt;
+        break;
+      case IcmpInst::IcmpOp::GTE:
+        br1->cond = MachineInst::Ge;
+        break;
+      case IcmpInst::IcmpOp::LT:
+        br1->cond = MachineInst::Lt;
+        break;
+      case IcmpInst::IcmpOp::LTE:
+        br1->cond = MachineInst::Le;
+        break;
+      }
+    } else if (dynamic_cast<FcmpInst *>(cond)) {
+      auto condOp = dynamic_cast<FcmpInst *>(cond)->getFcmpOp();
+      switch (condOp) {
+      case FcmpInst::FcmpOp::EQ:
+        br1->cond = MachineInst::Eq;
+        break; 
+      case FcmpInst::FcmpOp::NEQ:
+        br1->cond = MachineInst::Ne;
+        break;
+      case FcmpInst::FcmpOp::GT:
+        br1->cond = MachineInst::Gt;
+        break;
+      case FcmpInst::FcmpOp::GTE:
+        br1->cond = MachineInst::Ge;
+        break;
+      case FcmpInst::FcmpOp::LT:
+        br1->cond = MachineInst::Lt;
+        break;
+      case FcmpInst::FcmpOp::LTE:
+        br1->cond = MachineInst::Le;
+        break;
+      }
+    }
+    return { br1, br2 };
+  }
+  throw Exception("BranchInst's operandNums isn't 1 or 3 and BranchInst's name: " + 
+        dynamic_cast<BranchInst *>(inst)->getLLVM_Name());
 }
 
 void emit_inst(Instruction *inst, MachineBasicBlock *mbb) {
