@@ -72,17 +72,33 @@ struct Mov : MachineInst {
     void print(FILE *fp);
 };
 
-struct Ld_St : MachineInst {
-    MachineOperand *d_s, *base, *offset, *index;
+struct Load : MachineInst {
+    MachineOperand *dst, *base, *offset, *index;
     // PostIndex adds index_length to the base after addressing
     // PreIndex adds index_length to the base before addressing
     enum Index { NoIndex, PostIndex, PreIndex };
     Index index_type = NoIndex;
     int index_length;
 
-    enum Tag { IntLdr, IntStr, FloatLdr, FloatStr };
+    enum Tag { Int, Float };
     Tag tag;
-    Ld_St(Tag t, MachineOperand *ds, MachineOperand *b, MachineOperand *o): tag(t), d_s(ds), base(b), offset(o) {}
+    Load(Tag t, MachineOperand *d, MachineOperand *b, MachineOperand *o): tag(t), dst(d), base(b), offset(o) {}
+    Load(MachineOperand *d, MachineOperand *b, MachineOperand *o): dst(d), base(b), offset(o) {}
+    void print(FILE *fp);
+};
+
+struct Store : MachineInst {
+    MachineOperand *src, *base, *offset, *index;
+    // PostIndex adds index_length to the base after addressing
+    // PreIndex adds index_length to the base before addressing
+    enum Index { NoIndex, PostIndex, PreIndex };
+    Index index_type = NoIndex;
+    int index_length;
+
+    enum Tag { Int, Float };
+    Tag tag;
+    Store(Tag t, MachineOperand *s, MachineOperand *b, MachineOperand *o): tag(t), src(s), base(b), offset(o) {}
+    Store(MachineOperand *s, MachineOperand *b, MachineOperand *o): src(s), base(b), offset(o) {}
     void print(FILE *fp);
 };
 

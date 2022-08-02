@@ -2,6 +2,11 @@
 #include "Exception.h"
 #include <assert.h>
 
+std::map<Value*, MachineOperand*> v_m;
+int vreg_id = 0;
+size_t stack_offset = 0;
+std::map<Value*, size_t> val_offset;
+
 void MachineModule::print(FILE *fp) {
     for (auto func: functions) {
         func->print(fp);
@@ -101,23 +106,43 @@ void Mov::print(FILE *fp) {
     }
 }
 
-void Ld_St::print(FILE *fp) {
-    const char *ld_st_inst[] = { "ldr", "str", "vldr", "vstr" };
+void Load::print(FILE *fp) {
+    const char *ld_inst[] = { "ldr", "vldr" };
     switch (index_type) {
         case PreIndex:
-            fprintf(fp, "%s%s %s, [%s, %s%s]!", ld_st_inst[tag], get_cond(), d_s->print(), base->print(), index->print(), index->get_shift());
+            fprintf(fp, "%s%s %s, [%s, %s%s]!", ld_inst[tag], get_cond(), dst->print(), base->print(), index->print(), index->get_shift());
             break;
         case PostIndex:
-            fprintf(fp, "%s%s %s, [%s], %s%s", ld_st_inst[tag], get_cond(), d_s->print(), base->print(), index->print(), index->get_shift());
+            fprintf(fp, "%s%s %s, [%s], %s%s", ld_inst[tag], get_cond(), dst->print(), base->print(), index->print(), index->get_shift());
             break;
         case NoIndex: {
-                if (offset) {
-                    fprintf(fp, "%s%s %s, [%s, %s]", ld_st_inst[tag], get_cond(), d_s->print(), base->print(), offset->print());
-                } else {
-                    fprintf(fp, "%s%s %s, [%s]", ld_st_inst[tag], get_cond(), d_s->print(), base->print());
-                }
+            if (offset) {
+                fprintf(fp, "%s%s %s, [%s, %s]", ld_inst[tag], get_cond(), dst->print(), base->print(), offset->print());
+            } else {
+                fprintf(fp, "%s%s %s, [%s]", ld_inst[tag], get_cond(), dst->print(), base->print());
             }
+        } break;
+        default: assert(false && "invalid index");
+    }
+}
+
+void Store::print(FILE *fp) {
+    const char *st_inst[] = { "str", "vstr" };
+    switch (index_type) {
+        case PreIndex:
+            fprintf(fp, "%s%s %s, [%s, %s%s]!", st_inst[tag], get_cond(), src->print(), base->print(), index->print(), index->get_shift());
             break;
+        case PostIndex:
+            fprintf(fp, "%s%s %s, [%s], %s%s", st_inst[tag], get_cond(), src->print(), base->print(), index->print(), index->get_shift());
+            break;
+        case NoIndex: {
+            if (offset) {
+                fprintf(fp, "%s%s %s, [%s, %s]", st_inst[tag], get_cond(), src->print(), base->print(), offset->print());
+            } else {
+                fprintf(fp, "%s%s %s, [%s]", st_inst[tag], get_cond(), src->print(), base->print());
+            }
+        } break;
+        default: assert(false && "invalid index");
     }
 }
 
@@ -155,10 +180,6 @@ void Push_Pop::print(FILE *fp) {
     fprintf(fp, "}");
 }
 
-std::map<Value*, MachineOperand*> v_m;
-int vreg_id = 0;
-size_t stack_offset = 0;
-std::map<Value*, size_t> val_offset;
 
 size_t allocate(size_t size) {
     size_t before_alloca = stack_offset;
@@ -204,37 +225,43 @@ void handle_alloca(AllocaInst *inst, MachineBasicBlock *mbb) {
     }
 }
 
-void emit_ld_st(Instruction *inst, MachineBasicBlock *mbb) {
-    if (dynamic_cast<LoadInst *>(inst)) {
-        switch (inst->type_->typeId_) {
-            case Type::IntegerTypeId: {
-                if (auto global = dynamic_cast<GlobalVariable *>(inst->operands_[0])) {
-                    assert(false && "don't support loading global so far");
-                } else {
-                    auto base = new MReg(MReg::sp);
-                    auto offset = new IImm(val_offset[inst->operands_[0]]);
-                    auto dst = make_operand(inst);
-                    auto ld = new Ld_St(Ld_St::IntLdr, dst, base, offset);
-                    mbb->insts.emplace_back(ld);
-                }
-            } break;
-            default: assert(false && "don't support another type except intetger");
-        }
+void emit_load(Instruction *inst, MachineBasicBlock *mbb) {
+    if (auto global = dynamic_cast<GlobalVariable *>(inst->operands_[0])) {
+        assert(false && "don't support loading global so far");
     } else {
-        switch (inst->operands_[0]->type_->typeId_) {
-            case Type::IntegerTypeId: {
-                if (auto global = dynamic_cast<GlobalVariable *>(inst->operands_[0])) {
-                    assert(false && "don't support loading global so far");
-                } else {
-                    auto base = new MReg(MReg::sp);
-                    auto offset = new IImm(val_offset[inst->operands_[1]]);
-                    auto src = make_operand(inst->operands_[0]);
-                    auto st = new Ld_St(Ld_St::IntStr, src, base, offset);
-                    mbb->insts.emplace_back(st);
-                }
-            } break;
-            default: assert(false && "don't support another type except intetger");
+        auto base = new MReg(MReg::sp);
+        auto offset = new IImm(val_offset[inst->operands_[0]]);
+        auto dst = make_operand(inst);
+        auto ld = new Load(dst, base, offset);
+        auto ld_type = inst->type_->typeId_;
+        if (ld_type == Type::IntegerTypeId) {
+            ld->tag = Load::Int;
+        } else if (ld_type == Type::FloatTypeId) {
+            ld->tag = Load::Float;
+        } else {
+
         }
+        mbb->insts.emplace_back(ld);
+    }
+}
+
+void emit_store(Instruction *inst, MachineBasicBlock *mbb) {
+    if (auto global = dynamic_cast<GlobalVariable *>(inst->operands_[0])) {
+        assert(false && "don't support loading global so far");
+    } else {
+        auto base = new MReg(MReg::sp);
+        auto offset = new IImm(val_offset[inst->operands_[1]]);
+        auto src = make_operand(inst->operands_[0]);
+        auto st = new Store(src, base, offset);
+        auto st_type = inst->operands_[0]->type_->typeId_;
+        if (st_type == Type::IntegerTypeId) {
+            st->tag = Store::Int;
+        } else if (st_type == Type::FloatTypeId) {
+            st->tag = Store::Float;
+        } else {
+
+        }
+        mbb->insts.emplace_back(st);
     }
 }
 
@@ -311,7 +338,7 @@ void emit_binary(BinaryInst *inst, MachineBasicBlock *mbb) {
 
         } break;
 
-        default: printf("illegal binary instruction\n");
+        default: assert(false && "illegal binary instruction");
     }
 }
 
@@ -440,7 +467,8 @@ void emit_inst(Instruction *inst, MachineBasicBlock *mbb) {
     if (auto ret_inst = dynamic_cast<ReturnInst *>(inst)) { emit_ret(ret_inst, mbb); return; }
     else if (auto binary_inst = dynamic_cast<BinaryInst *>(inst)) { emit_binary(binary_inst, mbb); return; }
     else if (auto alloca_inst = dynamic_cast<AllocaInst *>(inst)) { handle_alloca(alloca_inst, mbb); return; }
-    else if (dynamic_cast<LoadInst *>(inst) || dynamic_cast<StoreInst *>(inst)) { emit_ld_st(inst, mbb); return; }
+    else if (inst->isLoad()) { emit_load(inst, mbb); return; }
+    else if (inst->isStore()) {emit_store(inst, mbb); return; }
     assert(false && "illegal instrustion");
 }
 
