@@ -356,7 +356,7 @@ void emit_mov(Value *src, MachineBasicBlock *mbb, Value *dst = nullptr) {
 */
 std::vector<Branch *> emit_br(Instruction *inst) {
   if (!inst->isBr()) {
-    throw Exception("Inst isn't BranchInst");
+    throw Exception(std::string("Inst isn't BranchInst in ") + __FILE__ + " " + std::to_string(__LINE__));
   }  
   if (inst->getOperandNum() == 1) {
     auto br = new Branch();
@@ -418,6 +418,21 @@ std::vector<Branch *> emit_br(Instruction *inst) {
   }
   throw Exception("BranchInst's operandNums isn't 1 or 3 and BranchInst's name: " + 
         dynamic_cast<BranchInst *>(inst)->getLLVM_Name());
+}
+
+Cmp *emit_cmp(Instruction *inst) {
+  if (!inst->isIcmp() && !inst->isFcmp()) {
+    throw Exception(std::string("Inst isn't IcmpInst or FcmpInst in ") + __FILE__ + " " + std::to_string(__LINE__));
+  }
+  auto cmp = new Cmp();
+  if (inst->isIcmp()) {
+    cmp->tag = Cmp::Int;
+  } else {
+    cmp->tag = Cmp::Float;
+  }
+  cmp->lhs = make_operand(inst->getOperand(0));
+  cmp->rhs = make_operand(inst->getOperand(1));
+  return cmp;
 }
 
 void emit_inst(Instruction *inst, MachineBasicBlock *mbb) {

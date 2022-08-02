@@ -56,6 +56,7 @@ struct Cmp : MachineInst {
     MachineOperand *lhs, *rhs;
     enum Tag { Int, Float };
     Tag tag;
+    Cmp() = default;
     Cmp(Tag t, MachineOperand *l , MachineOperand *r): tag(t), lhs(l), rhs(r) {}
     //if tag is Float, `add vmrs APSR_nzcv, FPSCR`
     void print(FILE *fp);
