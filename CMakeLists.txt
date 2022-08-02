@@ -16,7 +16,7 @@ include_directories(${PROJECT_SOURCE_DIR}/IR/include/Instructions)
 
 add_subdirectory(IR)
 
-add_executable(IRtest.out IRtest.cc)
+# add_executable(IRtest.out IRtest.cc)
 # add_executable(dominator_tree.out dominator_tree.cc)
 # add_executable(arm.out arm.cpp)
 
@@ -29,7 +29,7 @@ add_executable(arm_test ast.h syntax_analyzer.tab.h lex.yy.c syntax_analyzer.tab
 target_link_libraries(check.out PUBLIC IR)
 target_link_libraries(arm_test PUBLIC IR)
 
-target_link_libraries(IRtest.out PUBLIC IR)
+# target_link_libraries(IRtest.out PUBLIC IR)
 #target_link_libraries(dominator_tree.out PUBLIC IR)
 #target_link_libraries(arm.out PUBLIC IR)
 
