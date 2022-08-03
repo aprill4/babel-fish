@@ -204,6 +204,16 @@ MachineOperand *make_operand(Value *v, bool isVreg = false) {
         auto fimm = new FImm(const_float->value_);
         v_m[v] = fimm;
         return fimm;
+    }  else if (auto const_zero = dynamic_cast<ConstantZero *>(v)) {
+        if (const_zero->type_->isIntegerType()) {
+            auto iimm = new IImm(0); 
+            v_m[v] = iimm;
+            return iimm;        
+        } else if (const_zero->type_->isFloatType()) {
+            auto fimm = new FImm(0);
+            v_m[v] = fimm;
+            return fimm;
+        }
     } else {
         auto vreg = new VReg(vreg_id++);
         v_m[v] = vreg;
@@ -468,14 +478,20 @@ void emit_call(Instruction *inst, MachineBasicBlock* mbb) {
     Call* call = new Call();
     call->callee = func->getName();
     call->arg_count = func_call->getOperandNum() - 1;
-    // for (int i = 0; i < func_call->getOperandNum() - 1; i++) {
-    //     auto args = func_call->getOperand(i);
-    //     if (i < 3) {
-    //         make_operand(args);
-    //     } else {
-            
-    //     }
-    // }
+
+    for (int i = 0; i < func_call->getOperandNum() - 1; i++) {
+        auto args = func_call->getOperand(i);
+        if (i <= 3) {
+            auto mreg = new MReg(MReg::Reg(i + 1));
+            auto mv = new Mov();
+            // TO_DO: add mv's property;
+            mv->src = make_operand(args);
+            mv->dst = mreg;
+        } else {
+            // TO_DO: xxx;
+            // auto mv = new Mov();
+        }
+    }
     mbb->insts.emplace_back(call);
 }
 
