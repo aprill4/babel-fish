@@ -2,6 +2,11 @@
 #include "Exception.h"
 #include <assert.h>
 
+std::map<Value*, MachineOperand*> v_m;
+int vreg_id = 0;
+size_t stack_offset = 0;
+std::map<Value*, size_t> val_offset;
+
 void MachineModule::print(FILE *fp) {
     for (auto func: functions) {
         func->print(fp);
@@ -81,7 +86,7 @@ const char *MachineInst::get_cond() {
 
 void Binary::print(FILE *fp) {
     const char *op_str[] = {
-        "add", "sub", "mul", "div", "vadd.f32", "vsub.f32", "vmul.f32", "vdiv.f32", "lsl", "lsr", "asl", "asr"
+        "add", "sub", "mul", "div", "", "vadd.f32", "vsub.f32", "vmul.f32", "vdiv.f32", "lsl", "lsr", "asl", "asr"
     };
     fprintf(fp, "%s%s %s, %s, %s", op_str[kind], get_cond(), dst->print(), lhs->print(), rhs->print());
 }
@@ -102,23 +107,43 @@ void Mov::print(FILE *fp) {
     }
 }
 
-void Ld_St::print(FILE *fp) {
-    const char *ld_st_inst[] = { "ldr", "str", "vldr", "vstr" };
+void Load::print(FILE *fp) {
+    const char *ld_inst[] = { "ldr", "vldr" };
     switch (index_type) {
         case PreIndex:
-            fprintf(fp, "%s%s %s, [%s, %s%s]!", ld_st_inst[tag], get_cond(), d_s->print(), base->print(), index->print(), index->get_shift());
+            fprintf(fp, "%s%s %s, [%s, %s%s]!", ld_inst[tag], get_cond(), dst->print(), base->print(), index->print(), index->get_shift());
             break;
         case PostIndex:
-            fprintf(fp, "%s%s %s, [%s], %s%s", ld_st_inst[tag], get_cond(), d_s->print(), base->print(), index->print(), index->get_shift());
+            fprintf(fp, "%s%s %s, [%s], %s%s", ld_inst[tag], get_cond(), dst->print(), base->print(), index->print(), index->get_shift());
             break;
         case NoIndex: {
-                if (offset) {
-                    fprintf(fp, "%s%s %s, [%s, %s]", ld_st_inst[tag], get_cond(), d_s->print(), base->print(), offset->print());
-                } else {
-                    fprintf(fp, "%s%s %s, [%s]", ld_st_inst[tag], get_cond(), d_s->print(), base->print());
-                }
+            if (offset) {
+                fprintf(fp, "%s%s %s, [%s, %s]", ld_inst[tag], get_cond(), dst->print(), base->print(), offset->print());
+            } else {
+                fprintf(fp, "%s%s %s, [%s]", ld_inst[tag], get_cond(), dst->print(), base->print());
             }
+        } break;
+        default: assert(false && "invalid index");
+    }
+}
+
+void Store::print(FILE *fp) {
+    const char *st_inst[] = { "str", "vstr" };
+    switch (index_type) {
+        case PreIndex:
+            fprintf(fp, "%s%s %s, [%s, %s%s]!", st_inst[tag], get_cond(), src->print(), base->print(), index->print(), index->get_shift());
             break;
+        case PostIndex:
+            fprintf(fp, "%s%s %s, [%s], %s%s", st_inst[tag], get_cond(), src->print(), base->print(), index->print(), index->get_shift());
+            break;
+        case NoIndex: {
+            if (offset) {
+                fprintf(fp, "%s%s %s, [%s, %s]", st_inst[tag], get_cond(), src->print(), base->print(), offset->print());
+            } else {
+                fprintf(fp, "%s%s %s, [%s]", st_inst[tag], get_cond(), src->print(), base->print());
+            }
+        } break;
+        default: assert(false && "invalid index");
     }
 }
 
@@ -156,10 +181,6 @@ void Push_Pop::print(FILE *fp) {
     fprintf(fp, "}");
 }
 
-std::map<Value*, MachineOperand*> v_m;
-int vreg_id = 0;
-size_t stack_offset = 0;
-std::map<Value*, size_t> val_offset;
 
 size_t allocate(size_t size) {
     size_t before_alloca = stack_offset;
@@ -205,37 +226,43 @@ void handle_alloca(AllocaInst *inst, MachineBasicBlock *mbb) {
     }
 }
 
-void emit_ld_st(Instruction *inst, MachineBasicBlock *mbb) {
-    if (dynamic_cast<LoadInst *>(inst)) {
-        switch (inst->type_->typeId_) {
-            case Type::IntegerTypeId: {
-                if (auto global = dynamic_cast<GlobalVariable *>(inst->operands_[0])) {
-                    assert(false && "don't support loading global so far");
-                } else {
-                    auto base = new MReg(MReg::sp);
-                    auto offset = new IImm(val_offset[inst->operands_[0]]);
-                    auto dst = make_operand(inst);
-                    auto ld = new Ld_St(Ld_St::IntLdr, dst, base, offset);
-                    mbb->insts.emplace_back(ld);
-                }
-            } break;
-            default: assert(false && "don't support another type except intetger");
-        }
+void emit_load(Instruction *inst, MachineBasicBlock *mbb) {
+    if (auto global = dynamic_cast<GlobalVariable *>(inst->operands_[0])) {
+        assert(false && "don't support loading global so far");
     } else {
-        switch (inst->operands_[0]->type_->typeId_) {
-            case Type::IntegerTypeId: {
-                if (auto global = dynamic_cast<GlobalVariable *>(inst->operands_[0])) {
-                    assert(false && "don't support loading global so far");
-                } else {
-                    auto base = new MReg(MReg::sp);
-                    auto offset = new IImm(val_offset[inst->operands_[1]]);
-                    auto src = make_operand(inst->operands_[0]);
-                    auto st = new Ld_St(Ld_St::IntStr, src, base, offset);
-                    mbb->insts.emplace_back(st);
-                }
-            } break;
-            default: assert(false && "don't support another type except intetger");
+        auto base = new MReg(MReg::sp);
+        auto offset = new IImm(val_offset[inst->operands_[0]]);
+        auto dst = make_operand(inst);
+        auto ld = new Load(dst, base, offset);
+        auto ld_type = inst->type_->typeId_;
+        if (ld_type == Type::IntegerTypeId) {
+            ld->tag = Load::Int;
+        } else if (ld_type == Type::FloatTypeId) {
+            ld->tag = Load::Float;
+        } else {
+
         }
+        mbb->insts.emplace_back(ld);
+    }
+}
+
+void emit_store(Instruction *inst, MachineBasicBlock *mbb) {
+    if (auto global = dynamic_cast<GlobalVariable *>(inst->operands_[0])) {
+        assert(false && "don't support loading global so far");
+    } else {
+        auto base = new MReg(MReg::sp);
+        auto offset = new IImm(val_offset[inst->operands_[1]]);
+        auto src = make_operand(inst->operands_[0]);
+        auto st = new Store(src, base, offset);
+        auto st_type = inst->operands_[0]->type_->typeId_;
+        if (st_type == Type::IntegerTypeId) {
+            st->tag = Store::Int;
+        } else if (st_type == Type::FloatTypeId) {
+            st->tag = Store::Float;
+        } else {
+
+        }
+        mbb->insts.emplace_back(st);
     }
 }
 
@@ -244,43 +271,37 @@ void emit_binary(BinaryInst *inst, MachineBasicBlock *mbb) {
     auto lhs = make_operand(inst->operands_[0]);
     auto rhs = make_operand(inst->operands_[1]);
     auto dst = make_operand(inst);
+    Binary *binary_inst;
+
+    if (dynamic_cast<Constant *>(inst->operands_[0])) {
+        binary_inst = new Binary(dst, rhs, lhs);
+    } else {
+        binary_inst = new Binary(dst, lhs, rhs);
+    }
 
     switch(inst->instId_) {
         case Instruction::Add: {
-            auto binary_inst = new Binary(Binary::Int, Binary::IAdd);
-            binary_inst->dst = dst;
-
-            if (dynamic_cast<IImm *>(lhs)) {
-                binary_inst->lhs = rhs;
-                binary_inst->rhs = lhs;
-            } else {
-                binary_inst->lhs = lhs;
-                binary_inst->rhs = rhs;
-            }
-
+            binary_inst->tag = Binary::Int;
+            binary_inst->kind = Binary::IAdd;
             mbb->insts.emplace_back(binary_inst);
         } break;
 
         case Instruction::Sub: {
-            auto binary_inst = new Binary(Binary::Int, Binary::ISub);
-            binary_inst->dst = dst;
-
-            if (dynamic_cast<IImm *>(lhs)) {
-                binary_inst->lhs = rhs;
-                binary_inst->rhs = lhs;
-            } else {
-                binary_inst->lhs = lhs;
-                binary_inst->rhs = rhs;
-            }
-
+            binary_inst->tag = Binary::Int;
+            binary_inst->kind = Binary::ISub;
             mbb->insts.emplace_back(binary_inst);
         } break;
 
         case Instruction::Mul: {
-
+            binary_inst->tag = Binary::Int;
+            binary_inst->kind = Binary::IMul;
+            mbb->insts.emplace_back(binary_inst);
         } break;
 
         case Instruction::Sdiv: {
+            binary_inst->tag = Binary::Int;
+            binary_inst->kind = Binary::IDiv;
+            mbb->insts.emplace_back(binary_inst);
 
         } break;
         
@@ -289,30 +310,30 @@ void emit_binary(BinaryInst *inst, MachineBasicBlock *mbb) {
         } break;
 
         case Instruction::Fadd: {
-
+            binary_inst->tag = Binary::Float;
+            binary_inst->kind = Binary::FAdd;
+            mbb->insts.emplace_back(binary_inst);
         } break;
 
         case Instruction::Fsub: {
-
+            binary_inst->tag = Binary::Float;
+            binary_inst->kind = Binary::FSub;
+            mbb->insts.emplace_back(binary_inst);
         }
 
         case Instruction::Fmul: {
-
+            binary_inst->tag = Binary::Float;
+            binary_inst->kind = Binary::FMul;
+            mbb->insts.emplace_back(binary_inst);
         } break;
 
         case Instruction::Fdiv: {
-
+            binary_inst->tag = Binary::Float;
+            binary_inst->kind = Binary::FDiv;
+            mbb->insts.emplace_back(binary_inst);
         } break;
 
-        case Instruction::And: {
-
-        } break;
-         
-        case Instruction::Or: {
-
-        } break;
-
-        default: printf("illegal binary instruction\n");
+        default: assert(false && "illegal binary instruction");
     }
 }
 
@@ -443,10 +464,11 @@ void emit_inst(Instruction *inst, MachineBasicBlock *mbb) {
     if (auto ret_inst = dynamic_cast<ReturnInst *>(inst)) { emit_ret(ret_inst, mbb); return; }
     else if (auto binary_inst = dynamic_cast<BinaryInst *>(inst)) { emit_binary(binary_inst, mbb); return; }
     else if (auto alloca_inst = dynamic_cast<AllocaInst *>(inst)) { handle_alloca(alloca_inst, mbb); return; }
-    else if (dynamic_cast<LoadInst *>(inst) || dynamic_cast<StoreInst *>(inst)) { emit_ld_st(inst, mbb); return; }
     else if (auto icmp_inst = dynamic_cast<IcmpInst *>(inst)) { emit_cmp(icmp_inst, mbb); return; }
     else if (auto fcmp_inst = dynamic_cast<FcmpInst *>(inst)) { emit_cmp(fcmp_inst, mbb); return; }
     else if (auto br_inst = dynamic_cast<BranchInst *>(inst)) { emit_br(br_inst, mbb); return; }
+    else if (inst->isLoad()) { emit_load(inst, mbb); return; }
+    else if (inst->isStore()) {emit_store(inst, mbb); return; }
     assert(false && "illegal instrustion");
 }
 
