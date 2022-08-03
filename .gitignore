@@ -2,7 +2,7 @@ test
 build
 # *.sy
 *.json
-#*.out
+*.out
 *.yy.c
 *.cache
 *tab*
