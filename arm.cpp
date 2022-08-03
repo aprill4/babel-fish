@@ -476,6 +476,7 @@ void emit_call(Instruction *inst, MachineBasicBlock* mbb) {
             
     //     }
     // }
+    mbb->insts.emplace_back(call);
 }
 
 void push_pop(MachineFunction * func){
