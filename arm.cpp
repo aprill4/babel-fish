@@ -464,6 +464,22 @@ void emit_cmp(Instruction *inst, MachineBasicBlock* mbb) {
   mbb->insts.emplace_back(cmp);
 }
 
+void emit_call(Instruction *inst, MachineBasicBlock* mbb) {
+    auto func_call = dynamic_cast<CallInst*>(inst);
+    Function* func = dynamic_cast<Function*>(func_call->getOperand(0));
+    Call* call = new Call();
+    call->callee = func->getName();
+    call->arg_count = func_call->getOperandNum() - 1;
+    // for (int i = 0; i < func_call->getOperandNum() - 1; i++) {
+    //     auto args = func_call->getOperand(i);
+    //     if (i < 3) {
+    //         make_operand(args);
+    //     } else {
+            
+    //     }
+    // }
+}
+
 void push_pop(MachineFunction * func){
     auto push = new Push_Pop(), pop = new Push_Pop();
     push->tag = Push_Pop::Push;
@@ -494,6 +510,7 @@ void emit_inst(Instruction *inst, MachineBasicBlock *mbb) {
     else if (auto icmp_inst = dynamic_cast<IcmpInst *>(inst)) { emit_cmp(icmp_inst, mbb); return; }
     else if (auto fcmp_inst = dynamic_cast<FcmpInst *>(inst)) { emit_cmp(fcmp_inst, mbb); return; }
     else if (auto br_inst = dynamic_cast<BranchInst *>(inst)) { emit_br(br_inst, mbb); return; }
+    else if (inst->isCall()) { mbb->parent->call_func = true; emit_call(inst, mbb); return; }
     else if (inst->isLoad()) { emit_load(inst, mbb); return; }
     else if (inst->isStore()) {emit_store(inst, mbb); return; }
     assert(false && "illegal instrustion");
