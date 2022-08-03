@@ -499,7 +499,6 @@ void push_pop(MachineFunction * func){
 }
 
 void emit_inst(Instruction *inst, MachineBasicBlock *mbb) {
-    
     if (auto ret_inst = dynamic_cast<ReturnInst *>(inst)) { emit_ret(ret_inst, mbb); return; }
     else if (auto binary_inst = dynamic_cast<BinaryInst *>(inst)) { emit_binary(binary_inst, mbb); return; }
     else if (auto alloca_inst = dynamic_cast<AllocaInst *>(inst)) { handle_alloca(alloca_inst, mbb); return; }
@@ -519,16 +518,6 @@ MachineBasicBlock *emit_bb(BasicBlock *bb, MachineFunction* parent) {
     for (auto inst: bb->instructionList_) {
         emit_inst(inst, mbb);
     }
-    /*
-    auto first_inst = mbb->insts.begin();
-    if (auto push = dynamic_cast<Push_Pop *>(*first_inst)) {
-        auto it = mbb->insts.end();
-        it--;
-        auto pop = push;
-        pop->tag = Push_Pop::Pop;
-        mbb->insts.insert(it, pop);
-    }
-    */
     return mbb;
 }
 
@@ -556,10 +545,6 @@ MachineFunction *emit_func(Function *func) {
         }
     }
 
-    if (mfunc->call_func) {    
-        push_pop(mfunc);
-    }
-
     if (!stack_offset) { 
         for (auto bb: mfunc->exit_blocks) {
             auto it = bb->insts.end();
@@ -569,6 +554,10 @@ MachineFunction *emit_func(Function *func) {
             auto add = new Binary(Binary::Int, Binary::IAdd, dst, dst, rhs);
             bb->insts.insert(it, add);
         }
+    }
+
+    if (mfunc->call_func) {    
+        push_pop(mfunc);
     }
 
     return mfunc;
