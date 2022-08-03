@@ -12,6 +12,7 @@ struct MachineFunction;
 struct MachineInst;
 struct MachineOperand;
 struct MReg;
+struct Return;
 
 struct MachineModule {
     std::vector<MachineFunction *> functions;
@@ -21,6 +22,8 @@ struct MachineModule {
 struct MachineFunction {
     std::string name;
     std::vector<MachineBasicBlock *> basic_blocks;
+    bool call_func = false;
+    std::vector<Return*> returns;
     void print(FILE *fp);
 };
 
@@ -28,6 +31,7 @@ struct MachineBasicBlock {
     std::string block_name;
     std::vector<MachineBasicBlock *> pres, sucs;
     std::list<MachineInst *> insts;
+    MachineFunction* parent = nullptr;
     void print(FILE *fp);
 };
 
@@ -131,6 +135,8 @@ struct Call : MachineInst {
 };
 
 struct Return : MachineInst {
+    bool jump = false;
+    std::string jump_name;
     void print(FILE *fp);
 };
 

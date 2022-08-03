@@ -167,7 +167,9 @@ void Call::print(FILE *fp) {
 }
 
 void Return::print(FILE *fp) {
-    fprintf(fp, "bx lr");
+    if (jump) {
+        fprintf(fp, "b %s", jump_name.c_str());
+    } else fprintf(fp, "bx lr");
 }
 
 void Push_Pop::print(FILE *fp) {
@@ -341,6 +343,10 @@ void emit_binary(BinaryInst *inst, MachineBasicBlock *mbb) {
 void emit_ret(ReturnInst *inst, MachineBasicBlock *mbb) {
     auto ret = new Return;
     mbb->insts.emplace_back(ret);
+
+    assert(mbb->parent != nullptr);
+    mbb->parent->returns.emplace_back(ret);    // add return to MachineFunction's returns use to jump pop block (if exist call);
+
     if (inst->isRetVoid()) {
         return;
     }
@@ -458,6 +464,28 @@ void emit_cmp(Instruction *inst, MachineBasicBlock* mbb) {
   mbb->insts.emplace_back(cmp);
 }
 
+void push_pop(MachineFunction * func){
+    auto push = new Push_Pop(), pop = new Push_Pop();
+    push->tag = Push_Pop::Push;
+    pop->tag = Push_Pop::Pop;
+    std::vector<MReg*> push_pop_regs{new MReg(MReg::r11), new MReg(MReg::lr)};
+    for (auto reg : push_pop_regs) {
+        push->regs.emplace_back(reg);
+        pop->regs.emplace_back(reg);    
+    }
+    auto start = *func->basic_blocks.begin();   // add push to MachineFunction's first MachineBlock
+    start->insts.insert(start->insts.begin(), push);
+
+    MachineBasicBlock* end = new MachineBasicBlock(); // create end MachineBlock use to pop
+    end->block_name = ".end";
+    end->insts.emplace_back(pop);
+    end->insts.emplace_back(new Return);
+    for (auto r : func->returns){
+        r->jump = true;
+        r->jump_name = end->block_name;
+    }
+}
+
 void emit_inst(Instruction *inst, MachineBasicBlock *mbb) {
     
     if (auto ret_inst = dynamic_cast<ReturnInst *>(inst)) { emit_ret(ret_inst, mbb); return; }
@@ -471,20 +499,20 @@ void emit_inst(Instruction *inst, MachineBasicBlock *mbb) {
     assert(false && "illegal instrustion");
 }
 
-MachineBasicBlock *emit_bb(BasicBlock *bb) {
+MachineBasicBlock *emit_bb(BasicBlock *bb, MachineFunction* parent) {
     auto mbb = new MachineBasicBlock;
+    mbb->parent = parent;    // add MachineBasicBlock's parent
     mbb->block_name = bb->getLLVM_Name();
     for (auto inst: bb->instructionList_) {
         emit_inst(inst, mbb);
-        /*
         if (inst->isCall()) {
             //insert `push {lr}` at the head of the instruction list
+            parent->call_func = true;
             continue;
         } else if (inst->isRet()) {
             mbb->insts.emplace_back(new Return);
             continue;
         }
-        */
     }
     if (!stack_offset) { 
         auto it = mbb->insts.end();
@@ -517,7 +545,7 @@ MachineFunction *emit_func(Function *func) {
 
     std::map<BasicBlock *, MachineBasicBlock *> bb_map;
     for (auto bb: func->basicBlocks_) {
-        auto mbb = emit_bb(bb);
+        auto mbb = emit_bb(bb, mfunc);
         mfunc->basic_blocks.emplace_back(mbb);
         bb_map[bb] = mbb;
     }
@@ -528,9 +556,12 @@ MachineFunction *emit_func(Function *func) {
             bb_map[suc]->pres.emplace_back(bb_map[bb]);
         }
     }
-
+    if (mfunc->call_func) {    
+        push_pop(mfunc);
+    }
     return mfunc;
 }
+
 
 MachineModule *emit_asm (Module *IR) {
     auto mm = new MachineModule;
