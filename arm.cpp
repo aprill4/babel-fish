@@ -509,11 +509,9 @@ MachineBasicBlock *emit_bb(BasicBlock *bb, MachineFunction* parent) {
             //insert `push {lr}` at the head of the instruction list
             parent->call_func = true;
             continue;
-        } else if (inst->isRet()) {
-            mbb->insts.emplace_back(new Return);
-            continue;
         }
     }
+    /*
     if (!stack_offset) { 
         auto it = mbb->insts.end();
         it--;
@@ -530,6 +528,7 @@ MachineBasicBlock *emit_bb(BasicBlock *bb, MachineFunction* parent) {
         pop->tag = Push_Pop::Pop;
         mbb->insts.insert(it, pop);
     }
+    */
     return mbb;
 }
 
