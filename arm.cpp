@@ -18,11 +18,13 @@ void MachineFunction::print(FILE *fp) {
     for (auto bb: basic_blocks) {
         bb->print(fp);
     }
+    fprintf(fp, "\n");
 }
 
 void MachineBasicBlock::print(FILE *fp) {
     fprintf(fp, "%s:\n", block_name.c_str());
     for (auto inst: insts) {
+        fprintf(fp, "  ");
         inst->print(fp);
         inst->newline(fp);
     }
@@ -56,7 +58,11 @@ const char *FImm::print() {
 
 const char *VReg::print() {
     char *str = new char[12];
-    sprintf(str, "v%d", id);
+    if (operand_type == MachineOperand::Float) {
+        sprintf(str, "vf%d", id);
+    } else {
+        sprintf(str, "vg%d", id);
+    }
     return str;
 }
 
@@ -88,22 +94,22 @@ void Binary::print(FILE *fp) {
     const char *op_str[] = {
         "add", "sub", "mul", "div", "", "vadd.f32", "vsub.f32", "vmul.f32", "vdiv.f32", "lsl", "lsr", "asl", "asr"
     };
-    fprintf(fp, "%s%s %s, %s, %s", op_str[kind], get_cond(), dst->print(), lhs->print(), rhs->print());
+    fprintf(fp, "%s%s\t%s, %s, %s", op_str[kind], get_cond(), dst->print(), lhs->print(), rhs->print());
 }
 
 void Cmp::print(FILE *fp) {
     const char *cmp_inst[] = { "cmp", "vcmp.f32"};
-    fprintf(fp, "%s%s %s, %s", cmp_inst[tag], get_cond(), lhs->print(), rhs->print());
+    fprintf(fp, "%s%s\t%s, %s", cmp_inst[tag], get_cond(), lhs->print(), rhs->print());
 }
 
 
 void Mov::print(FILE *fp) {
     const char *mv_inst[] = { "mov", "vmov.f32", "vmov", "vmov"};
     if (dynamic_cast<Symbol *>(src)) {
-        fprintf(fp, "%s%s %s, #:lower:%s", mv_inst[tag], get_cond(), dst->print(), src->print());
-        fprintf(fp, "%s%s %s, #:upper:%s", mv_inst[tag], get_cond(), dst->print(), src->print());
+        fprintf(fp, "%s%s\t%s, #:lower:%s", mv_inst[tag], get_cond(), dst->print(), src->print());
+        fprintf(fp, "%s%s\t%s, #:upper:%s", mv_inst[tag], get_cond(), dst->print(), src->print());
     } else {
-        fprintf(fp, "%s%s %s, %s", mv_inst[tag], get_cond(), dst->print(), src->print());
+        fprintf(fp, "%s%s\t%s, %s", mv_inst[tag], get_cond(), dst->print(), src->print());
     }
 }
 
@@ -111,16 +117,16 @@ void Load::print(FILE *fp) {
     const char *ld_inst[] = { "ldr", "vldr" };
     switch (index_type) {
         case PreIndex:
-            fprintf(fp, "%s%s %s, [%s, %s%s]!", ld_inst[tag], get_cond(), dst->print(), base->print(), index->print(), index->get_shift());
+            fprintf(fp, "%s%s\t%s, [%s, %s%s]!", ld_inst[tag], get_cond(), dst->print(), base->print(), index->print(), index->get_shift());
             break;
         case PostIndex:
-            fprintf(fp, "%s%s %s, [%s], %s%s", ld_inst[tag], get_cond(), dst->print(), base->print(), index->print(), index->get_shift());
+            fprintf(fp, "%s%s\t%s, [%s], %s%s", ld_inst[tag], get_cond(), dst->print(), base->print(), index->print(), index->get_shift());
             break;
         case NoIndex: {
             if (offset) {
-                fprintf(fp, "%s%s %s, [%s, %s]", ld_inst[tag], get_cond(), dst->print(), base->print(), offset->print());
+                fprintf(fp, "%s%s\t%s, [%s, %s]", ld_inst[tag], get_cond(), dst->print(), base->print(), offset->print());
             } else {
-                fprintf(fp, "%s%s %s, [%s]", ld_inst[tag], get_cond(), dst->print(), base->print());
+                fprintf(fp, "%s%s\t%s, [%s]", ld_inst[tag], get_cond(), dst->print(), base->print());
             }
         } break;
         default: assert(false && "invalid index");
@@ -131,16 +137,16 @@ void Store::print(FILE *fp) {
     const char *st_inst[] = { "str", "vstr" };
     switch (index_type) {
         case PreIndex:
-            fprintf(fp, "%s%s %s, [%s, %s%s]!", st_inst[tag], get_cond(), src->print(), base->print(), index->print(), index->get_shift());
+            fprintf(fp, "%s%s\t%s, [%s, %s%s]!", st_inst[tag], get_cond(), src->print(), base->print(), index->print(), index->get_shift());
             break;
         case PostIndex:
-            fprintf(fp, "%s%s %s, [%s], %s%s", st_inst[tag], get_cond(), src->print(), base->print(), index->print(), index->get_shift());
+            fprintf(fp, "%s%s\t%s, [%s], %s%s", st_inst[tag], get_cond(), src->print(), base->print(), index->print(), index->get_shift());
             break;
         case NoIndex: {
             if (offset) {
-                fprintf(fp, "%s%s %s, [%s, %s]", st_inst[tag], get_cond(), src->print(), base->print(), offset->print());
+                fprintf(fp, "%s%s\t%s, [%s, %s]", st_inst[tag], get_cond(), src->print(), base->print(), offset->print());
             } else {
-                fprintf(fp, "%s%s %s, [%s]", st_inst[tag], get_cond(), src->print(), base->print());
+                fprintf(fp, "%s%s\t%s, [%s]", st_inst[tag], get_cond(), src->print(), base->print());
             }
         } break;
         default: assert(false && "invalid index");
@@ -148,33 +154,33 @@ void Store::print(FILE *fp) {
 }
 
 void IClz::print(FILE *fp) {
-    fprintf(fp, "clz%s %s, %s", get_cond(), dst->print(), src->print());
+    fprintf(fp, "clz%s\t%s, %s", get_cond(), dst->print(), src->print());
 }
 
 void FNeg::print(FILE *fp) {
-    fprintf(fp, "vneg.f32%s %s, %s", get_cond(), dst->print(), src->print());
+    fprintf(fp, "vneg.f32%s\t%s, %s", get_cond(), dst->print(), src->print());
 }
 
 void Cvt::print(FILE *fp) {
     const char *cvt_inst[] = { "vcvt.s32.f32", "vcvt.f32.s32" };
-    fprintf(fp, "%s%s %s, %s", cvt_inst[tag], get_cond(), dst->print(), src->print());
+    fprintf(fp, "%s%s\t%s, %s", cvt_inst[tag], get_cond(), dst->print(), src->print());
 }
 
 void Branch::print(FILE *fp) {
-   fprintf(fp, "b%s %s", get_cond(), label.c_str());
+   fprintf(fp, "b%s\t%s", get_cond(), label.c_str());
 }
 
 void Call::print(FILE *fp) {
-    fprintf(fp, "bl %s", callee.c_str());
+    fprintf(fp, "bl\t%s", callee.c_str());
 }
 
 void Return::print(FILE *fp) {
-    fprintf(fp, "bx lr");
+    fprintf(fp, "bx\tlr");
 }
 
 void Push_Pop::print(FILE *fp) {
     const char *inst[] = { "push", "pop" };
-    fprintf(fp, "%s%s { ", inst[tag], get_cond());
+    fprintf(fp, "%s%s\t{ ", inst[tag], get_cond());
     for (auto reg: regs) {
         fprintf(fp, "%s, ", reg->print());
     }
@@ -188,28 +194,45 @@ size_t allocate(size_t size) {
     return before_alloca;
 }
 
-MachineOperand *make_operand(Value *v, bool isVreg = false) {
-    if (v_m.find(v) != v_m.end()) { return v_m[v]; }
-    else if (isVreg) {
-        auto vreg = new VReg(vreg_id++);
-        v_m[v] = vreg;
-        return vreg;
+MachineOperand::OperandType infer_type_from_value(Value *v) {
+    switch (v->type_->typeId_) {
+        case Type::IntegerTypeId: return MachineOperand::Int;
+        case Type::FloatTypeId: return MachineOperand::Float;
+        default: assert(false && "don't support this type");
     }
+    return MachineOperand::Undef;
+}
+
+// make a virtual register
+// if value is given, associate the virtual register with that value.
+// (bacause some virtual registers is used to store intermediate result, 
+//  so they don't correspond to IR values)
+MachineOperand *make_vreg(MachineOperand::OperandType operand_type, Value *v = nullptr) {
+    auto vreg = new VReg(vreg_id++, operand_type);
+    if (v) {
+        v_m[v] = vreg;
+    }
+    return vreg;
+}
+
+MachineOperand *make_operand(Value *v) {
+    MachineOperand *ret = nullptr;
+    if (v_m.find(v) != v_m.end()) { ret = v_m[v]; }
     else if (auto const_int = dynamic_cast<ConstantInt *>(v)) {
         auto iimm = new IImm(const_int->value_); 
         v_m[v] = iimm;
-        return iimm;
+        ret = iimm;
     } else if (auto const_float = dynamic_cast<ConstantFloat *>(v)) {
         auto fimm = new FImm(const_float->value_);
         v_m[v] = fimm;
-        return fimm;
+        ret = fimm;
     } else {
-        auto vreg = new VReg(vreg_id++);
-        v_m[v] = vreg;
-        return vreg;
+        printf("what is %p\n", v);
+        assert(false && "don't know what operand you want");
     }
-    assert(false && "invalid value");
-    return nullptr;
+
+    return ret;
+
 }
 
 void handle_alloca(AllocaInst *inst, MachineBasicBlock *mbb) {
@@ -222,7 +245,8 @@ void handle_alloca(AllocaInst *inst, MachineBasicBlock *mbb) {
             auto alloca = new Binary(Binary::Int, Binary::ISub, dst, lhs, rhs);
             val_offset[inst] = allocate(4);
             mbb->insts.emplace_back(alloca);
-        }
+        } break;
+        default: assert(false && "don't support this alloca type");
     }
 }
 
@@ -232,16 +256,19 @@ void emit_load(Instruction *inst, MachineBasicBlock *mbb) {
     } else {
         auto base = new MReg(MReg::sp);
         auto offset = new IImm(val_offset[inst->operands_[0]]);
-        auto dst = make_operand(inst);
-        auto ld = new Load(dst, base, offset);
-        auto ld_type = inst->type_->typeId_;
-        if (ld_type == Type::IntegerTypeId) {
-            ld->tag = Load::Int;
-        } else if (ld_type == Type::FloatTypeId) {
-            ld->tag = Load::Float;
-        } else {
-
+        auto ld_tag = Load::Int;
+        switch (inst->type_->typeId_) {
+            case Type::IntegerTypeId: {
+                ld_tag = Load::Int;
+            } break;
+            case Type::FloatTypeId: {
+                ld_tag = Load::Float;
+            } break;
+            default: assert(false && "don't support this type");
         }
+        auto dst = make_vreg(infer_type_from_value(inst), inst);
+        auto ld = new Load(dst, base, offset);
+        ld->tag = ld_tag;
         mbb->insts.emplace_back(ld);
     }
 }
@@ -253,15 +280,18 @@ void emit_store(Instruction *inst, MachineBasicBlock *mbb) {
         auto base = new MReg(MReg::sp);
         auto offset = new IImm(val_offset[inst->operands_[1]]);
         auto src = make_operand(inst->operands_[0]);
-        auto st = new Store(src, base, offset);
-        auto st_type = inst->operands_[0]->type_->typeId_;
-        if (st_type == Type::IntegerTypeId) {
-            st->tag = Store::Int;
-        } else if (st_type == Type::FloatTypeId) {
-            st->tag = Store::Float;
-        } else {
-
+        auto st_tag = Store::Int;
+        switch (inst->operands_[0]->type_->typeId_) {
+            case Type::IntegerTypeId: {
+                st_tag = Store::Int;
+            } break;
+            case Type::FloatTypeId: {
+                st_tag = Store::Float;
+            } break;
+            default: assert(false && "don't support this type");
         }
+        auto st = new Store(src, base, offset);
+        st->tag = st_tag;
         mbb->insts.emplace_back(st);
     }
 }
@@ -270,7 +300,7 @@ void emit_binary(BinaryInst *inst, MachineBasicBlock *mbb) {
 
     auto lhs = make_operand(inst->operands_[0]);
     auto rhs = make_operand(inst->operands_[1]);
-    auto dst = make_operand(inst);
+    auto dst = make_vreg(infer_type_from_value(inst), inst);
     Binary *binary_inst;
 
     if (dynamic_cast<Constant *>(inst->operands_[0])) {
@@ -306,7 +336,7 @@ void emit_binary(BinaryInst *inst, MachineBasicBlock *mbb) {
         } break;
         
         case Instruction::Mod: {
-
+            assert(false && "not implemented yet.");
         } break;
 
         case Instruction::Fadd: {
@@ -344,21 +374,28 @@ void emit_ret(ReturnInst *inst, MachineBasicBlock *mbb) {
         return;
     }
 
-    auto mv = new Mov;
-    auto ret_val = inst->operands_[0];
-    if (ret_val->type_->typeId_== Type::IntegerTypeId) {
-        mv->tag = Mov::I2I;
-    } else {
-        assert(false && "don't support returning float value so far");
-        mv->tag = Mov::F2I;
-    }
-    mv->dst = new MReg(MReg::r0);
+    auto mv = new Mov(new MReg(MReg::r0),
+                      make_operand(inst->operands_[0]));
     v_m[inst] = mv->dst;
-    mv->src = make_operand(inst->operands_[0]);
     auto it = mbb->insts.end();
     it--;
     mbb->insts.insert(it, mv);
 }
+
+void emit_arg(size_t arg_index, Argument *arg, MachineBasicBlock *entry) {
+    if (arg_index > 3) {
+        assert(false && "don't support more than 4 arguments, yet");
+    }
+
+    // move 
+    auto mv = new Mov;
+    mv->tag = Mov::I2I;
+    mv->src = new MReg(MReg::r0);
+    mv->dst = make_vreg(MachineOperand::Int, arg);
+
+    entry->insts.emplace_back(mv);
+}
+
 /*
 void emit_mov(Value *src, MachineBasicBlock *mbb, Value *dst = nullptr) {
     auto mv = new Mov;
@@ -459,6 +496,27 @@ void emit_cmp(Instruction *inst, MachineBasicBlock* mbb) {
   mbb->insts.emplace_back(cmp);
 }
 
+void emit_cvt(Instruction *inst, MachineBasicBlock *mbb) {
+    auto cvt = new Cvt();
+    cvt->tag = inst->isFp2si() ? Cvt::F2S : Cvt::S2F;
+    cvt->src = make_operand(inst->getOperand(0));
+
+    // conversion must happen in fp registers.
+    // so check if `src` is in `r` registers,
+    // if so, emit a `fmov vr, src`, and change
+    // the src to be `vr`
+    if (cvt->src->operand_type == MachineOperand::Int) {
+        auto fmov = new Mov;
+        fmov->src = cvt->src;
+        fmov->dst = cvt->src = make_vreg(MachineOperand::Float);
+        fmov->tag = Mov::I2F;
+        mbb->insts.emplace_back(fmov);
+    }
+
+    cvt->dst = make_vreg(MachineOperand::Float, inst);
+    mbb->insts.emplace_back(cvt);
+}
+
 void emit_inst(Instruction *inst, MachineBasicBlock *mbb) {
     
     if (auto ret_inst = dynamic_cast<ReturnInst *>(inst)) { emit_ret(ret_inst, mbb); return; }
@@ -469,11 +527,11 @@ void emit_inst(Instruction *inst, MachineBasicBlock *mbb) {
     else if (auto br_inst = dynamic_cast<BranchInst *>(inst)) { emit_br(br_inst, mbb); return; }
     else if (inst->isLoad()) { emit_load(inst, mbb); return; }
     else if (inst->isStore()) {emit_store(inst, mbb); return; }
+    else if (inst->isFp2si() || inst->isSi2fp()) { emit_cvt(inst, mbb); return; }
     assert(false && "illegal instrustion");
 }
 
-MachineBasicBlock *emit_bb(BasicBlock *bb) {
-    auto mbb = new MachineBasicBlock;
+void emit_bb(BasicBlock *bb, MachineBasicBlock *mbb) {
     mbb->block_name = bb->getLLVM_Name();
     for (auto inst: bb->instructionList_) {
         emit_inst(inst, mbb);
@@ -487,7 +545,6 @@ MachineBasicBlock *emit_bb(BasicBlock *bb) {
         }
         */
     }
-    return mbb;
 }
 
 MachineFunction *emit_func(Function *func) {
@@ -495,14 +552,19 @@ MachineFunction *emit_func(Function *func) {
     
     mfunc->name = func->name_;
 
-    int i = 0;
-    for (auto arg: func->arguments_) {
-        make_operand(arg);
-    }
-
+    auto first_bb = true;
     std::map<BasicBlock *, MachineBasicBlock *> bb_map;
     for (auto bb: func->basicBlocks_) {
-        auto mbb = emit_bb(bb);
+        auto mbb = new MachineBasicBlock;
+        if (first_bb) {
+            first_bb = false;
+
+            for (size_t i = 0; i < func->arguments_.size(); i++) {
+                auto arg = func->arguments_[i];
+                emit_arg(i, arg, mbb);
+            }
+        }
+        emit_bb(bb, mbb);
         mfunc->basic_blocks.emplace_back(mbb);
         bb_map[bb] = mbb;
     }
@@ -517,7 +579,7 @@ MachineFunction *emit_func(Function *func) {
     return mfunc;
 }
 
-MachineModule *emit_asm (Module *IR) {
+MachineModule *emit_asm(Module *IR) {
     auto mm = new MachineModule;
 
     for (auto func: IR->functionList_) {
