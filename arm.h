@@ -131,6 +131,7 @@ struct Branch : MachineInst {
 
 struct Call : MachineInst {
     std::string callee;
+    int arg_count = 0;
     void print(FILE *fp);
 };
 
