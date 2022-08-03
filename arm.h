@@ -146,6 +146,9 @@ struct MachineOperand {
     FlexibleShift shift_type = NoShift;
     int shift_length;
 
+    enum OperandType { Undef, Float, Int };
+    int operand_type = Undef;
+
     const char* get_shift();
 
     virtual const char *print(){ return nullptr; }
@@ -153,13 +156,17 @@ struct MachineOperand {
 
 struct IImm : MachineOperand { 
     int value; 
-    IImm(int v): value(v) {}
+    IImm(int v): value(v) {
+        operand_type = MachineOperand::Int;
+    }
     const char *print();
 };
 
 struct FImm : MachineOperand { 
     float value; 
-    FImm(float v): value(v) {}
+    FImm(float v): value(v) {
+        operand_type = MachineOperand::Float;
+    }
     const char *print();
 };
 
@@ -174,7 +181,13 @@ struct MReg : MachineOperand {
                s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, 
                fp = r11, ip = r12, sp = r13, lr = r14, pc = r15, };
     Reg reg;
-    MReg(Reg r): reg(r) {}
+    MReg(Reg r): reg(r) {
+        if (r >= r0 && r <= r15) {
+            operand_type = MachineOperand::Int;
+        } else if (r >= s0 && r <= s15) {
+            operand_type = MachineOperand::Float;
+        }
+    }
 
     const char *print();
 };
