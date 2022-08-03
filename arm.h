@@ -10,9 +10,64 @@ struct MachineBasicBlock;
 struct MachineModule;
 struct MachineFunction;
 struct MachineInst;
-struct MachineOperand;
-struct MReg;
-struct Return;
+
+struct MachineOperand {
+    enum FlexibleShift { NoShift, Lsl, Lsr, Asl, Asr };
+    FlexibleShift shift_type = NoShift;
+    int shift_length;
+
+    enum OperandType { Undef, Float, Int };
+    OperandType operand_type = Undef;
+
+    const char* get_shift();
+
+    virtual const char *print(){ return nullptr; }
+};
+
+struct IImm : MachineOperand { 
+    int value; 
+    IImm(int v): value(v) {
+        operand_type = MachineOperand::Int;
+    }
+    const char *print();
+};
+
+struct FImm : MachineOperand { 
+    float value; 
+    FImm(float v): value(v) {
+        operand_type = MachineOperand::Float;
+    }
+    const char *print();
+};
+
+struct VReg : MachineOperand { 
+    int id;
+    VReg(int i, MachineOperand::OperandType ty): id(i) {
+        operand_type = ty;
+    }
+    const char *print();
+};
+
+struct MReg : MachineOperand {
+    enum Reg { undef, r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15,
+               s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, 
+               fp = r11, ip = r12, sp = r13, lr = r14, pc = r15, };
+    Reg reg;
+    MReg(Reg r): reg(r) {
+        if (r >= r0 && r <= r15) {
+            operand_type = MachineOperand::Int;
+        } else if (r >= s0 && r <= s15) {
+            operand_type = MachineOperand::Float;
+        }
+    }
+
+    const char *print();
+};
+
+struct Symbol : MachineOperand {
+    std::string name;
+    const char *print();
+};
 
 struct MachineModule {
     std::vector<MachineFunction *> functions;
@@ -69,11 +124,26 @@ struct Cmp : MachineInst {
 
 struct Mov : MachineInst {
     MachineOperand *dst, *src;
+    // FIXME: Not really "interger to float"
+    // It's more like "general purpose register to floating point register"
     enum Tag { I2I, F2F, F_I };
     Tag tag;
     Mov() {}
     Mov(Tag t): tag(t) {}
     Mov(Tag t, MachineOperand *d, MachineOperand *s): tag(t), dst(d), src(s) {}
+
+    // Infer tag from operand type
+    Mov(MachineOperand *d, MachineOperand *s): dst(d), src(s) {
+        if (dst->operand_type == src->operand_type) {
+            if (dst->operand_type == MachineOperand::Float) {
+                tag = F2F;
+            } else {
+                tag = I2I;
+            }
+        } else {
+            tag = F_I;
+        }
+    }
     void print(FILE *fp);
 };
 
@@ -144,50 +214,6 @@ struct Push_Pop : MachineInst {
     enum Tag { Push, Pop };
     Tag tag;
     void print(FILE *fp);
-};
-
-struct MachineOperand {
-    enum FlexibleShift { NoShift, Lsl, Lsr, Asl, Asr };
-    FlexibleShift shift_type = NoShift;
-    int shift_length;
-
-    const char* get_shift();
-
-    virtual const char *print(){ return nullptr; }
-};
-
-struct IImm : MachineOperand { 
-    int value; 
-    IImm(int v): value(v) {}
-    const char *print();
-};
-
-struct FImm : MachineOperand { 
-    float value; 
-    FImm(float v): value(v) {}
-    const char *print();
-};
-
-struct VReg : MachineOperand { 
-    int id;
-    VReg(int i): id(i) {}
-    const char *print();
-};
-
-struct MReg : MachineOperand {
-    enum Reg { undef, r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15,
-               s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, 
-               fp = r11, ip = r12, sp = r13, lr = r14, pc = r15, };
-    Reg reg;
-    MReg(Reg r): reg(r) {}
-    MReg() {}
-
-    const char *print();
-};
-
-struct Symbol : MachineOperand {
-    std::string name;
-    const char *print();
 };
 
 MachineModule *emit_asm(Module *IR);
