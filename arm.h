@@ -65,7 +65,7 @@ struct Cmp : MachineInst {
 
 struct Mov : MachineInst {
     MachineOperand *dst, *src;
-    enum Tag { I2I, F2F, F2I, I2F };
+    enum Tag { I2I, F2F, F_I };
     Tag tag;
     Mov() {}
     Mov(Tag t): tag(t) {}
@@ -170,11 +170,12 @@ struct VReg : MachineOperand {
 };
 
 struct MReg : MachineOperand {
-    enum Reg { r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15,
+    enum Reg { undef, r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15,
                s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, 
                fp = r11, ip = r12, sp = r13, lr = r14, pc = r15, };
     Reg reg;
     MReg(Reg r): reg(r) {}
+    MReg() {}
 
     const char *print();
 };

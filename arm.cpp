@@ -2,11 +2,6 @@
 #include "Exception.h"
 #include <assert.h>
 
-std::map<Value*, MachineOperand*> v_m;
-int vreg_id = 0;
-size_t stack_offset = 0;
-std::map<Value*, size_t> val_offset;
-
 void MachineModule::print(FILE *fp) {
     for (auto func: functions) {
         func->print(fp);
@@ -62,7 +57,7 @@ const char *VReg::print() {
 
 const char *MReg::print() {
     const char *mreg_str[] = {
-        "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
+        "", "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
         "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12", "s13", "s14", "s15",
     };
 
@@ -94,6 +89,9 @@ void Binary::print(FILE *fp) {
 void Cmp::print(FILE *fp) {
     const char *cmp_inst[] = { "cmp", "vcmp.f32"};
     fprintf(fp, "%s%s %s, %s", cmp_inst[tag], get_cond(), lhs->print(), rhs->print());
+    if (tag == Float) {
+        fprintf(fp, "\nadd vmrs APSR_nzcv, FPSCR");
+    }
 }
 
 
@@ -181,6 +179,10 @@ void Push_Pop::print(FILE *fp) {
     fprintf(fp, "}");
 }
 
+std::map<Value*, MachineOperand*> v_m;
+int vreg_id = 0;
+size_t stack_offset = 0;
+std::map<Value*, size_t> val_offset;
 
 size_t allocate(size_t size) {
     size_t before_alloca = stack_offset;
@@ -194,8 +196,7 @@ MachineOperand *make_operand(Value *v, bool isVreg = false) {
         auto vreg = new VReg(vreg_id++);
         v_m[v] = vreg;
         return vreg;
-    }
-    else if (auto const_int = dynamic_cast<ConstantInt *>(v)) {
+    } else if (auto const_int = dynamic_cast<ConstantInt *>(v)) {
         auto iimm = new IImm(const_int->value_); 
         v_m[v] = iimm;
         return iimm;
@@ -217,9 +218,9 @@ void handle_alloca(AllocaInst *inst, MachineBasicBlock *mbb) {
         case Type::IntegerTypeId: 
         case Type::FloatTypeId: {
             auto dst = new MReg(MReg::sp);
-            auto lhs = new MReg(MReg::sp);
+            //auto lhs = new MReg(MReg::sp);
             auto rhs = new IImm(4);
-            auto alloca = new Binary(Binary::Int, Binary::ISub, dst, lhs, rhs);
+            auto alloca = new Binary(Binary::Int, Binary::ISub, dst, dst, rhs);
             val_offset[inst] = allocate(4);
             mbb->insts.emplace_back(alloca);
         }
@@ -350,11 +351,9 @@ void emit_ret(ReturnInst *inst, MachineBasicBlock *mbb) {
         mv->tag = Mov::I2I;
     } else {
         assert(false && "don't support returning float value so far");
-        mv->tag = Mov::F2I;
     }
+    mv->src = make_operand(ret_val);
     mv->dst = new MReg(MReg::r0);
-    v_m[inst] = mv->dst;
-    mv->src = make_operand(inst->operands_[0]);
     auto it = mbb->insts.end();
     it--;
     mbb->insts.insert(it, mv);
@@ -486,6 +485,22 @@ MachineBasicBlock *emit_bb(BasicBlock *bb) {
             continue;
         }
         */
+    }
+    if (!stack_offset) { 
+        auto it = mbb->insts.end();
+        it--;
+        auto dst = new MReg(MReg::sp);
+        auto rhs = new IImm(stack_offset);
+        auto add = new Binary(Binary::Int, Binary::IAdd, dst, dst, rhs);
+        mbb->insts.insert(it, add);
+    }
+    auto first_inst = mbb->insts.begin();
+    if (auto push = dynamic_cast<Push_Pop *>(*first_inst)) {
+        auto it = mbb->insts.end();
+        it--;
+        auto pop = push;
+        pop->tag = Push_Pop::Pop;
+        mbb->insts.insert(it, pop);
     }
     return mbb;
 }
