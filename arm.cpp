@@ -167,9 +167,7 @@ void Call::print(FILE *fp) {
 }
 
 void Return::print(FILE *fp) {
-    if (jump) {
-        fprintf(fp, "b %s", jump_name.c_str());
-    } else fprintf(fp, "bx lr");
+    fprintf(fp, "bx lr");
 }
 
 void Push_Pop::print(FILE *fp) {
@@ -345,8 +343,8 @@ void emit_ret(ReturnInst *inst, MachineBasicBlock *mbb) {
     mbb->insts.emplace_back(ret);
 
     assert(mbb->parent != nullptr);
-    mbb->parent->returns.emplace_back(ret);    // add return to MachineFunction's returns use to jump pop block (if exist call);
-
+    // add return to MachineFunction's returns use to jump pop block (if exist call);
+    mbb->parent->exit_blocks.emplace_back(std::make_pair(mbb, ret));
     if (inst->isRetVoid()) {
         return;
     }
@@ -492,13 +490,13 @@ void push_pop(MachineFunction * func){
     auto start = *func->basic_blocks.begin();   // add push to MachineFunction's first MachineBlock
     start->insts.insert(start->insts.begin(), push);
 
-    MachineBasicBlock* end = new MachineBasicBlock(); // create end MachineBlock use to pop
-    end->block_name = ".end";
-    end->insts.emplace_back(pop);
-    end->insts.emplace_back(new Return);
-    for (auto r : func->returns){
-        r->jump = true;
-        r->jump_name = end->block_name;
+    for (auto [mb, return_inst] : func->exit_blocks) {
+        for (auto it = mb->insts.begin(); it != mb->insts.end(); ++it) {
+            if (*it == return_inst) {
+                mb->insts.insert(it, pop);
+                break;              
+            }    
+        }
     }
 }
 
@@ -522,11 +520,6 @@ MachineBasicBlock *emit_bb(BasicBlock *bb, MachineFunction* parent) {
     mbb->block_name = bb->getLLVM_Name();
     for (auto inst: bb->instructionList_) {
         emit_inst(inst, mbb);
-        if (inst->isCall()) {
-            //insert `push {lr}` at the head of the instruction list
-            parent->call_func = true;
-            continue;
-        }
     }
     /*
     if (!stack_offset) { 
