@@ -23,8 +23,7 @@ struct MachineFunction {
     std::string name;
     std::vector<MachineBasicBlock *> basic_blocks;
     bool call_func = false;
-    std::vector<std::pair<MachineBasicBlock*, Return*>> exit_blocks;
-    std::vector<Return*> returns;
+    std::vector<MachineBasicBlock *> exit_blocks;
     void print(FILE *fp);
 };
 

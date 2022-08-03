@@ -344,7 +344,7 @@ void emit_ret(ReturnInst *inst, MachineBasicBlock *mbb) {
 
     assert(mbb->parent != nullptr);
     // add return to MachineFunction's returns use to jump pop block (if exist call);
-    mbb->parent->exit_blocks.emplace_back(std::make_pair(mbb, ret));
+    mbb->parent->exit_blocks.emplace_back(mbb);
     if (inst->isRetVoid()) {
         return;
     }
@@ -491,13 +491,10 @@ void push_pop(MachineFunction * func){
     auto start = *func->basic_blocks.begin();   // add push to MachineFunction's first MachineBlock
     start->insts.insert(start->insts.begin(), push);
 
-    for (auto [mb, return_inst] : func->exit_blocks) {
-        for (auto it = mb->insts.begin(); it != mb->insts.end(); ++it) {
-            if (*it == return_inst) {
-                mb->insts.insert(it, pop);
-                break;              
-            }    
-        }
+    for (auto bb: func->exit_blocks) {
+        auto it = bb->insts.end();
+        it--;
+        bb->insts.insert(it, pop);
     }
 }
 
@@ -523,14 +520,6 @@ MachineBasicBlock *emit_bb(BasicBlock *bb, MachineFunction* parent) {
         emit_inst(inst, mbb);
     }
     /*
-    if (!stack_offset) { 
-        auto it = mbb->insts.end();
-        it--;
-        auto dst = new MReg(MReg::sp);
-        auto rhs = new IImm(stack_offset);
-        auto add = new Binary(Binary::Int, Binary::IAdd, dst, dst, rhs);
-        mbb->insts.insert(it, add);
-    }
     auto first_inst = mbb->insts.begin();
     if (auto push = dynamic_cast<Push_Pop *>(*first_inst)) {
         auto it = mbb->insts.end();
@@ -566,9 +555,22 @@ MachineFunction *emit_func(Function *func) {
             bb_map[suc]->pres.emplace_back(bb_map[bb]);
         }
     }
+
     if (mfunc->call_func) {    
         push_pop(mfunc);
     }
+
+    if (!stack_offset) { 
+        for (auto bb: mfunc->exit_blocks) {
+            auto it = bb->insts.end();
+            it--;
+            auto dst = new MReg(MReg::sp);
+            auto rhs = new IImm(stack_offset);
+            auto add = new Binary(Binary::Int, Binary::IAdd, dst, dst, rhs);
+            bb->insts.insert(it, add);
+        }
+    }
+
     return mfunc;
 }
 
