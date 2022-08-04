@@ -198,6 +198,17 @@ size_t allocate(size_t size) {
     return -size;
 }
 
+bool can_be_imm_ror(int x) {
+    int v = x;
+    for (int r = 0; r < 31; r += 2) {
+        if ((v & 0xff) == v) {
+            return true;
+        }
+        v = (v >> 2) | (v << 30);
+    }
+    return false;
+}
+
 MachineOperand::OperandType infer_type_from_value(Value *v) {
     switch (v->type_->typeId_) {
         case Type::IntegerTypeId: return MachineOperand::Int;
