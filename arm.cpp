@@ -87,7 +87,7 @@ const char *MachineInst::get_cond() {
 
 void Binary::print(FILE *fp) {
     const char *op_str[] = {
-        "add", "sub", "mul", "div", "", "vadd.f32", "vsub.f32", "vmul.f32", "vdiv.f32", "lsl", "lsr", "asl", "asr"
+        "add", "sub", "mul", "div", "", "vadd.f32", "vsub.f32", "vmul.f32", "vdiv.f32", "lsl", "lsr", "asl", "asr","rsb"
     };
     fprintf(fp, "%s%s\t%s, %s, %s", op_str[kind], get_cond(), dst->print(), lhs->print(), rhs->print());
 }
@@ -527,6 +527,42 @@ void emit_cvt(Instruction *inst, MachineBasicBlock *mbb) {
 }
 
 
+void emit_unary(Instruction *inst, MachineBasicBlock* mbb){
+    auto unary_inst = dynamic_cast<UnaryInst*>(inst);
+    auto right_val = unary_inst->getOperand(0);
+    switch (unary_inst->getInstrcutionType()) {
+        case Instruction::InstId::Not:
+            if (unary_inst->getType()->isIntegerType()) {
+                auto unary = new IClz();
+                unary->src = make_operand(right_val);
+                unary->dst = make_operand(right_val);
+                auto unary2 = new Binary(Binary::Int, Binary::ILsr, 
+                    make_operand(right_val), make_operand(right_val), new IImm(5));
+                mbb->insts.emplace_back(unary);
+                mbb->insts.emplace_back(unary2);
+            } else { 
+                // need to add
+            }
+        break;
+        case Instruction::InstId::Negative:
+            if (unary_inst->getType()->isIntegerType()) {
+                auto unary = new Binary(Binary::Int, Binary::Rsb, 
+                    make_operand(right_val),
+                    make_operand(right_val),
+                    new IImm(0));
+                mbb->insts.emplace_back(unary);        
+            } else { 
+                auto unary = new FNeg();
+                unary->src = make_operand(right_val);
+                unary->dst = make_operand(right_val);
+                mbb->insts.emplace_back(unary);
+            }
+        break;
+        default:
+        break;
+    }
+}
+
 void emit_call(Instruction *inst, MachineBasicBlock* mbb) {
     auto func_call = dynamic_cast<CallInst*>(inst);
     Function* func = dynamic_cast<Function*>(func_call->getOperand(0));
@@ -572,6 +608,7 @@ void push_pop(MachineFunction * func){
 void emit_inst(Instruction *inst, MachineBasicBlock *mbb) {
     if (auto ret_inst = dynamic_cast<ReturnInst *>(inst)) { emit_ret(ret_inst, mbb); return; }
     else if (auto binary_inst = dynamic_cast<BinaryInst *>(inst)) { emit_binary(binary_inst, mbb); return; }
+    else if (auto unary_inst = dynamic_cast<UnaryInst *>(inst)) { emit_unary(unary_inst, mbb); return; }
     else if (auto alloca_inst = dynamic_cast<AllocaInst *>(inst)) { handle_alloca(alloca_inst, mbb); return; }
     else if (auto icmp_inst = dynamic_cast<IcmpInst *>(inst)) { emit_cmp(icmp_inst, mbb); return; }
     else if (auto fcmp_inst = dynamic_cast<FcmpInst *>(inst)) { emit_cmp(fcmp_inst, mbb); return; }

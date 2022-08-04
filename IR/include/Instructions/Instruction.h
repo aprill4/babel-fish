@@ -81,6 +81,8 @@ public:
 
   bool isVoid();
   bool isBinary();
+  bool isNot();
+  bool isNegative();
   bool isTerminator();
 
   BasicBlock *parent_;

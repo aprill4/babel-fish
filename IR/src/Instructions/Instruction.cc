@@ -50,6 +50,9 @@ bool Instruction::isFcmp() { return instId_ == InstId::Fcmp; }
 bool Instruction::isCall() { return instId_ == InstId::Call; }
 bool Instruction::isGep() { return instId_ == InstId::Getelementptr; }
 bool Instruction::isZext() { return instId_ == InstId::Zext; }
+bool Instruction::isNot() { return instId_ == InstId::Not; }
+bool Instruction::isNegative(){ return instId_ == InstId::Negative; }
+
 
 bool Instruction::isBinary() {
   return (isAdd() || isSub() || isMul() || isDiv() || isMod() || isFadd() || isFsub() ||
