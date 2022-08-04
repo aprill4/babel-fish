@@ -540,6 +540,7 @@ void emit_unary(Instruction *inst, MachineBasicBlock* mbb){
                     make_operand(right_val), make_operand(right_val), new IImm(5));
                 mbb->insts.emplace_back(unary);
                 mbb->insts.emplace_back(unary2);
+                v_m[unary_inst] = make_operand(right_val);
             } else { 
                 // need to add
             }
@@ -551,11 +552,13 @@ void emit_unary(Instruction *inst, MachineBasicBlock* mbb){
                     make_operand(right_val),
                     new IImm(0));
                 mbb->insts.emplace_back(unary);        
+                v_m[unary_inst] = make_operand(right_val);
             } else { 
                 auto unary = new FNeg();
                 unary->src = make_operand(right_val);
                 unary->dst = make_operand(right_val);
                 mbb->insts.emplace_back(unary);
+                v_m[unary_inst] = make_operand(right_val);
             }
         break;
         default:

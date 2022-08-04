@@ -1227,13 +1227,16 @@ void IfElseStatement::generate(IRBuilder *irBuilder) {
     }
     Value *condVal;
     if (tmpVal->getType()->isIntegerType()) {
-      if (static_cast<IntegerType*>(tmpVal->getType())->getBitsNum() != 1) {    
-        condVal = IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
-                                  ConstantInt::get(c, tmpVal->getType(), 0),
-                                  irBuilder->getBasicBlock());
-      } else {
-        condVal = tmpVal;
-      }
+      condVal = IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
+                                ConstantInt::get(c, tmpVal->getType(), 0),
+                                irBuilder->getBasicBlock());
+      // if (static_cast<IntegerType*>(tmpVal->getType())->getBitsNum() != 1) {    
+      //   condVal = IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
+      //                             ConstantInt::get(c, tmpVal->getType(), 0),
+      //                             irBuilder->getBasicBlock());
+      // } else {
+      //   condVal = tmpVal;
+      // }
     } else {
       condVal =
           IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
