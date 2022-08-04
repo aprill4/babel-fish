@@ -984,6 +984,8 @@ void UnaryExpression::generate(IRBuilder *irBuilder) {
 			case UnaryOp::NOT:
         if(irBuilder->getScope()->parent) {
           if (dynamic_cast<Instruction*>(rhs)->isNot()) {
+            auto& inst_list = irBuilder->getBasicBlock()->instructionList_;
+            inst_list.erase(--inst_list.end());
             res = dynamic_cast<Instruction*>(rhs)->getOperand(0);
           } else {          
             res = UnaryInst::CreateNot(context, rhs, irBuilder->getBasicBlock());
