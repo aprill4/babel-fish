@@ -182,7 +182,7 @@ void Push_Pop::print(FILE *fp) {
     for (auto reg: regs) {
         fprintf(fp, "%s, ", reg->print());
     }
-    fprintf(fp, "}");
+    fprintf(fp, "\b\b }");
 }
 
 std::map<Value*, MachineOperand*> v_m;
@@ -191,9 +191,11 @@ size_t stack_offset = 0;
 std::map<Value*, size_t> val_offset;
 
 size_t allocate(size_t size) {
-    size_t before_alloca = stack_offset;
+    for (auto val: val_offset) {
+        val.second -= size;
+    }
     stack_offset += size;
-    return before_alloca;
+    return -size;
 }
 
 MachineOperand::OperandType infer_type_from_value(Value *v) {
@@ -244,17 +246,17 @@ MachineOperand *make_operand(Value *v) {
     return ret;
 }
 
-void handle_alloca(AllocaInst *inst, MachineBasicBlock *mbb) {
+void handle_alloca(AllocaInst *inst) {
     switch(inst->allocaType_->typeId_) {
         case Type::IntegerTypeId: 
         case Type::FloatTypeId: {
-            auto dst = new MReg(MReg::sp);
-            //auto lhs = new MReg(MReg::sp);
-            auto rhs = new IImm(4);
-            auto alloca = new Binary(Binary::Int, Binary::ISub, dst, dst, rhs);
             val_offset[inst] = allocate(4);
-            mbb->insts.emplace_back(alloca);
         } break;
+        case Type::ArrayTypeId: {
+            auto array_type = static_cast<ArrayType *>(inst->allocaType_);
+            auto array_size = array_type->elementNum_;
+            val_offset[inst] = allocate(4 * array_size);
+        }
         default: assert(false && "don't support this alloca type");
     }
 }
@@ -389,6 +391,7 @@ void emit_ret(ReturnInst *inst, MachineBasicBlock *mbb) {
     auto it = mbb->insts.end();
     it--;
     mbb->insts.insert(it, mv);
+    mbb->parent->exit_blocks.emplace_back(mbb);
 }
 
 void emit_arg(size_t arg_index, Argument *arg, MachineBasicBlock *entry) {
@@ -661,7 +664,7 @@ void emit_inst(Instruction *inst, MachineBasicBlock *mbb) {
     if (auto ret_inst = dynamic_cast<ReturnInst *>(inst)) { emit_ret(ret_inst, mbb); return; }
     else if (auto binary_inst = dynamic_cast<BinaryInst *>(inst)) { emit_binary(binary_inst, mbb); return; }
     else if (auto unary_inst = dynamic_cast<UnaryInst *>(inst)) { emit_unary(unary_inst, mbb); return; }
-    else if (auto alloca_inst = dynamic_cast<AllocaInst *>(inst)) { handle_alloca(alloca_inst, mbb); return; }
+    else if (auto alloca_inst = dynamic_cast<AllocaInst *>(inst)) { handle_alloca(alloca_inst); return; }
     else if (auto icmp_inst = dynamic_cast<IcmpInst *>(inst)) { emit_cmp(icmp_inst, mbb); return; }
     else if (auto fcmp_inst = dynamic_cast<FcmpInst *>(inst)) { emit_cmp(fcmp_inst, mbb); return; }
     else if (auto br_inst = dynamic_cast<BranchInst *>(inst)) { emit_br(br_inst, mbb); return; }
@@ -710,13 +713,18 @@ MachineFunction *emit_func(Function *func) {
         }
     }
 
-    if (!stack_offset) { 
+    if (stack_offset) { 
+        // insert `sub sp, sp, stack_offset` to the beginning of the entry block
+        auto entry_bb = mfunc->basic_blocks[0];
+        auto dst = new MReg(MReg::sp);
+        auto offset = new IImm(stack_offset);
+        auto sub = new Binary(Binary::Int, Binary::ISub, dst, dst, offset);
+        entry_bb->insts.emplace_front(sub);
+        // add sp, sp, stack_offset
         for (auto bb: mfunc->exit_blocks) {
             auto it = bb->insts.end();
             it--;
-            auto dst = new MReg(MReg::sp);
-            auto rhs = new IImm(stack_offset);
-            auto add = new Binary(Binary::Int, Binary::IAdd, dst, dst, rhs);
+            auto add = new Binary(Binary::Int, Binary::IAdd, dst, dst, offset);
             bb->insts.insert(it, add);
         }
     }

@@ -1,3 +1,5 @@
+void z(){}
 int main(int a) {
+    z();
     return 3 + a;
 }
