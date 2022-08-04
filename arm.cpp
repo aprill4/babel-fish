@@ -566,6 +566,15 @@ void emit_unary(Instruction *inst, MachineBasicBlock* mbb){
     }
 }
 
+void emit_gep(Instruction *inst, MachineBasicBlock* mbb) {
+    auto gep = dynamic_cast<GetElementPtrInst*>(inst);
+    // if () {
+        
+    // } else {
+        
+    // }
+}
+
 void emit_call(Instruction *inst, MachineBasicBlock* mbb) {
     auto func_call = dynamic_cast<CallInst*>(inst);
     Function* func = dynamic_cast<Function*>(func_call->getOperand(0));
@@ -620,6 +629,7 @@ void emit_inst(Instruction *inst, MachineBasicBlock *mbb) {
     else if (inst->isLoad()) { emit_load(inst, mbb); return; }
     else if (inst->isStore()) {emit_store(inst, mbb); return; }
     else if (inst->isFp2si() || inst->isSi2fp()) { emit_cvt(inst, mbb); return; }
+    else if (inst->isGep()) {  return; }
     assert(false && "illegal instrustion");
 }
 
