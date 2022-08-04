@@ -983,7 +983,11 @@ void UnaryExpression::generate(IRBuilder *irBuilder) {
         break;
 			case UnaryOp::NOT:
         if(irBuilder->getScope()->parent) {
-          res = UnaryInst::CreateNot(context, rhs, irBuilder->getBasicBlock());
+          if (dynamic_cast<Instruction*>(rhs)->isNot()) {
+            res = dynamic_cast<Instruction*>(rhs)->getOperand(0);
+          } else {          
+            res = UnaryInst::CreateNot(context, rhs, irBuilder->getBasicBlock());
+          }
           // auto zero = ConstantZero::get(context, rhs->getType());
           // rhs = IcmpInst::Create(context, 
           //                        IcmpInst::IcmpOp::NEQ, 
