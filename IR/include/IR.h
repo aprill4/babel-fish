@@ -20,6 +20,7 @@
 #include "Instructions/FpToSiInst.h"
 #include "Instructions/GetElementPtrInst.h"
 #include "Instructions/IcmpInst.h"
+#include "Instructions/UnaryInst.h"
 #include "Instructions/Instruction.h"
 #include "Instructions/LoadInst.h"
 #include "Instructions/PhiInst.h"

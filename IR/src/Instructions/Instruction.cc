@@ -134,6 +134,12 @@ std::string Instruction::getInstructionOpName() {
   case InstId::Sitofp:
     instName = "sitofp";
     break;
+  case InstId::Negative:
+    instName = "negative";
+    break;
+  case InstId::Not:
+    instName = "not";
+    break;
   default:
     break;
   }

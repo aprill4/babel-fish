@@ -31,7 +31,9 @@ public:
     Getelementptr,
     Zext,
     Fptosi,
-    Sitofp
+    Sitofp,
+    Negative,
+    Not,
   };
 
   Instruction(Type *type, InstId instId, std::size_t operandNum, BasicBlock *parent);

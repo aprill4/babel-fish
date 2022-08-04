@@ -7,6 +7,7 @@ set(IR_SRC
     Instructions/AllocaInst.cc
     Instructions/BinaryInst.cc
     Instructions/BranchInst.cc
+    Instructions/UnaryInst.cc
     Instructions/CallInst.cc
     Instructions/FcmpInst.cc
     Instructions/FpToSiInst.cc

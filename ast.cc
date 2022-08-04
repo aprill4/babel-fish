@@ -965,32 +965,37 @@ void UnaryExpression::generate(IRBuilder *irBuilder) {
   switch(op_){
 			case UnaryOp::NEGATIVE:
         if(rhs->getType()->isFloatType()) {
-          if(irBuilder->getScope()->parent) 
-            res = BinaryInst::CreateFsub(context, ConstantFloat::get(context, 0), rhs, irBuilder->getBasicBlock());
+          if(irBuilder->getScope()->parent) {
+            res = UnaryInst::CreateNegative(context, rhs, irBuilder->getBasicBlock());
+            // res = BinaryInst::CreateFsub(context, ConstantFloat::get(context, 0), rhs, irBuilder->getBasicBlock());
+          }
           else 
             res = ConstantFloat::get(context, -dynamic_cast<ConstantFloat*>(rhs)->getValue());
         }
         else {
-          if(irBuilder->getScope()->parent) 
-            res = BinaryInst::CreateSub(context, ConstantInt::get(context, rhs->getType(), 0), rhs, irBuilder->getBasicBlock());
+          if(irBuilder->getScope()->parent) {
+            res = UnaryInst::CreateNegative(context, rhs, irBuilder->getBasicBlock());
+            // res = BinaryInst::CreateSub(context, ConstantInt::get(context, rhs->getType(), 0), rhs, irBuilder->getBasicBlock());
+          }
           else 
             res = ConstantInt::get(context, context.Int32Type, -dynamic_cast<ConstantInt*>(rhs)->getValue());
         }
         break;
 			case UnaryOp::NOT:
         if(irBuilder->getScope()->parent) {
-          auto zero = ConstantZero::get(context, rhs->getType());
-          rhs = IcmpInst::Create(context, 
-                                 IcmpInst::IcmpOp::NEQ, 
-                                 rhs, 
-                                 zero, 
-                                 irBuilder->getBasicBlock());
-          zero = ConstantZero::get(context, rhs->getType());
-          res = IcmpInst::Create(context, 
-                                 IcmpInst::IcmpOp::EQ, 
-                                 rhs, 
-                                 zero, 
-                                 irBuilder->getBasicBlock());
+          res = UnaryInst::CreateNot(context, rhs, irBuilder->getBasicBlock());
+          // auto zero = ConstantZero::get(context, rhs->getType());
+          // rhs = IcmpInst::Create(context, 
+          //                        IcmpInst::IcmpOp::NEQ, 
+          //                        rhs, 
+          //                        zero, 
+          //                        irBuilder->getBasicBlock());
+          // zero = ConstantZero::get(context, rhs->getType());
+          // res = IcmpInst::Create(context, 
+          //                        IcmpInst::IcmpOp::EQ, 
+          //                        rhs, 
+          //                        zero, 
+          //                        irBuilder->getBasicBlock());
         }
         else
           res = ConstantInt::get(context, context.Int1Type, !(dynamic_cast<ConstantInt*>(rhs)->getValue()));
