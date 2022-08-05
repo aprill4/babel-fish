@@ -271,7 +271,7 @@ void handle_alloca(AllocaInst *inst, MachineBasicBlock *mbb) {
             auto array_type = static_cast<ArrayType *>(inst->allocaType_);
             auto array_size = array_type->elementNum_;
             val_offset[inst] = allocate(4 * array_size);
-        }
+        } break;
         default: assert(false && "don't support this alloca type");
     }
 }
@@ -637,53 +637,39 @@ void emit_unary(Instruction *inst, MachineBasicBlock* mbb){
 
 void emit_gep(Instruction *inst, MachineBasicBlock* mbb) {
     auto gep = dynamic_cast<GetElementPtrInst*>(inst);
-    auto res = make_vreg(MachineOperand::OperandType::Int, gep);
+    auto res = make_vreg(MachineOperand::OperandType::Int, inst);
     auto ptr = gep->getOperand(0);
+    mbb->insts.emplace_back(new Mov(Mov::I2I, res, new IImm(val_offset[ptr])));
     auto element_type = ptr->getType()->getPtrElementType();
+    ArrayType *arr_ty = nullptr;
     if (element_type->isArrayType()) {
-        ArrayType *arr_ty = static_cast<ArrayType *>(element_type);
-        for (int i = 0; i < gep->getOperandNum(); i++) {
-            auto item = gep->getOperand(i);
-            auto m_operand = make_operand(item);
-            Binary* offset;
-            MachineOperand* offset_operand = make_vreg(MachineOperand::OperandType::Int);
-            if (i == 0) {
-                offset = new Binary(Binary::Int, Binary::IMul, 
-                    offset_operand, m_operand, new IImm(arr_ty->getElementNum()));
-            } else {
-                element_type = arr_ty->getElementType();
-                if (element_type->isArrayType()) {
-                    arr_ty = static_cast<ArrayType *>(element_type);
-                    offset = new Binary(Binary::Int, Binary::IMul, 
-                        offset_operand, m_operand, new IImm(arr_ty->getElementNum()));
-                }
-            }
-            mbb->insts.emplace_back(offset);
-            auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, offset_operand);
-            mbb->insts.emplace_back(offset_sum);
-        }
+        arr_ty = static_cast<ArrayType *>(element_type);        
     } else if (element_type->isPointerType()) {
-        ArrayType *arr_ty = static_cast<ArrayType *>(element_type->getPtrElementType());
-        for (int i = 0; i < gep->getOperandNum(); i++) {
-            auto item = gep->getOperand(i);
-            auto m_operand = make_operand(item);
-            Binary* offset;
-            MachineOperand* offset_operand = make_vreg(MachineOperand::OperandType::Int);
-            if (i == 0) {
-                offset = new Binary(Binary::Int, Binary::IMul, 
-                    offset_operand, m_operand, new IImm(arr_ty->getElementNum()));
-            } else {            
-                element_type = arr_ty->getElementType();
-                if (element_type->isArrayType()) {
-                    arr_ty = static_cast<ArrayType *>(element_type);
-                    offset = new Binary(Binary::Int, Binary::IMul, 
-                        offset_operand, m_operand, new IImm(arr_ty->getElementNum()));
-                }
-            }
-            mbb->insts.emplace_back(offset);
-            auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, offset_operand);
-            mbb->insts.emplace_back(offset_sum);
+        arr_ty = static_cast<ArrayType *>(element_type->getPtrElementType());
+    }
+    auto first_item = gep->getOperand(1);
+    if (dynamic_cast<ConstantInt*>(first_item) && dynamic_cast<ConstantInt*>(first_item)->getValue() != 0) {
+        auto m_operand = make_operand(first_item);
+        MachineOperand* offset_operand = make_vreg(MachineOperand::OperandType::Int);
+        Binary* offset = new Binary(Binary::Int, Binary::IMul, 
+            offset_operand, m_operand, new IImm(arr_ty->getElementNum()));
+        mbb->insts.emplace_back(offset);
+        auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, offset_operand);
+        mbb->insts.emplace_back(offset_sum);        
+    }
+    for (int i = 2; i < gep->getOperandNum(); i++) {
+        auto item = gep->getOperand(i);
+        auto m_operand = make_operand(item);
+        MachineOperand* offset_operand = make_vreg(MachineOperand::OperandType::Int);
+        element_type = arr_ty->getElementType();
+        if (element_type->isArrayType()) {
+            arr_ty = static_cast<ArrayType *>(element_type);
         }
+        Binary* offset = new Binary(Binary::Int, Binary::IMul, 
+                offset_operand, m_operand, new IImm(arr_ty->getElementNum()));
+        mbb->insts.emplace_back(offset);
+        auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, offset_operand);
+        mbb->insts.emplace_back(offset_sum);
     }
 }
 
@@ -741,7 +727,7 @@ void emit_inst(Instruction *inst, MachineBasicBlock *mbb) {
     else if (inst->isLoad()) { emit_load(inst, mbb); return; }
     else if (inst->isStore()) {emit_store(inst, mbb); return; }
     else if (inst->isFp2si() || inst->isSi2fp()) { emit_cvt(inst, mbb); return; }
-    else if (inst->isGep()) {  return; }
+    else if (inst->isGep()) { emit_gep(inst, mbb); return; }
     assert(false && "illegal instrustion");
 }
 
