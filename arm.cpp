@@ -556,6 +556,14 @@ void emit_unary(Instruction *inst, MachineBasicBlock* mbb){
                 mbb->insts.emplace_back(lsr);
             } else { 
                 // need to add
+                auto cmp = new Cmp(Cmp::Float, make_operand(right_val), new FImm(0));
+                auto mov1 = new Mov(Mov::I2I, 
+                    make_vreg(MachineOperand::OperandType::Int, unary_inst), new IImm(0));
+                auto mov2 = new Mov(Mov::I2I, make_operand(unary_inst), new IImm(1));
+                mov2->cond = MachineInst::Eq;
+                mbb->insts.emplace_back(cmp);
+                mbb->insts.emplace_back(mov1);
+                mbb->insts.emplace_back(mov2);
             }
         break;
         case Instruction::InstId::Negative:
@@ -636,10 +644,10 @@ void emit_call(Instruction *inst, MachineBasicBlock* mbb) {
     call->callee = func->getName();
     call->arg_count = func_call->getOperandNum() - 1;
 
-    for (int i = 0; i < func_call->getOperandNum() - 1; i++) {
+    for (int i = 1; i < func_call->getOperandNum(); i++) {
         auto args = func_call->getOperand(i);
-        if (i <= 3) {
-            auto mreg = new MReg(MReg::Reg(i + 1));
+        if (i <= 4) {
+            auto mreg = new MReg(MReg::Reg(i));
             auto mv = new Mov();
             // TO_DO: add mv's property;
             mv->src = make_operand(args);
