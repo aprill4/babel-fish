@@ -1,6 +1,7 @@
 #include "arm.h"
 #include "Exception.h"
 #include <assert.h>
+#include <utility>
 
 void print_globals(FILE *fp, const std::set<GlobalVariable *> &globals);
 
@@ -92,7 +93,7 @@ const char *MachineInst::get_cond() {
 
 void Binary::print(FILE *fp) {
     const char *op_str[] = {
-        "add", "sub", "mul", "div", "", "vadd.f32", "vsub.f32", "vmul.f32", "vdiv.f32", "lsl", "lsr", "asl", "asr","rsb"
+        "add", "sub", "mul", "sdiv", "", "vadd.f32", "vsub.f32", "vmul.f32", "vdiv.f32", "lsl", "lsr", "asl", "asr","rsb"
     };
     fprintf(fp, "%s%s\t%s, %s, %s", op_str[kind], get_cond(), dst->print(), lhs->print(), rhs->print());
 }
@@ -369,74 +370,144 @@ void emit_store(Instruction *inst, MachineBasicBlock *mbb) {
     }
 }
 
+MachineOperand *emit_constant(int c, MachineBasicBlock *mbb) {
+    auto m = new Mov(Mov::I2I);
+    m->dst = make_vreg(MachineOperand::Int);
+    m->src = new IImm(c);
+    mbb->insts.emplace_back(m);
+    return m->dst;
+}
+
+MachineOperand *emit_constant_value(Constant *c, MachineBasicBlock *mbb) {
+    int value;
+    if (auto i = dynamic_cast<ConstantInt *>(c)) {
+        value = i->getValue();
+    } else if (auto f = dynamic_cast<ConstantFloat *>(c)) {
+        float fv = f->getValue();
+        value = *((int *) &fv);
+    } else {
+        assert(false && "what is this constant value");
+    }
+
+    return emit_constant(value, mbb);
+}
+
 void emit_binary(BinaryInst *inst, MachineBasicBlock *mbb) {
 
-    auto lhs = make_operand(inst->operands_[0]);
-    auto rhs = make_operand(inst->operands_[1]);
-    auto dst = make_vreg(infer_type_from_value(inst), inst);
-    Binary *binary_inst;
-
-    if (dynamic_cast<Constant *>(inst->operands_[0])) {
-        binary_inst = new Binary(dst, rhs, lhs);
-    } else {
-        binary_inst = new Binary(dst, lhs, rhs);
-    }
+    Binary::Tag tag;
+    Binary::Op kind;
+    bool associative = false;
+    bool can_rhs_be_imm = false;
+    bool can_be_easily_handled = true;
 
     switch(inst->instId_) {
         case Instruction::Add: {
-            binary_inst->tag = Binary::Int;
-            binary_inst->kind = Binary::IAdd;
-            mbb->insts.emplace_back(binary_inst);
+            tag = Binary::Int;
+            kind = Binary::IAdd;
+            associative = true;
+            can_rhs_be_imm = true;
         } break;
 
         case Instruction::Sub: {
-            binary_inst->tag = Binary::Int;
-            binary_inst->kind = Binary::ISub;
-            mbb->insts.emplace_back(binary_inst);
+            tag = Binary::Int;
+            kind = Binary::ISub;
+            associative = false;
+            can_rhs_be_imm = true;
         } break;
 
         case Instruction::Mul: {
-            binary_inst->tag = Binary::Int;
-            binary_inst->kind = Binary::IMul;
-            mbb->insts.emplace_back(binary_inst);
+            tag = Binary::Int;
+            kind = Binary::IMul;
+            associative = true;
+            can_rhs_be_imm = false;
         } break;
 
         case Instruction::Sdiv: {
-            binary_inst->tag = Binary::Int;
-            binary_inst->kind = Binary::IDiv;
-            mbb->insts.emplace_back(binary_inst);
+            tag = Binary::Int;
+            kind = Binary::IDiv;
 
+            associative = false;
+            can_rhs_be_imm = false;
         } break;
         
-        case Instruction::Mod: {
-            assert(false && "not implemented yet.");
-        } break;
-
         case Instruction::Fadd: {
-            binary_inst->tag = Binary::Float;
-            binary_inst->kind = Binary::FAdd;
-            mbb->insts.emplace_back(binary_inst);
+            tag = Binary::Float;
+            kind = Binary::FAdd;
+            associative = false;
+            can_rhs_be_imm = false; // really?
         } break;
 
         case Instruction::Fsub: {
-            binary_inst->tag = Binary::Float;
-            binary_inst->kind = Binary::FSub;
-            mbb->insts.emplace_back(binary_inst);
+            tag = Binary::Float;
+            kind = Binary::FSub;
         }
 
         case Instruction::Fmul: {
-            binary_inst->tag = Binary::Float;
-            binary_inst->kind = Binary::FMul;
-            mbb->insts.emplace_back(binary_inst);
+            tag = Binary::Float;
+            kind = Binary::FMul;
+            associative = false;
+            can_rhs_be_imm = false;
         } break;
 
         case Instruction::Fdiv: {
-            binary_inst->tag = Binary::Float;
-            binary_inst->kind = Binary::FDiv;
-            mbb->insts.emplace_back(binary_inst);
+            tag = Binary::Float;
+            kind = Binary::FDiv;
+            associative = false;
+            can_rhs_be_imm = false;
         } break;
 
-        default: assert(false && "illegal binary instruction");
+        default: can_be_easily_handled = false;
+    }
+
+    auto lv = inst->operands_[0];
+    auto rv = inst->operands_[1];
+
+    if (dynamic_cast<Constant *>(lv) &&
+            !dynamic_cast<Constant *>(rv) &&
+            associative) {
+        std::swap(lv, rv);
+    }
+
+    MachineOperand *lhs;
+    if (auto c = dynamic_cast<Constant *>(lv)) {
+        lhs = emit_constant_value(c, mbb);
+    } else {
+        lhs = make_operand(lv);
+    }
+
+    MachineOperand *rhs;
+    if (!can_rhs_be_imm && dynamic_cast<Constant *>(rv)) {
+        auto c = dynamic_cast<Constant *>(rv);
+        rhs = emit_constant_value(c, mbb);
+    } else {
+        rhs = make_operand(rv);
+    }
+
+    if (can_be_easily_handled) {
+        auto dst = make_vreg(infer_type_from_value(inst), inst);
+
+        auto binary_inst = new Binary(dst, lhs, rhs);
+        binary_inst->tag = tag;
+        binary_inst->kind = kind;
+        mbb->insts.emplace_back(binary_inst);
+
+        return;
+    }
+
+    switch(inst->instId_) {
+        case Instruction::Mod: {
+            auto dr = make_vreg(MachineOperand::Int);
+            auto div = new Binary(Binary::Int, Binary::IDiv, dr, lhs, rhs);
+            mbb->insts.emplace_back(div);
+            auto mr = make_vreg(MachineOperand::Int);
+            auto mul = new Binary(Binary::Int, Binary::IMul, mr, div->dst, div->rhs);
+            mbb->insts.emplace_back(mul);
+            auto dst = make_vreg(MachineOperand::Int, inst);
+            auto sub = new Binary(Binary::Int, Binary::ISub, dst, div->lhs, mul->dst);
+            mbb->insts.emplace_back(sub);
+        } break;
+
+        default: assert(false && "unknown binary inst");
     }
 }
 
