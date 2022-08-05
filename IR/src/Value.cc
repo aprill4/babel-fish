@@ -14,6 +14,7 @@ bool Value::setName(const std::string &name) {
   return false;
 }
 
+// why copy
 std::string Value::getName() { return name_; }
 
 std::string Value::getLLVM_Name() { 

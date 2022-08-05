@@ -66,11 +66,15 @@ struct MReg : MachineOperand {
 
 struct Symbol : MachineOperand {
     std::string name;
+
+    Symbol(std::string name): name(name) {}
+
     const char *print();
 };
 
 struct MachineModule {
     std::vector<MachineFunction *> functions;
+    Module *ir_module;
     void print(FILE *fp);
 };
 

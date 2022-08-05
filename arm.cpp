@@ -2,10 +2,15 @@
 #include "Exception.h"
 #include <assert.h>
 
+void print_globals(FILE *fp, const std::set<GlobalVariable *> &globals);
+
 void MachineModule::print(FILE *fp) {
     for (auto func: functions) {
         func->print(fp);
     }
+
+    // print globals
+    print_globals(fp, ir_module->globalVariableList_);
 }
 
 void MachineFunction::print(FILE *fp) {
@@ -104,8 +109,8 @@ void Cmp::print(FILE *fp) {
 void Mov::print(FILE *fp) {
     const char *mv_inst[] = { "mov", "vmov.f32", "vmov", "vmov"};
     if (dynamic_cast<Symbol *>(src)) {
-        fprintf(fp, "%s%s\t%s, #:lower:%s", mv_inst[tag], get_cond(), dst->print(), src->print());
-        fprintf(fp, "%s%s\t%s, #:upper:%s", mv_inst[tag], get_cond(), dst->print(), src->print());
+        fprintf(fp, "%sw%s\t%s, #:lower:%s\n", mv_inst[tag], get_cond(), dst->print(), src->print());
+        fprintf(fp, "  %st%s\t%s, #:upper:%s", mv_inst[tag], get_cond(), dst->print(), src->print());
     } else {
         fprintf(fp, "%s%s\t%s, %s", mv_inst[tag], get_cond(), dst->print(), src->print());
     }
@@ -259,9 +264,35 @@ void handle_alloca(AllocaInst *inst, MachineBasicBlock *mbb) {
     }
 }
 
+Mov *emit_load_global_addr(GlobalVariable *global) {
+    auto addr_reg = make_vreg(MachineOperand::Int);
+    auto symbol = new Symbol(global->getName());
+    auto load_addr = new Mov(Mov::I2I, addr_reg, symbol);
+    return load_addr;
+}
+
 void emit_load(Instruction *inst, MachineBasicBlock *mbb) {
     if (auto global = dynamic_cast<GlobalVariable *>(inst->operands_[0])) {
-        assert(false && "don't support loading global so far");
+        auto load_addr = emit_load_global_addr(global);
+        mbb->insts.emplace_back(load_addr);
+
+        // todo: de-duplicate
+        auto base = load_addr->dst;
+        auto offset = nullptr;
+        auto ld_tag = Load::Int;
+        switch (inst->type_->typeId_) {
+            case Type::IntegerTypeId: {
+                ld_tag = Load::Int;
+            } break;
+            case Type::FloatTypeId: {
+                ld_tag = Load::Float;
+            } break;
+            default: assert(false && "don't support this type");
+        }
+        auto dst = make_vreg(infer_type_from_value(inst), inst);
+        auto ld = new Load(dst, base, offset);
+        ld->tag = ld_tag;
+        mbb->insts.emplace_back(ld);
     } else {
         auto base = new MReg(MReg::sp);
         auto offset = new IImm(val_offset[inst->operands_[0]]);
@@ -283,8 +314,28 @@ void emit_load(Instruction *inst, MachineBasicBlock *mbb) {
 }
 
 void emit_store(Instruction *inst, MachineBasicBlock *mbb) {
-    if (auto global = dynamic_cast<GlobalVariable *>(inst->operands_[0])) {
-        assert(false && "don't support loading global so far");
+    if (auto global = dynamic_cast<GlobalVariable *>(inst->operands_[1])) {
+        auto load_addr = emit_load_global_addr(global);
+        mbb->insts.emplace_back(load_addr);
+
+        // todo: de-duplicate
+        auto base = load_addr->dst;
+        auto offset = nullptr;
+        auto src = make_operand(inst->operands_[0]);
+        auto st_tag = Store::Int;
+        switch (inst->operands_[0]->type_->typeId_) {
+            case Type::IntegerTypeId: {
+                st_tag = Store::Int;
+            } break;
+            case Type::FloatTypeId: {
+                st_tag = Store::Float;
+            } break;
+            default: assert(false && "don't support this type");
+        }
+        auto st = new Store(src, base, offset);
+        st->tag = st_tag;
+        mbb->insts.emplace_back(st);
+
     } else {
         auto base = new MReg(MReg::sp);
         auto offset = new IImm(val_offset[inst->operands_[1]]);
@@ -688,13 +739,68 @@ MachineFunction *emit_func(Function *func) {
     return mfunc;
 }
 
+void print_globals(FILE *fp, const std::set<GlobalVariable *> &globals) {
+    fprintf(fp, "\n; here are the globals +-+^_^+-=\n");
+    for (auto &glob : globals) {
+        fprintf(fp, "%s:\n", glob->getName().c_str());
+        auto init = glob->getInitValue();
+        if (auto f = dynamic_cast<ConstantFloat *>(init)) {
+            float value = f->getValue();
+            int same_value_but_in_digits = *((int *) &value);
+            fprintf(fp, "  .word\t%d", same_value_but_in_digits);
+        } else if (auto i = dynamic_cast<ConstantInt *>(init)) {
+            int value = i->getValue();
+            fprintf(fp, "  .word\t%d", value);
+        } else if (auto arr = dynamic_cast<ConstantArray *>(init)) {
+            // TODO: Merge consecutive zeros
+            int consecutive_zeros = 0;
+            for (auto item : arr->value_) {
+                int value;
+                bool nonzero = false;
+                if (auto f = dynamic_cast<ConstantFloat *>(item)) {
+                    float fv = f->getValue();
+                    value = *((int *) &fv);
+                    nonzero = true;
+                } else if (auto i = dynamic_cast<ConstantInt *>(item)) {
+                    value = i->getValue();
+                    nonzero = true;
+                } else if (dynamic_cast<ConstantZero *>(item)) {
+                    consecutive_zeros++;
+                    continue;
+                } else {
+                    assert(false && "what is this element");
+                }
+
+                if (nonzero && consecutive_zeros != 0) {
+                    consecutive_zeros = 0;
+                    fprintf(fp, "  .zero\t%d\n", consecutive_zeros * 4);
+                }
+
+                fprintf(fp, "  .word\t%d\n", value);
+            }
+
+            // print remaining zeros
+            if (consecutive_zeros != 0) {
+                fprintf(fp, "  .zero\t%d\n", consecutive_zeros * 4);
+            }
+
+        } else {
+            assert(false && "what is this global");
+        }
+        fprintf(fp, "\n");
+    }
+}
+
 MachineModule *emit_asm(Module *IR) {
     auto mm = new MachineModule;
+    mm->ir_module = IR;
 
+    // emit functions
     for (auto func: IR->functionList_) {
         if (func->is_libFn) { continue; }
         auto mfunc = emit_func(func);
         mm->functions.emplace_back(mfunc);
     }
+
     return mm;
 }
