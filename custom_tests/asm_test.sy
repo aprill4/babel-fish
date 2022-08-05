@@ -1,5 +1,6 @@
 void z(){}
 int main(int a) {
     z();
+    int c;
     return 3 + a;
 }

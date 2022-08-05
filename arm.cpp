@@ -191,14 +191,12 @@ size_t stack_offset = 0;
 std::map<Value*, size_t> val_offset;
 
 size_t allocate(size_t size) {
-    for (auto val: val_offset) {
-        val.second -= size;
-    }
+    auto before_alloca = stack_offset;
     stack_offset += size;
-    return -size;
+    return before_alloca;
 }
 
-bool can_be_imm_ror(int x) {
+bool can_be_iimm_ror(int x) {
     int v = x;
     for (int r = 0; r < 31; r += 2) {
         if ((v & 0xff) == v) {
@@ -233,23 +231,19 @@ MachineOperand *make_vreg(MachineOperand::OperandType operand_type, Value *v = n
 MachineOperand *make_operand(Value *v) {
     MachineOperand *ret = nullptr;
     if (v_m.find(v) != v_m.end()) { ret = v_m[v]; }
-    else if (auto const_int = dynamic_cast<ConstantInt *>(v)) {
-        auto iimm = new IImm(const_int->value_); 
-        v_m[v] = iimm;
-        ret = iimm;
-    } else if (auto const_float = dynamic_cast<ConstantFloat *>(v)) {
-        auto fimm = new FImm(const_float->value_);
-        v_m[v] = fimm;
-        ret = fimm;
-    }  else if (auto const_zero = dynamic_cast<ConstantZero *>(v)) {
-        if (const_zero->type_->isIntegerType()) {
-            auto iimm = new IImm(0); 
-            v_m[v] = iimm;
-            ret = iimm;
-        } else if (const_zero->type_->isFloatType()) {
-            auto fimm = new FImm(0);
-            v_m[v] = fimm;
-            ret = fimm;
+    else if (auto const_val = dynamic_cast<Constant *>(v)) {
+        int val = 0;
+        if (auto const_int = dynamic_cast<ConstantInt *>(const_val)) {
+            val = const_int->value_;
+        } else if (auto const_float = dynamic_cast<ConstantFloat *>(const_val)) {
+            int *p = (int *)&(const_float->value_);
+            val = *p;
+        }
+
+        if (can_be_iimm_ror(val)) {
+            auto imm = new IImm(val);
+            v_m[v] = imm;
+            ret = imm;
         }
     } else {
         assert(false && "don't know what operand you want");
@@ -257,7 +251,12 @@ MachineOperand *make_operand(Value *v) {
     return ret;
 }
 
-void handle_alloca(AllocaInst *inst) {
+void handle_alloca(AllocaInst *inst, MachineBasicBlock *mbb) {
+    auto dst = new MReg(MReg::fp);
+    auto src = new MReg(MReg::sp);
+    auto mv = new Mov(Mov::I2I, dst, src);
+    mbb->insts.emplace_back(mv);
+
     switch(inst->allocaType_->typeId_) {
         case Type::IntegerTypeId: 
         case Type::FloatTypeId: {
@@ -675,7 +674,7 @@ void emit_inst(Instruction *inst, MachineBasicBlock *mbb) {
     if (auto ret_inst = dynamic_cast<ReturnInst *>(inst)) { emit_ret(ret_inst, mbb); return; }
     else if (auto binary_inst = dynamic_cast<BinaryInst *>(inst)) { emit_binary(binary_inst, mbb); return; }
     else if (auto unary_inst = dynamic_cast<UnaryInst *>(inst)) { emit_unary(unary_inst, mbb); return; }
-    else if (auto alloca_inst = dynamic_cast<AllocaInst *>(inst)) { handle_alloca(alloca_inst); return; }
+    else if (auto alloca_inst = dynamic_cast<AllocaInst *>(inst)) { handle_alloca(alloca_inst, mbb); return; }
     else if (auto icmp_inst = dynamic_cast<IcmpInst *>(inst)) { emit_cmp(icmp_inst, mbb); return; }
     else if (auto fcmp_inst = dynamic_cast<FcmpInst *>(inst)) { emit_cmp(fcmp_inst, mbb); return; }
     else if (auto br_inst = dynamic_cast<BranchInst *>(inst)) { emit_br(br_inst, mbb); return; }
