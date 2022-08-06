@@ -1,15 +1,15 @@
 %{
-#include <iostream>
-#include <cstdlib>
+#include <stdlib.h>
+#include <stdio.h>
 #include "ast.h"
 #include "syntax_analyzer.tab.h"
 Root* root = nullptr;
 
-extern int yylex();
+extern int yylex(void);
 
-void yyerror(const char *s) {
-      using namespace std;
-      cerr << yylloc.first_line << ':' << yylloc.first_column << ": error: " << s << endl;
+extern "C" void yyerror(const char *s) {
+      fprintf(stderr, "%d:%d: error: %s\n", yylloc.first_line,
+              yylloc.first_column, s);
 }
 
 %}
