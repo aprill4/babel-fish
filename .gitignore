@@ -10,3 +10,4 @@ build
 *.ll
 *.o
 ast.cc # edit ast.cc.in instead
+sad
