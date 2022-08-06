@@ -275,7 +275,6 @@ MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb) {
 
 void handle_alloca(AllocaInst *inst) {
     switch(inst->allocaType_->typeId_) {
-        case Type::PointerTypeId: 
         case Type::IntegerTypeId: 
         case Type::PointerTypeId: 
         case Type::FloatTypeId: {
