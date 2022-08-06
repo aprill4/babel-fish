@@ -799,17 +799,21 @@ void emit_call(Instruction *inst, MachineBasicBlock* mbb) {
     call->callee = func->getName();
     call->arg_count = func_call->getOperandNum() - 1;
 
-    for (int i = 1; i < func_call->getOperandNum(); i++) {
+    for (int i = func_call->getOperandNum() - 1; i >= 1; i++) {
         auto args = func_call->getOperand(i);
         if (i <= 4) {
             auto mreg = new MReg(MReg::Reg(i));
-            auto mv = new Mov();
-            // TO_DO: add mv's property;
-            mv->src = make_operand(args, mbb);
-            mv->dst = mreg;
+            auto mv = new Mov(args->getType()->isIntegerType() ? Mov::I2I : Mov::F2F
+            , mreg, make_operand(args, mbb));
+            mbb->insts.emplace_back(mv);
         } else {
-            // TO_DO: xxx;
-            // auto mv = new Mov();
+            auto mreg = new MReg(MReg::r3);
+            auto mv = new Mov(args->getType()->isIntegerType() ? Mov::I2I : Mov::F2F
+            , mreg, make_operand(args, mbb));
+            auto store = new Store(Store::Int, mreg, new MReg(MReg::sp), 
+                    i > 5 ? new IImm((i - 5) * 4) : nullptr);
+            mbb->insts.emplace_back(mv);
+            mbb->insts.emplace_back(store);
         }
     }
     mbb->insts.emplace_back(call);
