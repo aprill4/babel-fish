@@ -903,6 +903,9 @@ MachineFunction *emit_func(Function *func) {
             auto add = new Binary(Binary::Int, Binary::IAdd, dst, dst, offset);
             bb->insts.insert(it, add);
         }
+        stack_offset = 0;
+        val_offset.clear();
+        v_m.clear();
     }
 
     if (mfunc->call_func) {    
