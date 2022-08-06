@@ -525,6 +525,8 @@ void emit_binary(BinaryInst *inst, MachineBasicBlock *mbb) {
 }
 
 void emit_ret(ReturnInst *inst, MachineBasicBlock *mbb) {
+    mbb->parent->exit_blocks.emplace_back(mbb);
+
     auto ret = new Return;
     mbb->insts.emplace_back(ret);
     if (inst->isRetVoid()) {
@@ -542,7 +544,6 @@ void emit_ret(ReturnInst *inst, MachineBasicBlock *mbb) {
     auto it = mbb->insts.end();
     it--;
     mbb->insts.insert(it, mv);
-    mbb->parent->exit_blocks.emplace_back(mbb);
 }
 
 void emit_args(std::vector<Argument *> &args, MachineBasicBlock *entry) {
