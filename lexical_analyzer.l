@@ -4,7 +4,7 @@
 #include "ast.h"
 #include "syntax_analyzer.tab.h"
 
-void yyerror(const char *s);
+extern "C" void yyerror(const char *s);
 int yycolumn = 1;
 
 #define SAVE_TOKEN     yylval.string = new std::string(yytext, yyleng)
