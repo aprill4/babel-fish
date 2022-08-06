@@ -9,5 +9,5 @@ build
 *.elf
 *.ll
 *.o
-ast.cc # edit ast.cc.in instead
+ast.cc
 sad
