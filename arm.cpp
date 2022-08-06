@@ -518,8 +518,7 @@ void emit_binary(BinaryInst *inst, MachineBasicBlock *mbb) {
         std::swap(lv, rv);
     }
 
-    auto lhs = make_operand(lv, mbb, true);
-    auto rhs = make_operand(rv, mbb, !can_rhs_be_imm);
+    auto lhs = make_operand(lv, mbb, true), rhs = make_operand(rv, mbb, !can_rhs_be_imm);
 
     if (can_be_easily_handled) {
         auto dst = make_vreg(infer_type_from_value(inst), inst);
@@ -760,9 +759,9 @@ void emit_gep(Instruction *inst, MachineBasicBlock* mbb) {
     auto gep = dynamic_cast<GetElementPtrInst*>(inst);
     auto res = make_vreg(MachineOperand::OperandType::Int, inst);
     auto ptr = gep->getOperand(0);
-    mbb->insts.emplace_back(
-            new Binary(
-                Binary::Int, Binary::ISub, res, new MReg(MReg::fp), new IImm(val_offset[ptr])));
+    auto base = new MReg(MReg::fp);
+    auto offset = new IImm(val_offset[ptr]);
+    mbb->insts.emplace_back(new Binary(Binary::Int, Binary::ISub, res, base, offset));
     auto element_type = ptr->getType()->getPtrElementType();
     ArrayType *arr_ty = nullptr;
     if (element_type->isArrayType()) {
@@ -771,42 +770,28 @@ void emit_gep(Instruction *inst, MachineBasicBlock* mbb) {
         arr_ty = static_cast<ArrayType *>(element_type->getPtrElementType());
     }
     auto first_item = gep->getOperand(1);
-    if (dynamic_cast<ConstantInt*>(first_item)) {
-        if (dynamic_cast<ConstantInt*>(first_item)->getValue() != 0) {        
-            auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, 
-                        new IImm(dynamic_cast<ConstantInt*>(first_item)->getValue() * arr_ty->getElementNum()));
-            mbb->insts.emplace_back(offset_sum);        
-        }
-    } else {
+    if (dynamic_cast<ConstantInt*>(first_item) && dynamic_cast<ConstantInt*>(first_item)->getValue() != 0) {
         auto m_operand = make_operand(first_item, mbb);
         MachineOperand* offset_operand = make_vreg(MachineOperand::OperandType::Int);
         Binary* offset = new Binary(Binary::Int, Binary::IMul, 
             offset_operand, m_operand, new IImm(arr_ty->getElementNum()));
         mbb->insts.emplace_back(offset);
         auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, offset_operand);
-        mbb->insts.emplace_back(offset_sum);                
+        mbb->insts.emplace_back(offset_sum);        
     }
     for (int i = 2; i < gep->getOperandNum(); i++) {
         auto item = gep->getOperand(i);
-        if (dynamic_cast<ConstantInt*>(item)) {
-            if (dynamic_cast<ConstantInt*>(item)->getValue() != 0) {
-                auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, 
-                            new IImm(dynamic_cast<ConstantInt*>(item)->getValue() * arr_ty->getElementNum()));
-                mbb->insts.emplace_back(offset_sum);                    
-            }
-        } else {        
-            auto m_operand = make_operand(item, mbb);
-            MachineOperand* offset_operand = make_vreg(MachineOperand::OperandType::Int);
-            element_type = arr_ty->getElementType();
-            if (element_type->isArrayType()) {
-                arr_ty = static_cast<ArrayType *>(element_type);
-            }
-            Binary* offset = new Binary(Binary::Int, Binary::IMul, 
-                    offset_operand, m_operand, new IImm(arr_ty->getElementNum()));
-            mbb->insts.emplace_back(offset);
-            auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, offset_operand);
-            mbb->insts.emplace_back(offset_sum);
+        auto m_operand = make_operand(item, mbb);
+        MachineOperand* offset_operand = make_vreg(MachineOperand::OperandType::Int);
+        element_type = arr_ty->getElementType();
+        if (element_type->isArrayType()) {
+            arr_ty = static_cast<ArrayType *>(element_type);
         }
+        Binary* offset = new Binary(Binary::Int, Binary::IMul, 
+                offset_operand, m_operand, new IImm(arr_ty->getElementNum()));
+        mbb->insts.emplace_back(offset);
+        auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, offset_operand);
+        mbb->insts.emplace_back(offset_sum);
     }
 }
 
@@ -905,6 +890,9 @@ MachineFunction *emit_func(Function *func) {
             bb_map[suc]->pres.emplace_back(bb_map[bb]);
         }
     }
+
+    mfunc->stack_size = stack_offset;
+    mfunc->vreg_count = vreg_id;
 
     if (stack_offset) { 
         auto entry_bb = mfunc->basic_blocks[0];

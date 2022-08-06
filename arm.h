@@ -83,6 +83,10 @@ struct MachineFunction {
     std::vector<MachineBasicBlock *> basic_blocks;
     bool call_func = false;
     std::vector<MachineBasicBlock *> exit_blocks;
+
+    size_t stack_size;
+    int vreg_count;
+
     void print(FILE *fp);
 };
 
