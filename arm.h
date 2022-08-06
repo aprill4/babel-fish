@@ -104,7 +104,7 @@ struct MachineInst {
 };
 
 struct Binary : MachineInst {
-    enum Op { IAdd, ISub, IMul, IDiv, Mod, FAdd, FSub, FMul, FDiv, ILsl, ILsr, IAsl, IAsr,Rsb };
+    enum Op { IAdd, ISub, IMul, IDiv, Mod, FAdd, FSub, FMul, FDiv, ILsl, ILsr, IAsl, IAsr, Rsb };
     Op kind;
     MachineOperand *dst, *lhs, *rhs;
 
