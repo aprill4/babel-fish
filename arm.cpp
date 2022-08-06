@@ -555,7 +555,7 @@ void emit_ret(ReturnInst *inst, MachineBasicBlock *mbb) {
     }
 
     auto ty = inst->operands_[0]->getType();
-    bool is_int = (ty->isIntegerType() && ty->isPointerType());
+    bool is_int = (ty->isIntegerType() || ty->isPointerType());
 
     auto mv = new Mov;
     mv->tag = is_int ? Mov::I2I : Mov::F2F;
