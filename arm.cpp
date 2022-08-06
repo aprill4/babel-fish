@@ -756,7 +756,9 @@ void emit_gep(Instruction *inst, MachineBasicBlock* mbb) {
     auto gep = dynamic_cast<GetElementPtrInst*>(inst);
     auto res = make_vreg(MachineOperand::OperandType::Int, inst);
     auto ptr = gep->getOperand(0);
-    mbb->insts.emplace_back(new Mov(Mov::I2I, res, new IImm(val_offset[ptr])));
+    auto base = new MReg(MReg::fp);
+    auto offset = new IImm(val_offset[ptr]);
+    mbb->insts.emplace_back(new Binary(Binary::Int, Binary::ISub, res, base, offset));
     auto element_type = ptr->getType()->getPtrElementType();
     ArrayType *arr_ty = nullptr;
     if (element_type->isArrayType()) {
