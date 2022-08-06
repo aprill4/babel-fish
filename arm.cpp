@@ -191,10 +191,12 @@ void Push_Pop::print(FILE *fp) {
     fprintf(fp, "\b\b }");
 }
 
+//-----------------------------------------------------------------
 std::map<Value*, MachineOperand*> v_m;
 int vreg_id = 0;
 size_t stack_offset = 0;
 std::map<Value*, size_t> val_offset;
+//-----------------------------------------------------------------
 
 size_t allocate(size_t size) {
     auto before_alloca = stack_offset;
@@ -318,24 +320,29 @@ void emit_load(Instruction *inst, MachineBasicBlock *mbb) {
         auto ld = new Load(dst, base, offset);
         ld->tag = ld_tag;
         mbb->insts.emplace_back(ld);
-    } else {
+    } else if (dynamic_cast<AllocaInst *>(inst->operands_[0])){
         auto base = new MReg(MReg::fp);
-        auto offset = new IImm(val_offset[inst->operands_[0]]);
+        auto offset = new IImm(-(val_offset[inst->operands_[0]]));
         auto ld_tag = Load::Int;
-        switch (inst->type_->typeId_) {
-            case Type::PointerTypeId:
-            case Type::IntegerTypeId: {
-                ld_tag = Load::Int;
-            } break;
-            case Type::FloatTypeId: {
-                ld_tag = Load::Float;
-            } break;
-            default: assert(false && "don't support this type");
+        if (inst->type_->typeId_ == Type::FloatTypeId) {
+            ld_tag = Load::Float;
         }
         auto dst = make_vreg(infer_type_from_value(inst), inst);
         auto ld = new Load(dst, base, offset);
         ld->tag = ld_tag;
         mbb->insts.emplace_back(ld);
+    } else if (auto gep = dynamic_cast<GetElementPtrInst *>(inst->operands_[0])) {
+        auto base = make_operand(gep, mbb);
+        auto ld_tag = Load::Int;
+        if (inst->type_->typeId_ == Type::FloatTypeId) {
+            ld_tag = Load::Float;
+        }
+        auto dst = make_vreg(infer_type_from_value(inst), inst);
+        auto ld = new Load(dst, base);
+        ld->tag = ld_tag;
+        mbb->insts.emplace_back(ld);
+    } else {
+        assert(false && "load doesn't support this type");
     }
 }
 
@@ -362,25 +369,28 @@ void emit_store(Instruction *inst, MachineBasicBlock *mbb) {
         st->tag = st_tag;
         mbb->insts.emplace_back(st);
 
-    } else {
-        auto base = new MReg(MReg::sp);
-        auto offset = new IImm(val_offset[inst->operands_[1]]);
+    } else if (auto alloca = dynamic_cast<AllocaInst *>(inst->operands_[1])) {
+        auto base = new MReg(MReg::fp);
+        auto offset = new IImm(-(val_offset[inst->operands_[1]]));
         auto src = make_operand(inst->operands_[0], mbb);
         auto st_tag = Store::Int;
-        switch (inst->operands_[0]->type_->typeId_) {
-            case Type::PointerTypeId:
-            case Type::IntegerTypeId: {
-                st_tag = Store::Int;
-            } break;
-            case Type::FloatTypeId: {
-                st_tag = Store::Float;
-            } break;
-            default: assert(false && "don't support this type");
+        if (inst->operands_[0]->type_->typeId_ == Type::FloatTypeId) {
+            st_tag = Store::Float;
         }
         auto st = new Store(src, base, offset);
         st->tag = st_tag;
         mbb->insts.emplace_back(st);
-    }
+    } else if (auto gep = dynamic_cast<GetElementPtrInst *>(inst->operands_[1])) {
+        auto base = make_operand(gep, mbb);
+        auto src = make_operand(inst->operands_[0], mbb);
+        auto st_tag = Store::Int;
+        if (inst->operands_[0]->type_->typeId_ == Type::FloatTypeId) {
+            st_tag = Store::Float;
+        }
+        auto st = new Store(src, base);
+        st->tag = st_tag;
+        mbb->insts.emplace_back(st);
+    } 
 }
 
 MachineOperand *emit_constant(int c, MachineBasicBlock *mbb) {
@@ -538,8 +548,8 @@ void emit_ret(ReturnInst *inst, MachineBasicBlock *mbb) {
 
     auto mv = new Mov;
     mv->tag = is_int ? Mov::I2I : Mov::F2F;
-    mv->src = new MReg(is_int ? MReg::r0 : MReg::s0);
-    mv->dst = make_operand(inst->operands_[0], mbb);
+    mv->dst = new MReg(is_int ? MReg::r0 : MReg::s0);
+    mv->src = make_operand(inst->operands_[0], mbb);
 
     auto it = mbb->insts.end();
     it--;
