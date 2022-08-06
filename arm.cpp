@@ -109,8 +109,8 @@ void Cmp::print(FILE *fp) {
 void Mov::print(FILE *fp) {
     const char *mv_inst[] = { "mov", "vmov.f32", "vmov", "movw", "movt" };
     if (dynamic_cast<Symbol *>(src)) {
-        fprintf(fp, "%sw%s\t%s, #:lower:%s\n", mv_inst[tag], get_cond(), dst->print(), src->print());
-        fprintf(fp, "  %st%s\t%s, #:upper:%s", mv_inst[tag], get_cond(), dst->print(), src->print());
+        fprintf(fp, "movw%s\t%s, #:lower:%s\n", get_cond(), dst->print(), src->print());
+        fprintf(fp, "  movt%s\t%s, #:upper:%s", get_cond(), dst->print(), src->print());
     } else {
         fprintf(fp, "%s%s\t%s, %s", mv_inst[tag], get_cond(), dst->print(), src->print());
     }
@@ -272,14 +272,10 @@ MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb) {
     return ret;
 }
 
-void handle_alloca(AllocaInst *inst, MachineBasicBlock *mbb) {
-    auto dst = new MReg(MReg::fp);
-    auto src = new MReg(MReg::sp);
-    auto mv = new Mov(Mov::I2I, dst, src);
-    mbb->insts.emplace_back(mv);
-
+void handle_alloca(AllocaInst *inst) {
     switch(inst->allocaType_->typeId_) {
         case Type::IntegerTypeId: 
+        case Type::PointerTypeId: 
         case Type::FloatTypeId: {
             val_offset[inst] = allocate(4);
         } break;
@@ -322,7 +318,7 @@ void emit_load(Instruction *inst, MachineBasicBlock *mbb) {
         ld->tag = ld_tag;
         mbb->insts.emplace_back(ld);
     } else {
-        auto base = new MReg(MReg::sp);
+        auto base = new MReg(MReg::fp);
         auto offset = new IImm(val_offset[inst->operands_[0]]);
         auto ld_tag = Load::Int;
         switch (inst->type_->typeId_) {
@@ -718,7 +714,7 @@ void emit_inst(Instruction *inst, MachineBasicBlock *mbb) {
     if (auto ret_inst = dynamic_cast<ReturnInst *>(inst)) { emit_ret(ret_inst, mbb); return; }
     else if (auto binary_inst = dynamic_cast<BinaryInst *>(inst)) { emit_binary(binary_inst, mbb); return; }
     else if (auto unary_inst = dynamic_cast<UnaryInst *>(inst)) { emit_unary(unary_inst, mbb); return; }
-    else if (auto alloca_inst = dynamic_cast<AllocaInst *>(inst)) { handle_alloca(alloca_inst, mbb); return; }
+    else if (auto alloca_inst = dynamic_cast<AllocaInst *>(inst)) { handle_alloca(alloca_inst); return; }
     else if (auto icmp_inst = dynamic_cast<IcmpInst *>(inst)) { emit_cmp(icmp_inst, mbb); return; }
     else if (auto fcmp_inst = dynamic_cast<FcmpInst *>(inst)) { emit_cmp(fcmp_inst, mbb); return; }
     else if (auto br_inst = dynamic_cast<BranchInst *>(inst)) { emit_br(br_inst, mbb); return; }
@@ -768,12 +764,17 @@ MachineFunction *emit_func(Function *func) {
     }
 
     if (stack_offset) { 
-        // insert `sub sp, sp, stack_offset` to the beginning of the entry block
         auto entry_bb = mfunc->basic_blocks[0];
+        // insert `sub sp, sp, stack_offset` to the beginning of the entry block
         auto dst = new MReg(MReg::sp);
         auto offset = new IImm(stack_offset);
         auto sub = new Binary(Binary::Int, Binary::ISub, dst, dst, offset);
         entry_bb->insts.emplace_front(sub);
+        // mv sp to fp
+        auto fp = new MReg(MReg::fp);
+        auto sp = new MReg(MReg::sp);
+        auto mv = new Mov(Mov::I2I, fp, sp);
+        entry_bb->insts.emplace_front(mv);
         // add sp, sp, stack_offset
         for (auto bb: mfunc->exit_blocks) {
             auto it = bb->insts.end();

@@ -2,5 +2,6 @@ void z(){}
 int main(int a) {
     z();
     int c;
+    float d = 3;
     return 3 + a;
 }
