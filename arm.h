@@ -130,7 +130,7 @@ struct Mov : MachineInst {
     MachineOperand *dst, *src;
     // FIXME: Not really "interger to float"
     // It's more like "general purpose register to floating point register"
-    enum Tag { I2I, F2F, F_I };
+    enum Tag { I2I, F2F, F_I, H2I, L2I };
     Tag tag;
     Mov() {}
     Mov(Tag t): tag(t) {}

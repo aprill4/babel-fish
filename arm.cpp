@@ -107,7 +107,7 @@ void Cmp::print(FILE *fp) {
 
 
 void Mov::print(FILE *fp) {
-    const char *mv_inst[] = { "mov", "vmov.f32", "vmov", "vmov"};
+    const char *mv_inst[] = { "mov", "vmov.f32", "vmov", "movw", "movt" };
     if (dynamic_cast<Symbol *>(src)) {
         fprintf(fp, "%sw%s\t%s, #:lower:%s\n", mv_inst[tag], get_cond(), dst->print(), src->print());
         fprintf(fp, "  %st%s\t%s, #:upper:%s", mv_inst[tag], get_cond(), dst->print(), src->print());
@@ -233,22 +233,38 @@ MachineOperand *make_vreg(MachineOperand::OperandType operand_type, Value *v = n
     return vreg;
 }
 
-MachineOperand *make_operand(Value *v) {
+MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb) {
     MachineOperand *ret = nullptr;
     if (v_m.find(v) != v_m.end()) { ret = v_m[v]; }
     else if (auto const_val = dynamic_cast<Constant *>(v)) {
         int val = 0;
+        int is_float = 0;
         if (auto const_int = dynamic_cast<ConstantInt *>(const_val)) {
             val = const_int->value_;
         } else if (auto const_float = dynamic_cast<ConstantFloat *>(const_val)) {
             int *p = (int *)&(const_float->value_);
             val = *p;
+            is_float = 1;
+        } else if (auto const_zero = dynamic_cast<ConstantZero *>(const_val)) {
+            is_float = const_zero->type_->typeId_ == Type::FloatTypeId;
         }
 
         if (can_be_iimm_ror(val)) {
             auto imm = new IImm(val);
             v_m[v] = imm;
             ret = imm;
+        } else {
+            auto l_imm = new IImm(0xffff & val);
+            auto h_imm = new IImm((val >> 16) & 0xffff);
+            auto dst = make_vreg(MachineOperand::OperandType(is_float + 1), v);
+
+            auto mvw = new Mov(Mov::H2I, dst, h_imm);
+            auto mvt = new Mov(Mov::L2I, dst, l_imm);
+
+            mbb->insts.emplace_back(mvw);
+            mbb->insts.emplace_back(mvt);
+
+            v_m[v] = dst;
         }
     } else {
         assert(false && "don't know what operand you want");
@@ -271,7 +287,7 @@ void handle_alloca(AllocaInst *inst, MachineBasicBlock *mbb) {
             auto array_type = static_cast<ArrayType *>(inst->allocaType_);
             auto array_size = array_type->elementNum_;
             val_offset[inst] = allocate(4 * array_size);
-        }
+        } break;
         default: assert(false && "don't support this alloca type");
     }
 }
@@ -333,7 +349,7 @@ void emit_store(Instruction *inst, MachineBasicBlock *mbb) {
         // todo: de-duplicate
         auto base = load_addr->dst;
         auto offset = nullptr;
-        auto src = make_operand(inst->operands_[0]);
+        auto src = make_operand(inst->operands_[0], mbb);
         auto st_tag = Store::Int;
         switch (inst->operands_[0]->type_->typeId_) {
             case Type::IntegerTypeId: {
@@ -351,7 +367,7 @@ void emit_store(Instruction *inst, MachineBasicBlock *mbb) {
     } else {
         auto base = new MReg(MReg::sp);
         auto offset = new IImm(val_offset[inst->operands_[1]]);
-        auto src = make_operand(inst->operands_[0]);
+        auto src = make_operand(inst->operands_[0], mbb);
         auto st_tag = Store::Int;
         switch (inst->operands_[0]->type_->typeId_) {
             case Type::IntegerTypeId: {
@@ -370,8 +386,8 @@ void emit_store(Instruction *inst, MachineBasicBlock *mbb) {
 
 void emit_binary(BinaryInst *inst, MachineBasicBlock *mbb) {
 
-    auto lhs = make_operand(inst->operands_[0]);
-    auto rhs = make_operand(inst->operands_[1]);
+    auto lhs = make_operand(inst->operands_[0], mbb);
+    auto rhs = make_operand(inst->operands_[1], mbb);
     auto dst = make_vreg(infer_type_from_value(inst), inst);
     Binary *binary_inst;
 
@@ -447,7 +463,7 @@ void emit_ret(ReturnInst *inst, MachineBasicBlock *mbb) {
     }
 
     auto mv = new Mov(new MReg(MReg::r0),
-                      make_operand(inst->operands_[0]));
+                      make_operand(inst->operands_[0], mbb));
     v_m[inst] = mv->dst;
     auto it = mbb->insts.end();
     it--;
@@ -469,23 +485,6 @@ void emit_arg(size_t arg_index, Argument *arg, MachineBasicBlock *entry) {
     entry->insts.emplace_back(mv);
 }
 
-/*
-void emit_mov(Value *src, MachineBasicBlock *mbb, Value *dst = nullptr) {
-    auto mv = new Mov;
-    if (dst){
-        //from src to dst
-    }
-
-    switch(src->type_->typeId_) {
-        case Type::IntegerTypeId: {
-            auto src = make_operand(src);
-            auto dst = make_operand(src)
-
-        }
-    }
-    
-}
-*/
 void emit_br(Instruction *inst, MachineBasicBlock *mbb) {
   if (!inst->isBr()) {
     throw Exception(std::string("Inst isn't BranchInst in ") + __FILE__ + " " + std::to_string(__LINE__));
@@ -564,15 +563,15 @@ void emit_cmp(Instruction *inst, MachineBasicBlock* mbb) {
   } else {
     cmp->tag = Cmp::Float;
   }
-  cmp->lhs = make_operand(inst->getOperand(0));
-  cmp->rhs = make_operand(inst->getOperand(1));
+  cmp->lhs = make_operand(inst->getOperand(0), mbb);
+  cmp->rhs = make_operand(inst->getOperand(1), mbb);
   mbb->insts.emplace_back(cmp);
 }
 
 void emit_cvt(Instruction *inst, MachineBasicBlock *mbb) {
     auto cvt = new Cvt();
     cvt->tag = inst->isFp2si() ? Cvt::F2S : Cvt::S2F;
-    cvt->src = make_operand(inst->getOperand(0));
+    cvt->src = make_operand(inst->getOperand(0), mbb);
 
     // conversion must happen in fp registers.
     // so check if `src` is in `r` registers,
@@ -598,7 +597,7 @@ void emit_unary(Instruction *inst, MachineBasicBlock* mbb){
         case Instruction::InstId::Not:
             if (unary_inst->getType()->isIntegerType()) {
                 auto clz = new IClz();
-                clz->src = make_operand(right_val);
+                clz->src = make_operand(right_val, mbb);
                 clz->dst = make_vreg(MachineOperand::OperandType::Int);
                 auto lsr = new Binary(Binary::Int, Binary::ILsr, 
                     make_vreg(MachineOperand::OperandType::Int, unary_inst), clz->dst, new IImm(5));
@@ -606,10 +605,10 @@ void emit_unary(Instruction *inst, MachineBasicBlock* mbb){
                 mbb->insts.emplace_back(lsr);
             } else { 
                 // need to add
-                auto cmp = new Cmp(Cmp::Float, make_operand(right_val), new FImm(0));
+                auto cmp = new Cmp(Cmp::Float, make_operand(right_val, mbb), new FImm(0));
                 auto mov1 = new Mov(Mov::I2I, 
                     make_vreg(MachineOperand::OperandType::Int, unary_inst), new IImm(0));
-                auto mov2 = new Mov(Mov::I2I, make_operand(unary_inst), new IImm(1));
+                auto mov2 = new Mov(Mov::I2I, make_operand(unary_inst, mbb), new IImm(1));
                 mov2->cond = MachineInst::Eq;
                 mbb->insts.emplace_back(cmp);
                 mbb->insts.emplace_back(mov1);
@@ -620,12 +619,12 @@ void emit_unary(Instruction *inst, MachineBasicBlock* mbb){
             if (unary_inst->getType()->isIntegerType()) {
                 auto rsb = new Binary(Binary::Int, Binary::Rsb, 
                     make_vreg(MachineOperand::OperandType::Int, unary_inst),
-                    make_operand(right_val),
+                    make_operand(right_val, mbb),
                     new IImm(0));
                 mbb->insts.emplace_back(rsb);     
             } else { 
                 auto fneg = new FNeg();
-                fneg->src = make_operand(right_val);
+                fneg->src = make_operand(right_val, mbb);
                 fneg->dst = make_vreg(MachineOperand::OperandType::Int, unary_inst);
                 mbb->insts.emplace_back(fneg);
             }
@@ -644,7 +643,7 @@ void emit_gep(Instruction *inst, MachineBasicBlock* mbb) {
         ArrayType *arr_ty = static_cast<ArrayType *>(element_type);
         for (int i = 0; i < gep->getOperandNum(); i++) {
             auto item = gep->getOperand(i);
-            auto m_operand = make_operand(item);
+            auto m_operand = make_operand(item, mbb);
             Binary* offset;
             MachineOperand* offset_operand = make_vreg(MachineOperand::OperandType::Int);
             if (i == 0) {
@@ -666,7 +665,7 @@ void emit_gep(Instruction *inst, MachineBasicBlock* mbb) {
         ArrayType *arr_ty = static_cast<ArrayType *>(element_type->getPtrElementType());
         for (int i = 0; i < gep->getOperandNum(); i++) {
             auto item = gep->getOperand(i);
-            auto m_operand = make_operand(item);
+            auto m_operand = make_operand(item, mbb);
             Binary* offset;
             MachineOperand* offset_operand = make_vreg(MachineOperand::OperandType::Int);
             if (i == 0) {
@@ -700,7 +699,7 @@ void emit_call(Instruction *inst, MachineBasicBlock* mbb) {
             auto mreg = new MReg(MReg::Reg(i));
             auto mv = new Mov();
             // TO_DO: add mv's property;
-            mv->src = make_operand(args);
+            mv->src = make_operand(args, mbb);
             mv->dst = mreg;
         } else {
             // TO_DO: xxx;
