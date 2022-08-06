@@ -420,25 +420,22 @@ void emit_store(Instruction *inst, MachineBasicBlock *mbb) {
 }
 
 MachineOperand *emit_constant(int c, MachineBasicBlock *mbb) {
-    auto m = new Mov(Mov::I2I);
-    m->dst = make_vreg(MachineOperand::Int);
-    m->src = new IImm(c);
-    mbb->insts.emplace_back(m);
-    return m->dst;
-}
+    auto dst = make_vreg(MachineOperand::Int);
+    if (!can_be_iimm_ror(c)) {
+        auto l_imm = new IImm(0xffff & c);
+        auto h_imm = new IImm((c >> 16) & 0xffff);
 
-MachineOperand *emit_constant_value(Constant *c, MachineBasicBlock *mbb) {
-    int value;
-    if (auto i = dynamic_cast<ConstantInt *>(c)) {
-        value = i->getValue();
-    } else if (auto f = dynamic_cast<ConstantFloat *>(c)) {
-        float fv = f->getValue();
-        value = *((int *) &fv);
+        auto mvw = new Mov(Mov::H2I, dst, h_imm);
+        auto mvt = new Mov(Mov::L2I, dst, l_imm);
+
+        mbb->insts.emplace_back(mvw);
+        mbb->insts.emplace_back(mvt);
     } else {
-        assert(false && "what is this constant value");
+        auto src = new IImm(c);
+        auto mov = new Mov(Mov::I2I, dst, src);
+        mbb->insts.emplace_back(mov);
     }
-
-    return emit_constant(value, mbb);
+    return dst;
 }
 
 void emit_binary(BinaryInst *inst, MachineBasicBlock *mbb) {
