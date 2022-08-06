@@ -236,7 +236,7 @@ MachineOperand *make_vreg(MachineOperand::OperandType operand_type, Value *v = n
     return vreg;
 }
 
-MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb) {
+MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb, bool no_imm = false) {
     MachineOperand *ret = nullptr;
     if (v_m.find(v) != v_m.end()) { ret = v_m[v]; }
     else if (auto const_val = dynamic_cast<Constant *>(v)) {
@@ -256,10 +256,17 @@ MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb) {
             auto imm = new IImm(val);
             v_m[v] = imm;
             ret = imm;
+            if (no_imm) {
+                auto dst = make_vreg(MachineOperand::Int, v);
+                auto mv = new Mov(Mov::I2I, dst, imm);
+                mbb->insts.emplace_back(mv);
+                v_m[v] = dst;
+                ret = dst;
+            }
         } else {
             auto l_imm = new IImm(0xffff & val);
             auto h_imm = new IImm((val >> 16) & 0xffff);
-            auto dst = make_vreg(MachineOperand::OperandType(is_float + 1), v);
+            auto dst = make_vreg(MachineOperand::Int, v);
 
             auto mvw = new Mov(Mov::H2I, dst, h_imm);
             auto mvt = new Mov(Mov::L2I, dst, l_imm);
@@ -268,6 +275,13 @@ MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb) {
             mbb->insts.emplace_back(mvt);
 
             v_m[v] = dst;
+        }
+
+        if (is_float) {
+            auto src = ret;
+            auto dst = make_vreg(MachineOperand::Float, v);
+            auto mv = new Mov(Mov::F_I, dst, src);
+            mbb->insts.emplace_back(mv);
         }
     } else {
         assert(false && "don't know what operand you want");
@@ -347,6 +361,7 @@ void emit_load(Instruction *inst, MachineBasicBlock *mbb) {
 }
 
 void emit_store(Instruction *inst, MachineBasicBlock *mbb) {
+    /*
     if (auto const_val = dynamic_cast<Constant *>(inst->operands_[0])) {
         auto imm = make_operand(const_val, mbb);
         auto dst = make_vreg(infer_type_from_value(const_val), const_val);
@@ -357,6 +372,7 @@ void emit_store(Instruction *inst, MachineBasicBlock *mbb) {
         auto mv = new Mov(Mov::Tag(is_int + 1), dst, imm);
         mbb->insts.emplace_back(mv);
     }
+    */
 
     if (auto global = dynamic_cast<GlobalVariable *>(inst->operands_[1])) {
         auto load_addr = emit_load_global_addr(global);
@@ -383,7 +399,7 @@ void emit_store(Instruction *inst, MachineBasicBlock *mbb) {
     } else if (auto alloca = dynamic_cast<AllocaInst *>(inst->operands_[1])) {
         auto base = new MReg(MReg::fp);
         auto offset = new IImm(-(val_offset[inst->operands_[1]]));
-        auto src = make_operand(inst->operands_[0], mbb);
+        auto src = make_operand(inst->operands_[0], mbb, true);
         auto st_tag = Store::Int;
         if (inst->operands_[0]->type_->typeId_ == Type::FloatTypeId) {
             st_tag = Store::Float;
@@ -393,7 +409,7 @@ void emit_store(Instruction *inst, MachineBasicBlock *mbb) {
         mbb->insts.emplace_back(st);
     } else if (auto gep = dynamic_cast<GetElementPtrInst *>(inst->operands_[1])) {
         auto base = make_operand(gep, mbb);
-        auto src = make_operand(inst->operands_[0], mbb);
+        auto src = make_operand(inst->operands_[0], mbb, true);
         auto st_tag = Store::Int;
         if (inst->operands_[0]->type_->typeId_ == Type::FloatTypeId) {
             st_tag = Store::Float;
@@ -502,20 +518,8 @@ void emit_binary(BinaryInst *inst, MachineBasicBlock *mbb) {
         std::swap(lv, rv);
     }
 
-    MachineOperand *lhs;
-    if (auto c = dynamic_cast<Constant *>(lv)) {
-        lhs = emit_constant_value(c, mbb);
-    } else {
-        lhs = make_operand(lv, mbb);
-    }
-
-    MachineOperand *rhs;
-    if (!can_rhs_be_imm && dynamic_cast<Constant *>(rv)) {
-        auto c = dynamic_cast<Constant *>(rv);
-        rhs = emit_constant_value(c, mbb);
-    } else {
-        rhs = make_operand(rv, mbb);
-    }
+    auto lhs = make_operand(lv, mbb, true);
+    auto rhs = make_operand(rv, mbb, !can_rhs_be_imm);
 
     if (can_be_easily_handled) {
         auto dst = make_vreg(infer_type_from_value(inst), inst);
@@ -689,7 +693,7 @@ void emit_cmp(Instruction *inst, MachineBasicBlock* mbb) {
 void emit_cvt(Instruction *inst, MachineBasicBlock *mbb) {
     auto cvt = new Cvt();
     cvt->tag = inst->isFp2si() ? Cvt::F2S : Cvt::S2F;
-    cvt->src = make_operand(inst->getOperand(0), mbb);
+    cvt->src = make_operand(inst->getOperand(0), mbb, true);
 
     // conversion must happen in fp registers.
     // so check if `src` is in `r` registers,
