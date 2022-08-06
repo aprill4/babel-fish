@@ -199,9 +199,8 @@ std::map<Value*, size_t> val_offset;
 //-----------------------------------------------------------------
 
 size_t allocate(size_t size) {
-    auto before_alloca = stack_offset;
     stack_offset += size;
-    return before_alloca;
+    return stack_offset;
 }
 
 bool can_be_iimm_ror(int x) {
