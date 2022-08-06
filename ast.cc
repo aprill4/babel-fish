@@ -812,12 +812,6 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
               } else if (dynamic_cast<ConstantInt*>(rhs)) {
                 rhs = ConstantInt::get(context, lhs->getType(), dynamic_cast<ConstantInt*>(rhs)->getValue());              
               } else {
-                // if (lhs->getType()->isIntegerType() && static_cast<IntegerType*>(lhs->getType())->getBitsNum() == 1) {
-                //   lhs = ZextInst::Create(context, context.Int32Type, lhs, irBuilder->getBasicBlock());
-                // }
-                // else if (rhs->getType()->isIntegerType() && static_cast<IntegerType*>(rhs->getType())->getBitsNum() == 1) {
-                //   rhs = ZextInst::Create(context, context.Int32Type, rhs, irBuilder->getBasicBlock());
-                // }
               }
             }
             res = IcmpInst::Create(context, IcmpInst::IcmpOp::EQ, lhs, rhs, irBuilder->getBasicBlock());
@@ -842,12 +836,6 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
               } else if (dynamic_cast<ConstantInt*>(rhs)) {
                 rhs = ConstantInt::get(context, lhs->getType(), dynamic_cast<ConstantInt*>(rhs)->getValue());              
               } else {
-                // if (lhs->getType()->isIntegerType() && static_cast<IntegerType*>(lhs->getType())->getBitsNum() == 1) {
-                //   lhs = ZextInst::Create(context, context.Int32Type, lhs, irBuilder->getBasicBlock());
-                // }
-                // else if (rhs->getType()->isIntegerType() && static_cast<IntegerType*>(rhs->getType())->getBitsNum() == 1) {
-                //   rhs = ZextInst::Create(context, context.Int32Type, rhs, irBuilder->getBasicBlock());
-                // }
               }
             }
             res = IcmpInst::Create(context, IcmpInst::IcmpOp::NEQ, lhs, rhs, irBuilder->getBasicBlock());
@@ -870,11 +858,6 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
             if (lhs->getType()->isPointerType()) {
               lhs = LoadInst::Create(context, lhs, irBuilder->getBasicBlock());
             }
-            // if (lhs->getType()->isIntegerType()){
-            //   lhs = IcmpInst::Create(context, IcmpInst::IcmpOp::NEQ, lhs, ConstantZero::get(context, lhs->getType()), irBuilder->getBasicBlock());
-            // } else {
-            //   lhs = FcmpInst::Create(context, FcmpInst::FcmpOp::NEQ, lhs, ConstantZero::get(context, lhs->getType()), irBuilder->getBasicBlock());
-            // }
             irBuilder->getBasicBlock()->addSuccessor(lb);
             irBuilder->getBasicBlock()->addSuccessor(rb);
             BranchInst::Create(context, lhs, lb, rb, irBuilder->getBasicBlock());
@@ -886,11 +869,6 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
             if (rhs->getType()->isPointerType()) {
               rhs = LoadInst::Create(context, rhs, irBuilder->getBasicBlock());
             }
-            // if (rhs->getType()->isIntegerType()){
-            //   rhs = IcmpInst::Create(context, IcmpInst::IcmpOp::NEQ, rhs, ConstantZero::get(context, rhs->getType()), irBuilder->getBasicBlock());
-            // } else {
-            //   rhs = FcmpInst::Create(context, FcmpInst::FcmpOp::NEQ, rhs, ConstantZero::get(context, rhs->getType()), irBuilder->getBasicBlock());
-            // }
             irBuilder->getBasicBlock()->addSuccessor(irBuilder->getWhileBlock());
             irBuilder->getBasicBlock()->addSuccessor(rb);
             BranchInst::Create(context, rhs, irBuilder->getWhileBlock(), rb, irBuilder->getBasicBlock());
@@ -911,11 +889,6 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
             if (lhs->getType()->isPointerType()) {
               lhs = LoadInst::Create(context, lhs, irBuilder->getBasicBlock());
             }
-            // if (lhs->getType()->isIntegerType()){
-            //   lhs = IcmpInst::Create(context, IcmpInst::IcmpOp::NEQ, lhs, ConstantZero::get(context, lhs->getType()), irBuilder->getBasicBlock());
-            // } else {
-            //   lhs = FcmpInst::Create(context, FcmpInst::FcmpOp::NEQ, lhs, ConstantZero::get(context, lhs->getType()), irBuilder->getBasicBlock());
-            // }
             irBuilder->getBasicBlock()->addSuccessor(lb);
             irBuilder->getBasicBlock()->addSuccessor(rb);
             BranchInst::Create(context, lhs, lb, rb, irBuilder->getBasicBlock());
@@ -931,11 +904,6 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
             if (rhs->getType()->isPointerType()) {
               rhs = LoadInst::Create(context, rhs, irBuilder->getBasicBlock());
             }
-            // if (rhs->getType()->isIntegerType()){
-            //   rhs = IcmpInst::Create(context, IcmpInst::IcmpOp::NEQ, rhs, ConstantZero::get(context, rhs->getType()), irBuilder->getBasicBlock());
-            // } else {
-            //   rhs = FcmpInst::Create(context, FcmpInst::FcmpOp::NEQ, rhs, ConstantZero::get(context, rhs->getType()), irBuilder->getBasicBlock());
-            // }
             irBuilder->getBasicBlock()->addSuccessor(lb);
             irBuilder->getBasicBlock()->addSuccessor(irBuilder->getNextBlock());
             BranchInst::Create(context, rhs, lb, irBuilder->getNextBlock(), irBuilder->getBasicBlock());
@@ -966,16 +934,38 @@ void UnaryExpression::generate(IRBuilder *irBuilder) {
 			case UnaryOp::NEGATIVE:
         if(rhs->getType()->isFloatType()) {
           if(irBuilder->getScope()->parent) {
-            res = UnaryInst::CreateNegative(context, rhs, irBuilder->getBasicBlock());
-            // res = BinaryInst::CreateFsub(context, ConstantFloat::get(context, 0), rhs, irBuilder->getBasicBlock());
+            if (dynamic_cast<Instruction*>(rhs) && dynamic_cast<Instruction*>(rhs)->isNegative()) {
+              auto& inst_list = irBuilder->getBasicBlock()->instructionList_;
+              inst_list.erase(--inst_list.end());
+              res = dynamic_cast<Instruction*>(rhs)->getOperand(0);
+            } else {
+              if (dynamic_cast<ConstantFloat*>(rhs)) {
+                dynamic_cast<ConstantFloat*>(rhs)->setValue(
+                  -dynamic_cast<ConstantFloat*>(rhs)->getValue());
+                res = rhs;
+              } else {
+                res = UnaryInst::CreateNegative(context, rhs, irBuilder->getBasicBlock());
+              }
+            }
           }
           else 
             res = ConstantFloat::get(context, -dynamic_cast<ConstantFloat*>(rhs)->getValue());
         }
         else {
           if(irBuilder->getScope()->parent) {
-            res = UnaryInst::CreateNegative(context, rhs, irBuilder->getBasicBlock());
-            // res = BinaryInst::CreateSub(context, ConstantInt::get(context, rhs->getType(), 0), rhs, irBuilder->getBasicBlock());
+            if (dynamic_cast<Instruction*>(rhs) && dynamic_cast<Instruction*>(rhs)->isNegative()) {
+              auto& inst_list = irBuilder->getBasicBlock()->instructionList_;
+              inst_list.erase(--inst_list.end());
+              res = dynamic_cast<Instruction*>(rhs)->getOperand(0);            
+            } else {
+              if (dynamic_cast<ConstantInt*>(rhs)) {
+                dynamic_cast<ConstantInt*>(rhs)->setValue(
+                    -dynamic_cast<ConstantInt*>(rhs)->getValue());
+                res = rhs;
+              } else {
+                res = UnaryInst::CreateNegative(context, rhs, irBuilder->getBasicBlock());
+              }
+            }
           }
           else 
             res = ConstantInt::get(context, context.Int32Type, -dynamic_cast<ConstantInt*>(rhs)->getValue());
@@ -983,25 +973,18 @@ void UnaryExpression::generate(IRBuilder *irBuilder) {
         break;
 			case UnaryOp::NOT:
         if(irBuilder->getScope()->parent) {
-          if (dynamic_cast<Instruction*>(rhs)->isNot()) {
+          if (dynamic_cast<Instruction*>(rhs) && dynamic_cast<Instruction*>(rhs)->isNot()) {
             auto& inst_list = irBuilder->getBasicBlock()->instructionList_;
             inst_list.erase(--inst_list.end());
             res = dynamic_cast<Instruction*>(rhs)->getOperand(0);
-          } else {          
-            res = UnaryInst::CreateNot(context, rhs, irBuilder->getBasicBlock());
+          } else {
+            if (dynamic_cast<ConstantInt*>(rhs)) {
+              res = ConstantInt::get(context, context.Int1Type, 
+                      !(dynamic_cast<ConstantInt*>(rhs)->getValue()));
+            } else {            
+              res = UnaryInst::CreateNot(context, rhs, irBuilder->getBasicBlock());
+            }         
           }
-          // auto zero = ConstantZero::get(context, rhs->getType());
-          // rhs = IcmpInst::Create(context, 
-          //                        IcmpInst::IcmpOp::NEQ, 
-          //                        rhs, 
-          //                        zero, 
-          //                        irBuilder->getBasicBlock());
-          // zero = ConstantZero::get(context, rhs->getType());
-          // res = IcmpInst::Create(context, 
-          //                        IcmpInst::IcmpOp::EQ, 
-          //                        rhs, 
-          //                        zero, 
-          //                        irBuilder->getBasicBlock());
         }
         else
           res = ConstantInt::get(context, context.Int1Type, !(dynamic_cast<ConstantInt*>(rhs)->getValue()));
@@ -1237,13 +1220,6 @@ void IfElseStatement::generate(IRBuilder *irBuilder) {
         condVal = IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
                                   ConstantInt::get(c, tmpVal->getType(), 0),
                                   irBuilder->getBasicBlock());
-        // if (static_cast<IntegerType*>(tmpVal->getType())->getBitsNum() != 1) {    
-        //   condVal = IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
-        //                             ConstantInt::get(c, tmpVal->getType(), 0),
-        //                             irBuilder->getBasicBlock());
-        // } else {
-        //   condVal = tmpVal;
-        // }
       } else {
         condVal =
             IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
