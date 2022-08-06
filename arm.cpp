@@ -265,6 +265,7 @@ MachineOperand *make_operand(Value *v) {
 
 void handle_alloca(AllocaInst *inst) {
     switch(inst->allocaType_->typeId_) {
+        case Type::PointerTypeId: 
         case Type::IntegerTypeId: 
         case Type::FloatTypeId: {
             val_offset[inst] = allocate(4);
@@ -312,6 +313,7 @@ void emit_load(Instruction *inst, MachineBasicBlock *mbb) {
         auto offset = new IImm(val_offset[inst->operands_[0]]);
         auto ld_tag = Load::Int;
         switch (inst->type_->typeId_) {
+            case Type::PointerTypeId:
             case Type::IntegerTypeId: {
                 ld_tag = Load::Int;
             } break;
@@ -356,6 +358,7 @@ void emit_store(Instruction *inst, MachineBasicBlock *mbb) {
         auto src = make_operand(inst->operands_[0]);
         auto st_tag = Store::Int;
         switch (inst->operands_[0]->type_->typeId_) {
+            case Type::PointerTypeId:
             case Type::IntegerTypeId: {
                 st_tag = Store::Int;
             } break;
@@ -527,18 +530,40 @@ void emit_ret(ReturnInst *inst, MachineBasicBlock *mbb) {
     mbb->parent->exit_blocks.emplace_back(mbb);
 }
 
-void emit_arg(size_t arg_index, Argument *arg, MachineBasicBlock *entry) {
-    if (arg_index > 3) {
-        assert(false && "don't support more than 4 arguments, yet");
+void emit_args(std::vector<Argument *> &args, MachineBasicBlock *entry) {
+
+    // ints are passed in r0~r3
+    // floats are passed in s0~s15
+    // and they are passed independently
+    int num_of_ints = 0;
+    int num_of_floats = 0;
+
+    for (size_t i = 0; i < args.size(); i++) {
+        auto arg = args[i];
+
+        auto ty = arg->getType();
+        auto is_int = (ty->isPointerType() || ty->isIntegerType());
+        printf("is_int: %d\n", is_int);
+
+        auto mv = new Mov;
+        mv->tag = is_int ? Mov::I2I : Mov::F2F;
+        mv->src = new MReg(MReg::Reg((is_int ? MReg::r0 : MReg::s0) +
+                      (is_int ? num_of_ints : num_of_floats)));
+        mv->dst = make_vreg(is_int ?
+                      MachineOperand::Int : MachineOperand::Float, arg);
+
+        if (is_int) {
+            num_of_ints++;
+        } else {
+            num_of_floats++;
+        }
+
+        entry->insts.emplace_back(mv);
     }
 
-    // move 
-    auto mv = new Mov;
-    mv->tag = Mov::I2I;
-    mv->src = new MReg(MReg::r0);
-    mv->dst = make_vreg(MachineOperand::Int, arg);
-
-    entry->insts.emplace_back(mv);
+    if (num_of_ints > 4 || num_of_floats > 16) {
+        assert(false && "don't support passing arguments in stack, yet");
+    }
 }
 
 /*
@@ -837,10 +862,7 @@ MachineFunction *emit_func(Function *func) {
         if (first_bb) {
             first_bb = false;
 
-            for (size_t i = 0; i < func->arguments_.size(); i++) {
-                auto arg = func->arguments_[i];
-                emit_arg(i, arg, mbb);
-            }
+            emit_args(func->arguments_, mbb);
         }
         emit_bb(bb, mbb);
         mfunc->basic_blocks.emplace_back(mbb);
