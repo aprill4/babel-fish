@@ -347,6 +347,17 @@ void emit_load(Instruction *inst, MachineBasicBlock *mbb) {
 }
 
 void emit_store(Instruction *inst, MachineBasicBlock *mbb) {
+    if (auto const_val = dynamic_cast<Constant *>(inst->operands_[0])) {
+        auto imm = make_operand(const_val, mbb);
+        auto dst = make_vreg(infer_type_from_value(const_val), const_val);
+        int is_int = 0;
+        if (dst->operand_type == MachineOperand::Int) {
+            is_int = 1;
+        }
+        auto mv = new Mov(Mov::Tag(is_int + 1), dst, imm);
+        mbb->insts.emplace_back(mv);
+    }
+
     if (auto global = dynamic_cast<GlobalVariable *>(inst->operands_[1])) {
         auto load_addr = emit_load_global_addr(global);
         mbb->insts.emplace_back(load_addr);
