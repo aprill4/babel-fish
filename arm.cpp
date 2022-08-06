@@ -774,14 +774,14 @@ void emit_gep(Instruction *inst, MachineBasicBlock* mbb) {
     if (dynamic_cast<ConstantInt*>(first_item)) {
         if (dynamic_cast<ConstantInt*>(first_item)->getValue() != 0) {        
             auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, 
-                        new IImm(dynamic_cast<ConstantInt*>(first_item)->getValue() * arr_ty->getElementNum()));
+                        new IImm(dynamic_cast<ConstantInt*>(first_item)->getValue() * arr_ty->getElementNum() * 4));
             mbb->insts.emplace_back(offset_sum);        
         }
     } else {
         auto m_operand = make_operand(first_item, mbb);
         MachineOperand* offset_operand = make_vreg(MachineOperand::OperandType::Int);
         Binary* offset = new Binary(Binary::Int, Binary::IMul, 
-            offset_operand, m_operand, new IImm(arr_ty->getElementNum()));
+            offset_operand, m_operand, new IImm(arr_ty->getElementNum() * 4));
         mbb->insts.emplace_back(offset);
         auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, offset_operand);
         mbb->insts.emplace_back(offset_sum);                
@@ -790,8 +790,15 @@ void emit_gep(Instruction *inst, MachineBasicBlock* mbb) {
         auto item = gep->getOperand(i);
         if (dynamic_cast<ConstantInt*>(item)) {
             if (dynamic_cast<ConstantInt*>(item)->getValue() != 0) {
-                auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, 
-                            new IImm(dynamic_cast<ConstantInt*>(item)->getValue() * arr_ty->getElementNum()));
+                element_type = arr_ty->getElementType();
+                std::int32_t offset_num = 0;                
+                if (element_type->isArrayType()) {
+                    arr_ty = static_cast<ArrayType *>(element_type);
+                    offset_num = dynamic_cast<ConstantInt*>(item)->getValue() * arr_ty->getElementNum() * 4;
+                } else {
+                    offset_num = dynamic_cast<ConstantInt*>(item)->getValue() * 4;
+                }
+                auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, new IImm(offset_num));
                 mbb->insts.emplace_back(offset_sum);                    
             }
         } else {        
@@ -802,7 +809,7 @@ void emit_gep(Instruction *inst, MachineBasicBlock* mbb) {
                 arr_ty = static_cast<ArrayType *>(element_type);
             }
             Binary* offset = new Binary(Binary::Int, Binary::IMul, 
-                    offset_operand, m_operand, new IImm(arr_ty->getElementNum()));
+                    offset_operand, m_operand, new IImm(arr_ty->getElementNum() * 4));
             mbb->insts.emplace_back(offset);
             auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, offset_operand);
             mbb->insts.emplace_back(offset_sum);
