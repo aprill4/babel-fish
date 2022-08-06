@@ -57,9 +57,11 @@ function run_test {
     else
         timeout 5 $bin_out > $std_out 2>>$err_out
     fi
-    [[ $? -eq 124 ]] && report_result $Blue "timeout after 5 seconds" && return
-    [[ $? -ne 0 ]] && \
-        report_result $Yellow "runtime error: exit_code=$?" && return
+    ec=$?
+    echo $ec > $std_out
+    [[ $ec -eq 124 ]] && report_result $Blue "timeout after 5 seconds" && return
+    [[ $ec -eq 139 ]] && \
+        report_result $Yellow "segfault" && return
 
     diff $std_out $correct_out >> $err_out
     [[ $? -ne 0 ]] && report_result $Yellow "wrong answer" && return
