@@ -69,7 +69,7 @@ const char *VReg::print() {
 
 const char *MReg::print() {
     const char *mreg_str[] = {
-        "", "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
+        "", "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "fp", "ip", "sp", "lr", "pc",
         "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12", "s13", "s14", "s15",
     };
 
@@ -521,9 +521,14 @@ void emit_ret(ReturnInst *inst, MachineBasicBlock *mbb) {
         return;
     }
 
-    auto mv = new Mov(new MReg(MReg::r0),
-                      make_operand(inst->operands_[0]));
-    v_m[inst] = mv->dst;
+    auto ty = inst->operands_[0]->getType();
+    bool is_int = (ty->isIntegerType() && ty->isPointerType());
+
+    auto mv = new Mov;
+    mv->tag = is_int ? Mov::I2I : Mov::F2F;
+    mv->src = new MReg(is_int ? MReg::r0 : MReg::s0);
+    mv->dst = make_operand(inst->operands_[0]);
+
     auto it = mbb->insts.end();
     it--;
     mbb->insts.insert(it, mv);
