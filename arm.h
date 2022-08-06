@@ -163,6 +163,7 @@ struct Load : MachineInst {
     Tag tag;
     Load(Tag t, MachineOperand *d, MachineOperand *b, MachineOperand *o): tag(t), dst(d), base(b), offset(o) {}
     Load(MachineOperand *d, MachineOperand *b, MachineOperand *o): dst(d), base(b), offset(o) {}
+    Load(MachineOperand *d, MachineOperand *b): dst(d), base(b), offset(nullptr) {}
     void print(FILE *fp);
 };
 
@@ -178,6 +179,7 @@ struct Store : MachineInst {
     Tag tag;
     Store(Tag t, MachineOperand *s, MachineOperand *b, MachineOperand *o): tag(t), src(s), base(b), offset(o) {}
     Store(MachineOperand *s, MachineOperand *b, MachineOperand *o): src(s), base(b), offset(o) {}
+    Store(MachineOperand *s, MachineOperand *b): src(s), base(b), offset(nullptr) {}
     void print(FILE *fp);
 };
 

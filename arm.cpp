@@ -110,8 +110,8 @@ void Cmp::print(FILE *fp) {
 void Mov::print(FILE *fp) {
     const char *mv_inst[] = { "mov", "vmov.f32", "vmov", "movw", "movt" };
     if (dynamic_cast<Symbol *>(src)) {
-        fprintf(fp, "%sw%s\t%s, #:lower:%s\n", mv_inst[tag], get_cond(), dst->print(), src->print());
-        fprintf(fp, "  %st%s\t%s, #:upper:%s", mv_inst[tag], get_cond(), dst->print(), src->print());
+        fprintf(fp, "movw%s\t%s, #:lower:%s\n", get_cond(), dst->print(), src->print());
+        fprintf(fp, "  movt%s\t%s, #:upper:%s", get_cond(), dst->print(), src->print());
     } else {
         fprintf(fp, "%s%s\t%s, %s", mv_inst[tag], get_cond(), dst->print(), src->print());
     }
@@ -191,10 +191,12 @@ void Push_Pop::print(FILE *fp) {
     fprintf(fp, "\b\b }");
 }
 
+//-----------------------------------------------------------------
 std::map<Value*, MachineOperand*> v_m;
 int vreg_id = 0;
 size_t stack_offset = 0;
 std::map<Value*, size_t> val_offset;
+//-----------------------------------------------------------------
 
 size_t allocate(size_t size) {
     auto before_alloca = stack_offset;
@@ -273,15 +275,10 @@ MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb) {
     return ret;
 }
 
-void handle_alloca(AllocaInst *inst, MachineBasicBlock *mbb) {
-    auto dst = new MReg(MReg::fp);
-    auto src = new MReg(MReg::sp);
-    auto mv = new Mov(Mov::I2I, dst, src);
-    mbb->insts.emplace_back(mv);
-
+void handle_alloca(AllocaInst *inst) {
     switch(inst->allocaType_->typeId_) {
-        case Type::PointerTypeId: 
         case Type::IntegerTypeId: 
+        case Type::PointerTypeId: 
         case Type::FloatTypeId: {
             val_offset[inst] = allocate(4);
         } break;
@@ -323,28 +320,44 @@ void emit_load(Instruction *inst, MachineBasicBlock *mbb) {
         auto ld = new Load(dst, base, offset);
         ld->tag = ld_tag;
         mbb->insts.emplace_back(ld);
-    } else {
-        auto base = new MReg(MReg::sp);
-        auto offset = new IImm(val_offset[inst->operands_[0]]);
+    } else if (dynamic_cast<AllocaInst *>(inst->operands_[0])){
+        auto base = new MReg(MReg::fp);
+        auto offset = new IImm(-(val_offset[inst->operands_[0]]));
         auto ld_tag = Load::Int;
-        switch (inst->type_->typeId_) {
-            case Type::PointerTypeId:
-            case Type::IntegerTypeId: {
-                ld_tag = Load::Int;
-            } break;
-            case Type::FloatTypeId: {
-                ld_tag = Load::Float;
-            } break;
-            default: assert(false && "don't support this type");
+        if (inst->type_->typeId_ == Type::FloatTypeId) {
+            ld_tag = Load::Float;
         }
         auto dst = make_vreg(infer_type_from_value(inst), inst);
         auto ld = new Load(dst, base, offset);
         ld->tag = ld_tag;
         mbb->insts.emplace_back(ld);
+    } else if (auto gep = dynamic_cast<GetElementPtrInst *>(inst->operands_[0])) {
+        auto base = make_operand(gep, mbb);
+        auto ld_tag = Load::Int;
+        if (inst->type_->typeId_ == Type::FloatTypeId) {
+            ld_tag = Load::Float;
+        }
+        auto dst = make_vreg(infer_type_from_value(inst), inst);
+        auto ld = new Load(dst, base);
+        ld->tag = ld_tag;
+        mbb->insts.emplace_back(ld);
+    } else {
+        assert(false && "load doesn't support this type");
     }
 }
 
 void emit_store(Instruction *inst, MachineBasicBlock *mbb) {
+    if (auto const_val = dynamic_cast<Constant *>(inst->operands_[0])) {
+        auto imm = make_operand(const_val, mbb);
+        auto dst = make_vreg(infer_type_from_value(const_val), const_val);
+        int is_int = 0;
+        if (dst->operand_type == MachineOperand::Int) {
+            is_int = 1;
+        }
+        auto mv = new Mov(Mov::Tag(is_int + 1), dst, imm);
+        mbb->insts.emplace_back(mv);
+    }
+
     if (auto global = dynamic_cast<GlobalVariable *>(inst->operands_[1])) {
         auto load_addr = emit_load_global_addr(global);
         mbb->insts.emplace_back(load_addr);
@@ -367,25 +380,28 @@ void emit_store(Instruction *inst, MachineBasicBlock *mbb) {
         st->tag = st_tag;
         mbb->insts.emplace_back(st);
 
-    } else {
-        auto base = new MReg(MReg::sp);
-        auto offset = new IImm(val_offset[inst->operands_[1]]);
+    } else if (auto alloca = dynamic_cast<AllocaInst *>(inst->operands_[1])) {
+        auto base = new MReg(MReg::fp);
+        auto offset = new IImm(-(val_offset[inst->operands_[1]]));
         auto src = make_operand(inst->operands_[0], mbb);
         auto st_tag = Store::Int;
-        switch (inst->operands_[0]->type_->typeId_) {
-            case Type::PointerTypeId:
-            case Type::IntegerTypeId: {
-                st_tag = Store::Int;
-            } break;
-            case Type::FloatTypeId: {
-                st_tag = Store::Float;
-            } break;
-            default: assert(false && "don't support this type");
+        if (inst->operands_[0]->type_->typeId_ == Type::FloatTypeId) {
+            st_tag = Store::Float;
         }
         auto st = new Store(src, base, offset);
         st->tag = st_tag;
         mbb->insts.emplace_back(st);
-    }
+    } else if (auto gep = dynamic_cast<GetElementPtrInst *>(inst->operands_[1])) {
+        auto base = make_operand(gep, mbb);
+        auto src = make_operand(inst->operands_[0], mbb);
+        auto st_tag = Store::Int;
+        if (inst->operands_[0]->type_->typeId_ == Type::FloatTypeId) {
+            st_tag = Store::Float;
+        }
+        auto st = new Store(src, base);
+        st->tag = st_tag;
+        mbb->insts.emplace_back(st);
+    } 
 }
 
 MachineOperand *emit_constant(int c, MachineBasicBlock *mbb) {
@@ -530,6 +546,8 @@ void emit_binary(BinaryInst *inst, MachineBasicBlock *mbb) {
 }
 
 void emit_ret(ReturnInst *inst, MachineBasicBlock *mbb) {
+    mbb->parent->exit_blocks.emplace_back(mbb);
+
     auto ret = new Return;
     mbb->insts.emplace_back(ret);
     if (inst->isRetVoid()) {
@@ -537,17 +555,16 @@ void emit_ret(ReturnInst *inst, MachineBasicBlock *mbb) {
     }
 
     auto ty = inst->operands_[0]->getType();
-    bool is_int = (ty->isIntegerType() && ty->isPointerType());
+    bool is_int = (ty->isIntegerType() || ty->isPointerType());
 
     auto mv = new Mov;
     mv->tag = is_int ? Mov::I2I : Mov::F2F;
-    mv->src = new MReg(is_int ? MReg::r0 : MReg::s0);
-    mv->dst = make_operand(inst->operands_[0], mbb);
+    mv->dst = new MReg(is_int ? MReg::r0 : MReg::s0);
+    mv->src = make_operand(inst->operands_[0], mbb);
 
     auto it = mbb->insts.end();
     it--;
     mbb->insts.insert(it, mv);
-    mbb->parent->exit_blocks.emplace_back(mbb);
 }
 
 void emit_args(std::vector<Argument *> &args, MachineBasicBlock *entry) {
@@ -739,7 +756,9 @@ void emit_gep(Instruction *inst, MachineBasicBlock* mbb) {
     auto gep = dynamic_cast<GetElementPtrInst*>(inst);
     auto res = make_vreg(MachineOperand::OperandType::Int, inst);
     auto ptr = gep->getOperand(0);
-    mbb->insts.emplace_back(new Mov(Mov::I2I, res, new IImm(val_offset[ptr])));
+    auto base = new MReg(MReg::fp);
+    auto offset = new IImm(val_offset[ptr]);
+    mbb->insts.emplace_back(new Binary(Binary::Int, Binary::ISub, res, base, offset));
     auto element_type = ptr->getType()->getPtrElementType();
     ArrayType *arr_ty = nullptr;
     if (element_type->isArrayType()) {
@@ -819,7 +838,7 @@ void emit_inst(Instruction *inst, MachineBasicBlock *mbb) {
     if (auto ret_inst = dynamic_cast<ReturnInst *>(inst)) { emit_ret(ret_inst, mbb); return; }
     else if (auto binary_inst = dynamic_cast<BinaryInst *>(inst)) { emit_binary(binary_inst, mbb); return; }
     else if (auto unary_inst = dynamic_cast<UnaryInst *>(inst)) { emit_unary(unary_inst, mbb); return; }
-    else if (auto alloca_inst = dynamic_cast<AllocaInst *>(inst)) { handle_alloca(alloca_inst, mbb); return; }
+    else if (auto alloca_inst = dynamic_cast<AllocaInst *>(inst)) { handle_alloca(alloca_inst); return; }
     else if (auto icmp_inst = dynamic_cast<IcmpInst *>(inst)) { emit_cmp(icmp_inst, mbb); return; }
     else if (auto fcmp_inst = dynamic_cast<FcmpInst *>(inst)) { emit_cmp(fcmp_inst, mbb); return; }
     else if (auto br_inst = dynamic_cast<BranchInst *>(inst)) { emit_br(br_inst, mbb); return; }
@@ -866,12 +885,17 @@ MachineFunction *emit_func(Function *func) {
     }
 
     if (stack_offset) { 
-        // insert `sub sp, sp, stack_offset` to the beginning of the entry block
         auto entry_bb = mfunc->basic_blocks[0];
+        // insert `sub sp, sp, stack_offset` to the beginning of the entry block
         auto dst = new MReg(MReg::sp);
         auto offset = new IImm(stack_offset);
         auto sub = new Binary(Binary::Int, Binary::ISub, dst, dst, offset);
         entry_bb->insts.emplace_front(sub);
+        // mv sp to fp
+        auto fp = new MReg(MReg::fp);
+        auto sp = new MReg(MReg::sp);
+        auto mv = new Mov(Mov::I2I, fp, sp);
+        entry_bb->insts.emplace_front(mv);
         // add sp, sp, stack_offset
         for (auto bb: mfunc->exit_blocks) {
             auto it = bb->insts.end();
@@ -879,6 +903,9 @@ MachineFunction *emit_func(Function *func) {
             auto add = new Binary(Binary::Int, Binary::IAdd, dst, dst, offset);
             bb->insts.insert(it, add);
         }
+        stack_offset = 0;
+        val_offset.clear();
+        v_m.clear();
     }
 
     if (mfunc->call_func) {    

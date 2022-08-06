@@ -1,6 +1,4 @@
-void z(){}
-int main(int a) {
-    z();
-    int c;
-    return 3 + a;
+int main() {
+    int a[1] = {2};
+    a[0] = 12;
 }
