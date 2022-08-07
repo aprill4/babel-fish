@@ -942,7 +942,7 @@ MachineFunction *emit_func(Function *func) {
         mfunc->basic_blocks.emplace_back(mbb);
         bb_map[bb] = mbb;
     }
-
+    // CFG is not used?
     for (auto bb: func->basicBlocks_) {
         for (auto suc: bb->successorBlocks_) {
             bb_map[bb]->sucs.emplace_back(bb_map[suc]);
