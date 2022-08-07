@@ -1,0 +1,4 @@
+irs/82_long_func.ll:62:9: error: '%v81' defined with type 'i32' but expected 'i1'
+  br i1 %v81, label %l77, label %r78
+        ^
+1 error generated.

@@ -1,7 +1,4 @@
-TOTAL: 0H-0M-0S-0us
-differences between test_out and correct_out:
-1c1,2
-< -50
----
-> -5
-> 0
+irs/21_if_test2.ll:62:10: error: expected instruction opcode
+  %v70 = negative i32 %v69
+         ^
+1 error generated.

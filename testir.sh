@@ -10,24 +10,25 @@ Red='\033[0;31m'
 [[ $# -ne 2 ]] && echo -e "Usage: $0 <testcases-dir> -g/-t\n<testcases-dir> contains generated LLVM IR\n-g --- complie with clang/gcc to get the rigth answers\n-t --- test our compiler" && exit 1
 
 # 
-bison -d syntax_analyzer.y
-flex lexical_analyzer.l
+#bison -d syntax_analyzer.y
+#flex lexical_analyzer.l
 
-if [ -d "./build" ]; then
-    echo "directory \"./build\" exists"
-    cd build || exit
-    cmake ..
-    make
-else 
-    mkdir build
-    cd build || exit
-    cmake ..
-    make
-fi
+#if [ -d "./build" ]; then
+    #echo "directory \"./build\" exists"
+    #cd build || exit
+    #cmake ..
+    #make
+#else 
+    #mkdir build
+    #cd build || exit
+    #cmake ..
+    #make
+#fi
+#
+#cp check.out ../check.out
+#cd -
 
-cp check.out ../check.out
-cd -
-
+clang++ check.cpp lex.yy.cpp syntax_analyzer.tab.cpp ast.cc IR.cpp -o check.out
 # test compiler
 srcdir=$1
 IRdir=irs

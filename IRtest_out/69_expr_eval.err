@@ -1,0 +1,4 @@
+irs/69_expr_eval.ll:1330:12: error: expected instruction opcode
+  %v2369 = not i32 %v2368
+           ^
+1 error generated.

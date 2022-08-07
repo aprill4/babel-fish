@@ -10,11 +10,11 @@ int main(void) {
   // root->print();
   IRBuilder * irBuilder = new IRBuilder();
   root->generate(irBuilder);
-  cout << R"(target triple = "x86_64-pc-linux-gnu")" << endl << endl;
+  //cout << R"(target triple = "x86_64-pc-linux-gnu")" << endl << endl;
   
   auto m = irBuilder->getModule();
 
-  cout << m->print() << endl;
+  //cout << m->print() << endl;
 
   auto mm = emit_asm(m);
 
