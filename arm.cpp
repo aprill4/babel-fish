@@ -274,6 +274,7 @@ MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb, bool no_imm = fal
             mbb->insts.emplace_back(mvt);
 
             v_m[v] = dst;
+            ret = dst;
         }
 
         if (is_float) {
@@ -285,6 +286,7 @@ MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb, bool no_imm = fal
     } else {
         assert(false && "don't know what operand you want");
     }
+    assert(ret && "src of mov is nullptr in function make_operand");
     return ret;
 }
 
