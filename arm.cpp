@@ -820,28 +820,57 @@ void emit_call(Instruction *inst, MachineBasicBlock* mbb) {
     call->callee = func->getName();
     call->arg_count = func_call->getOperandNum() - 1;
     call->args_type.resize(call->arg_count);
-    auto sp_sub = new Binary(Binary::Int, Binary::ISub, new MReg(MReg::sp), new MReg(MReg::sp), new IImm((call->arg_count - 4) * 4));
-    mbb->insts.emplace_back(sp_sub);
-    for (int i = func_call->getOperandNum() - 1; i >= 1; i--) {
+    int32_t int_args_num = 0, float_args_num = 0;
+    for (int i = 1; i < func_call->getOperandNum(); i++) {
         auto args = func_call->getOperand(i);
-        call->args_type[i - 1] = args->getType()->isIntegerType() ? Call::Int : Call::Float;
-        if (i <= 4) {
-            auto mreg = new MReg(MReg::Reg(i));
-            auto mv = new Mov(args->getType()->isIntegerType() ? Mov::I2I : Mov::F2F
-            , mreg, make_operand(args, mbb));
-            mbb->insts.emplace_back(mv);
+        if (!args->getType()->isFloatType()) {
+            int_args_num++;
+            call->args_type[i - 1] = Call::Int;
         } else {
-            auto mreg = new MReg(MReg::r3);
-            auto mv = new Mov(args->getType()->isIntegerType() ? Mov::I2I : Mov::F2F
-            , mreg, make_operand(args, mbb));
-            auto store = new Store(Store::Int, mreg, new MReg(MReg::sp), 
-                    i > 5 ? new IImm((i - 5) * 4) : nullptr);
-            mbb->insts.emplace_back(mv);
-            mbb->insts.emplace_back(store);
+            float_args_num++;
+            call->args_type[i - 1] = Call::Float;
+        }
+    }
+    int32_t args_offset = ((int_args_num > 4 ?  int_args_num - 4 : 0) 
+                + (float_args_num > 16 ?  float_args_num - 16 : 0)) * 4;
+    auto sp_sub = new Binary(Binary::Int, Binary::ISub, 
+            new MReg(MReg::sp), new MReg(MReg::sp), new IImm(args_offset));
+    int32_t old_args_offset = args_offset;
+    mbb->insts.emplace_back(sp_sub);
+    for (int i = func_call->getOperandNum() - 1; i >= 0 ; i--) {
+        auto args = func_call->getOperand(i);
+        if (!args->getType()->isFloatType()) {
+            if (int_args_num <= 4) {
+                auto mreg = new MReg(MReg::Reg(int_args_num));
+                auto mv = new Mov(Mov::I2I, mreg, make_operand(args, mbb));
+                mbb->insts.emplace_back(mv);                
+            } else {
+                auto mreg = new MReg(MReg::r3);
+                auto mv = new Mov(Mov::I2I, mreg, make_operand(args, mbb));
+                auto store = new Store(Store::Int, mreg, new MReg(MReg::sp), new IImm(args_offset));
+                mbb->insts.emplace_back(mv);
+                mbb->insts.emplace_back(store);              
+                args_offset -= 4; 
+            }
+            int_args_num--;
+        } else {
+            if (float_args_num <= 16) {
+                auto mreg = new MReg(MReg::Reg(float_args_num + 16));
+                auto mv = new Mov(Mov::F2F, mreg, make_operand(args, mbb));
+                mbb->insts.emplace_back(mv);                
+            } else {
+                auto mreg = new MReg(MReg::s15);
+                auto mv = new Mov(Mov::F2F, mreg, make_operand(args, mbb));
+                auto store = new Store(Store::Float, mreg, new MReg(MReg::sp), new IImm(args_offset));
+                mbb->insts.emplace_back(mv);
+                mbb->insts.emplace_back(store);              
+                args_offset -= 4;  
+            }
+            float_args_num--;
         }
     }
     mbb->insts.emplace_back(call);
-    auto sp_add = new Binary(Binary::Int, Binary::IAdd, new MReg(MReg::sp), new MReg(MReg::sp), new IImm((call->arg_count - 4) * 4));
+    auto sp_add = new Binary(Binary::Int, Binary::IAdd, new MReg(MReg::sp), new MReg(MReg::sp), new IImm(old_args_offset));
     mbb->insts.emplace_back(sp_add);
 }
 
