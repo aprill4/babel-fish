@@ -1,6 +1,6 @@
 test
 build
-# *.sy
+*.sy
 *.json
 *.out
 *.cache
@@ -9,3 +9,4 @@ build
 *.o
 ast.cc
 sad
+*.s

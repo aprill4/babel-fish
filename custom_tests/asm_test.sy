@@ -1,5 +1,9 @@
-int main() {
-    float a = 3.0;
-    float b = a + 1.0;
-    return 1;
+int x = 1;
+float main() {
+    int p = 2;
+    int t = 1;
+    int s = (p + t) * 2;
+    int c = t - 1;
+    float m = 1.3;
+    return 1.3;
 }
