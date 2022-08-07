@@ -11,13 +11,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Install QEMU
-        run: sudo apt install qemu-arm-static
+        run: sudo apt install qemu-user-static
       - name: Install Zig
         uses: goto-bus-stop/setup-zig@default
         with:
           version: 0.9.0
       - name: Environment
-        run: qemu-arm --version && zig --version && bison --version && flex --version
+        run: qemu-arm-static --version && zig --version && bison --version && flex --version
       - name: Build
         run: bash build.sh
       - name: Test
