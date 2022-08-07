@@ -837,7 +837,7 @@ void emit_call(Instruction *inst, MachineBasicBlock* mbb) {
             new MReg(MReg::sp), new MReg(MReg::sp), new IImm(args_offset));
     int32_t old_args_offset = args_offset;
     mbb->insts.emplace_back(sp_sub);
-    for (int i = func_call->getOperandNum() - 1; i >= 0 ; i--) {
+    for (int i = func_call->getOperandNum() - 1; i >= 1 ; i--) {
         auto args = func_call->getOperand(i);
         if (!args->getType()->isFloatType()) {
             if (int_args_num <= 4) {
