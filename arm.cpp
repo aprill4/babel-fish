@@ -220,6 +220,124 @@ bool can_be_iimm_ror(int x) {
     return false;
 }
 
+// @WARNING: require a careful review 
+std::vector<MachineOperand*> get_defs(MachineInst *inst) {
+    std::vector<MachineOperand*> res;
+    if(auto i = dynamic_cast<Mov*>(inst)) res.emplace_back(i->dst);
+    else if(auto i = dynamic_cast<Binary*>(inst)) res.emplace_back(i->dst);
+    else if(auto i = dynamic_cast<Call*>(inst)) {
+        res.emplace_back(new MReg(MReg::Reg::lr));
+        for(int u = MReg::Reg::r0; u < MReg::Reg::r4; u++)
+            res.emplace_back(new MReg(MReg::Reg(u)));
+        res.emplace_back(new MReg(MReg::Reg::r12));
+        for(int u = MReg::Reg::s0; u < MReg::Reg::s16; u++)
+            res.emplace_back(new MReg(MReg::Reg(u)));
+    }
+    else if(auto i = dynamic_cast<Load*>(inst)) res.emplace_back(i->dst);
+    else if(auto i = dynamic_cast<IClz*>(inst)) res.emplace_back(i->dst);
+    else if(auto i = dynamic_cast<FNeg*>(inst)) res.emplace_back(i->dst);
+    else if(auto i = dynamic_cast<Cvt*>(inst)) res.emplace_back(i->dst);
+    
+    return res; 
+}
+
+void replace_defs(MachineInst *inst, MachineOperand *old_opr, bool isInt){
+    MachineOperand* tmp = new IImm(2);
+    MachineOperand*& opr = tmp; // too weak(xun) to figure out a perfect solution
+
+    if(auto i = dynamic_cast<Mov*>(inst)) opr = i->dst;
+    else if(auto i = dynamic_cast<Binary*>(inst)) opr = i->dst;
+    else if(auto i = dynamic_cast<Load*>(inst)) opr = i->dst;
+    else if(auto i = dynamic_cast<IClz*>(inst)) opr = i->dst;
+    else if(auto i = dynamic_cast<FNeg*>(inst)) opr = i->dst;
+    else if(auto i = dynamic_cast<Cvt*>(inst)) opr = i->dst;
+
+    //assuming old_opr is VReg kind, plz check
+    if(dynamic_cast<VReg*>(opr) 
+       && dynamic_cast<VReg*>(opr)->id == dynamic_cast<VReg*>(old_opr)->id) {
+        tmp = new MReg(isInt ? MReg::Reg::r4 : MReg::Reg::s16);
+        opr = tmp;
+    }
+}
+
+std::vector<MachineOperand*> get_uses(MachineInst *inst, bool has_ret_val) {
+    std::vector<MachineOperand*> res;
+    if(auto i = dynamic_cast<Mov*>(inst)) res.emplace_back(i->src);
+    else if(auto i = dynamic_cast<Binary*>(inst)) {
+        res.emplace_back(i->lhs);
+        res.emplace_back(i->rhs);
+    }
+    else if(auto i = dynamic_cast<Cmp*>(inst)) {
+        res.emplace_back(i->lhs);
+        res.emplace_back(i->rhs);
+    }
+    else if(auto i = dynamic_cast<Call*>(inst)) {
+        int icnt = 0, fcnt = 0;
+        for(auto&type: i->args_type)
+            if(type == Call::ArgType::Int) icnt++;
+            else fcnt++;
+        for(int u = MReg::Reg::r0; u < MReg::Reg::r4 && icnt; u++, icnt--)
+            res.emplace_back(new MReg(MReg::Reg(u)));
+        for(int u = MReg::Reg::s0; u < MReg::Reg::s16 && fcnt; u++, fcnt--)
+            res.emplace_back(new MReg(MReg::Reg(u)));
+    }
+    else if(auto i = dynamic_cast<Store*>(inst)) {
+        res.emplace_back(i->src);
+        res.emplace_back(i->base);
+        res.emplace_back(i->offset);
+    }
+    else if(auto i = dynamic_cast<Load*>(inst)) {
+        res.emplace_back(i->base);
+        res.emplace_back(i->offset);
+    }
+    else if(auto i = dynamic_cast<IClz*>(inst)) 
+        res.emplace_back(i->src);
+    else if(auto i = dynamic_cast<FNeg*>(inst)) 
+        res.emplace_back(i->src);
+    else if(auto i = dynamic_cast<Cvt*>(inst)) 
+        res.emplace_back(i->src);
+    else if(auto i = dynamic_cast<Return*>(inst)) {
+        res.emplace_back(new MReg(MReg::Reg::lr));
+        if(has_ret_val) res.emplace_back(new MReg(MReg::Reg::r0));
+    }
+    return res; 
+}
+
+void replace_uses(MachineInst *inst, MachineOperand *old_opr, int new_reg){
+    std::vector<MachineOperand**>oprs;
+
+    if(auto i = dynamic_cast<Mov*>(inst)) oprs.emplace_back(&(i->src));
+    else if(auto i = dynamic_cast<Binary*>(inst)) {
+        oprs.emplace_back(&(i->lhs));
+        oprs.emplace_back(&(i->rhs));
+    }
+    else if(auto i = dynamic_cast<Cmp*>(inst)) {
+        oprs.emplace_back(&(i->lhs));
+        oprs.emplace_back(&(i->rhs));
+    }
+    else if(auto i = dynamic_cast<Store*>(inst)) {
+        oprs.emplace_back(&(i->src));
+        oprs.emplace_back(&(i->base));
+        oprs.emplace_back(&(i->offset));
+    }
+    else if(auto i = dynamic_cast<Load*>(inst)) {
+        oprs.emplace_back(&(i->base));
+        oprs.emplace_back(&(i->offset));
+    }
+    else if(auto i = dynamic_cast<IClz*>(inst)) 
+        oprs.emplace_back(&(i->src));
+    else if(auto i = dynamic_cast<FNeg*>(inst)) 
+        oprs.emplace_back(&(i->src));
+    else if(auto i = dynamic_cast<Cvt*>(inst)) 
+        oprs.emplace_back(&(i->src));
+
+    //assuming old_opr is VReg kind, plz check 
+    for(auto opr: oprs) 
+        if(dynamic_cast<VReg*>(*opr) 
+           && dynamic_cast<VReg*>(*opr)->id == dynamic_cast<VReg*>(old_opr)->id) 
+            *opr = new MReg(MReg::Reg(new_reg));
+}
+
 MachineOperand::OperandType infer_type_from_value(Value *v) {
     switch (v->type_->typeId_) {
         case Type::IntegerTypeId: return MachineOperand::Int;
@@ -1050,3 +1168,200 @@ MachineModule *emit_asm(Module *IR) {
 
     return mm;
 }
+
+void stack_ra_on_function(MachineFunction *mf)  {
+
+        int callee_size      = 100, //calcation details: (r11 - r4 + 1 + lr + s31 - s16) * 4 = 100
+            local_array_size = mf->stack_size,
+            spilled_size     = mf->vreg_count * 4,
+            arg_size         = 0;
+
+        // calculate arg size
+        if(mf->call_func){
+            short max_icnt = 0, max_fcnt = 0;
+
+            for(auto mb : mf->basic_blocks) {
+                for(auto inst: mb->insts) {
+                    if (dynamic_cast<Call*>(inst)) {
+                        auto call = dynamic_cast<Call*>(inst);
+                        short icnt = 0, fcnt = 0;
+                        for(auto&type: call->args_type)
+                            if(type == Call::ArgType::Int) icnt++;
+                            else fcnt++; 
+                        max_icnt = std::max(max_icnt, icnt);
+                        max_fcnt = std::max(max_fcnt, fcnt);
+                    }
+                }
+            }
+
+            arg_size = std::max(0, max_icnt - 4) * 4 + std::max(0, max_fcnt - 16) * 4;
+        }
+
+        // insert stores after defs, loads before uses
+        for(auto mb: mf->basic_blocks) {
+            auto it = mb->insts.begin(); // for the convenience of insert into std::list
+            for(auto inst: mb->insts) {
+                auto defs = get_defs(inst);
+                for (auto def : defs) {
+                    if (!dynamic_cast<VReg*>(def)) continue;
+                    
+                    auto actual_reg = dynamic_cast<VReg*>(def);
+                    bool isInt = actual_reg->operand_type == MachineOperand::OperandType::Int;
+                    auto str = new Store(isInt ? Store::Tag::Int : Store::Tag::Float,
+                                                   new MReg(isInt?MReg::Reg::r4 : MReg::Reg::s16),
+                                                   new MReg(MReg::Reg::sp),
+                                                   new IImm(arg_size + actual_reg->id * 4));
+
+                    auto it0 = it;
+                    it0++; //awkward since the api's limitations
+                    mb->insts.insert(it0, str);
+                    replace_defs(inst, def, str->src);
+                }
+
+                auto uses = get_uses(inst, mf->has_ret_val);
+                int ireg = MReg::Reg::r5; // using r5~r7 as temp
+                int freg = MReg::Reg::s17;
+
+                // @TODO uses might be the same??
+                for (auto use : uses) {
+                    if (!dynamic_cast<VReg*>(use)) continue;
+
+                    assert(ireg >= MReg::Reg::r5 && ireg <= MReg::Reg::r7);
+                    assert(freg >= MReg::Reg::s17 && freg <= MReg::Reg::s19);
+                    auto actual_reg = dynamic_cast<VReg*>(use);
+                    bool isInt = actual_reg->operand_type == MachineOperand::OperandType::Int;
+                    int new_reg;
+                    if(isInt) new_reg = ireg++;
+
+                    auto ldr = new Load(isInt ? Load::Tag::Int : Load::Tag::Float,
+                                                   new MReg(MReg::Reg(new_reg)),
+                                                   new MReg(MReg::Reg::sp),
+                                                   new IImm(arg_size + actual_reg->id * 4));
+
+                    mb->insts.insert(it, ldr);
+                    replace_uses(inst, use, new_reg);
+                }
+                it++;
+            }
+        }
+
+        // insert prologue and epilogue
+        // insert add/sub sp & push/pops
+        auto push = new Push_Pop();
+        push->tag = Push_Pop::Tag::Push;
+        push->regs.emplace_back(new MReg(MReg::Reg::lr));
+        for(int r = MReg::Reg::r4; r < MReg::Reg::r12; r++) 
+            push->regs.emplace_back(new MReg(MReg::Reg(r)));
+        for(int r = MReg::Reg::s16; r <= MReg::Reg::s31; r++) 
+            push->regs.emplace_back(new MReg(MReg::Reg(r)));
+
+        auto total_size = local_array_size + spilled_size + arg_size;
+        auto sub_sp = new Binary(Binary::Tag::Int, 
+                                           Binary::Op::ISub,
+                                           new MReg(MReg::Reg::sp), 
+                                           new MReg(MReg::Reg::sp), 
+                                           new IImm(total_size));
+        auto add_sp = new Binary(Binary::Tag::Int, 
+                                           Binary::Op::IAdd,
+                                           new MReg(MReg::Reg::sp), 
+                                           new MReg(MReg::Reg::sp), 
+                                           new IImm(total_size));
+
+        auto it = mf->basic_blocks[0]->insts.begin();
+        mf->basic_blocks[0]->insts.insert(it, sub_sp);
+        it++;
+        mf->basic_blocks[0]->insts.insert(it, push);
+
+
+        for(auto bb : mf->exit_blocks) 
+            if (dynamic_cast<Return*>(bb->insts.back())) {
+                auto pop = new Push_Pop();
+                pop->tag = Push_Pop::Tag::Pop;
+                pop->regs = push->regs; // share the set of MReg objects, plz check
+                bb->insts.push_back(add_sp);
+                bb->insts.push_back(pop);
+            }
+        
+
+        // fixup local array base calc
+        /*for(auto base : f->local_array_bases) {
+            assert(base->tag == MI_BINARY);
+            auto sub = (MI_Binary *) base;
+            assert(sub->op == BINARY_SUBTRACT);
+            assert(sub->lhs == make_reg(sp));
+            assert(sub->rhs.tag == IMM && sub->rhs.value > 0);
+
+            int32 offset_relative_to_sp = arg_size + spilled_size + local_array_size - sub->rhs.value;
+            // @TODO replace with a mov directly
+            // if offset relative to sp is 0
+
+            sub->op = BINARY_ADD;
+            sub->lhs = make_reg(sp);
+            sub->rhs = make_imm(offset_relative_to_sp);
+
+        }
+
+
+        // fixup arg loading calc
+        for(auto mb : f->mbs) {
+            for(auto I=mb->inst; I; I=I->next) {
+                if (I->tag != MI_LOAD) continue;
+                auto ldr = (MI_Load *) I;
+                if (!ldr) continue;
+                if (ldr->mem_tag != MEM_LOAD_ARG) continue;
+
+                int32 offset_value = ((ldr->offset.tag == SHAYEBUSHI) ? 0 : ldr->offset.value);
+                uint32 ofst_rel_to_sp = arg_size + spilled_size + local_array_size + callee_size + offset_value;
+                ldr->base.value = sp;
+                ldr->offset = make_imm(ofst_rel_to_sp);
+
+            }
+        }*/
+
+        // legalize imm, use r12 as temp
+        for(auto mb : mf->basic_blocks) {
+            auto it = mb->insts.begin();
+            for(auto I: mb->insts) {
+                auto uses = get_uses(I, mf->has_ret_val);
+
+                bool need_legalize = false;
+                MachineOperand *use_of_imm;
+
+                if (auto load = dynamic_cast<Load*>(I)) {
+                    if (dynamic_cast<IImm*>(load->base)) 
+                        goto done;
+                }
+
+                if (dynamic_cast<Load*>(I) || dynamic_cast<Store*>(I)) {
+                    auto load_or_store = static_cast<Load*>(I);
+                    if (dynamic_cast<IImm*>(load_or_store->offset)) {
+                        use_of_imm = load_or_store->offset;
+                        int val = dynamic_cast<IImm*>(load_or_store->offset)->value;
+                        need_legalize = val < -4095 || val > 4095;
+                        goto done;
+                    }
+                }
+
+                for(auto use : uses) {
+                    if (dynamic_cast<IImm*>(use)) {
+                        use_of_imm = use;
+                        need_legalize = !can_be_iimm_ror(dynamic_cast<IImm*>(use)->value);
+                        goto done;
+                    }
+                }
+
+                done:;
+
+                if (need_legalize) {
+                    //printf("%d cannot be imm!\n", use_of_imm.value);
+
+                    auto temp = new MReg(MReg::Reg::r12);
+                    auto ldr = new Load(temp, emit_constant(dynamic_cast<IImm*>(use_of_imm)->value, mb)) ;
+                    mb->insts.insert(it, ldr);
+                    replace_uses(I, use_of_imm, MReg::Reg::r12);
+                }
+                it++;
+            }
+        }
+
+    }
