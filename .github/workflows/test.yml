@@ -5,13 +5,13 @@ on:
       - 'asm/testing'
 
 jobs:
-  build:
+  Test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Install QEMU
-        run: sudo apt install qemu-user-static
+        run: sudo apt install qemu-arm-static
       - name: Install Zig
         uses: goto-bus-stop/setup-zig@default
         with:
@@ -21,7 +21,7 @@ jobs:
       - name: Build
         run: bash build.sh
       - name: Test
-        run: bash test.sh
+        run: bash test.sh -c
       #- uses: actions/upload-artifact@v3
         #with:
           #name: ignore-${{ matrix.target }}
