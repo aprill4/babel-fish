@@ -836,6 +836,7 @@ void emit_call(Instruction *inst, MachineBasicBlock* mbb) {
     auto sp_sub = new Binary(Binary::Int, Binary::ISub, 
             new MReg(MReg::sp), new MReg(MReg::sp), new IImm(args_offset));
     int32_t old_args_offset = args_offset;
+    args_offset -= 4;
     mbb->insts.emplace_back(sp_sub);
     for (int i = func_call->getOperandNum() - 1; i >= 1 ; i--) {
         auto args = func_call->getOperand(i);
@@ -872,6 +873,15 @@ void emit_call(Instruction *inst, MachineBasicBlock* mbb) {
     mbb->insts.emplace_back(call);
     auto sp_add = new Binary(Binary::Int, Binary::IAdd, new MReg(MReg::sp), new MReg(MReg::sp), new IImm(old_args_offset));
     mbb->insts.emplace_back(sp_add);
+    if (func_call->getFunctionType()->getReturnType()->isIntegerType()) {
+        auto reg_r0 = new MReg(MReg::r0);
+        auto ret = make_vreg(MachineOperand::OperandType::Int, inst);
+        mbb->insts.emplace_back(new Mov(Mov::I2I, ret, reg_r0));
+    } else if (func_call->getFunctionType()->getReturnType()->isFloatType()) {
+        auto reg_s0 = new MReg(MReg::s0);
+        auto ret = make_vreg(MachineOperand::OperandType::Float, inst);
+        mbb->insts.emplace_back(new Mov(Mov::F2F, ret, reg_s0));        
+    }
 }
 
 void push_pop(MachineFunction * func){
