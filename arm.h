@@ -1,10 +1,7 @@
 #pragma once
-#include "IR/include/IR.h"
+#include "IR.h"
 
-#include <list>
-#include <vector>
 #include <cstdio>
-#include <string>
 
 struct MachineBasicBlock;
 struct MachineModule;
