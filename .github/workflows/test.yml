@@ -16,12 +16,8 @@ jobs:
         uses: goto-bus-stop/setup-zig@default
         with:
           version: 0.9.0
-      - name: Env
-        run:
-          - qemu-arm --version
-          - zig --version
-          - bison --version
-          - flex --version
+      - name: Environment
+        run: qemu-arm --version && zig --version && bison --version && flex --version
       - name: Build
         run: bash build.sh
       - name: Test
