@@ -9,3 +9,5 @@ build
 *.elf
 *.ll
 *.o
+ast.cc
+sad
