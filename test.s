@@ -10,6 +10,7 @@ z27:
 
 main:
 main28:
+  push	{ fp, lr,  }
   mov	fp, sp
   sub	sp, sp, #16
   sub	vg0, fp, #12
@@ -29,11 +30,15 @@ main28:
   movt	vg6, #16294
   vmov	vf7, vg6
   vstr	vg6, [fp, #-16]
+  sub	sp, sp, #0
+  bl	z
+  add	sp, sp, #0
   movw	vg8, #26214
   movt	vg8, #16294
   vmov	vf9, vg8
   vmov.f32	s0, vg8
   add	sp, sp, #16
+  pop	{ fp, lr,  }
   bx	lr
 
 

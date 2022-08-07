@@ -7,5 +7,6 @@ float main() {
     int x[3];
     x[1] = 3;
     float m = 1.3;
+    z();
     return 1.3;
 }

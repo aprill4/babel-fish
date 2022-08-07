@@ -110,7 +110,7 @@ struct Binary : MachineInst {
     MachineOperand *dst, *lhs, *rhs;
 
     enum Tag { Int, Float };
-    Tag tag;
+    Tag tag = Int;
 
     Binary(MachineOperand *d, MachineOperand *l, MachineOperand *r): dst(d), lhs(l), rhs(r) {}
     Binary(Tag t, Op k, MachineOperand *d, MachineOperand *l, MachineOperand *r): tag(t), kind(k), dst(d), lhs(l), rhs(r) {}
