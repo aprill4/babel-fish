@@ -2,6 +2,8 @@
 #include "IRBuilder.h"
 #include "arm.h"
 #include <iostream>
+#include <cstring>
+#include <cassert>
 
 using namespace std;
 
