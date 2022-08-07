@@ -1,18 +1,16 @@
 %{
-#include <iostream>
-#include <cstdlib>
+#include <stdlib.h>
+#include <stdio.h>
 #include "ast.h"
-#include "syntax_analyzer.tab.h"
+//#include "syntax_analyzer.tab.h"
 Root* root = nullptr;
 
-extern int yylex();
+extern int yylex(void);
 
-void yyerror(const char *s) {
-      using namespace std;
-      cerr << yylloc.first_line << ':' << yylloc.first_column << ": error: " << s << endl;
-}
+extern "C" void yyerror(const char *s);
 
 %}
+
 
 %locations
 
@@ -377,3 +375,11 @@ Stmt: LVal ASSIGN AddExp SEMICOLON { $$ = new AssignStatement($1, $3); }
       | RETURN SEMICOLON { $$ = new ReturnStatement(); }
       | RETURN AddExp SEMICOLON { $$ = new ReturnStatement($2); }
       ;
+
+%%
+
+extern "C" void yyerror(const char *s) {
+      fprintf(stderr, "%d:%d: error: %s\n", yylloc.first_line,
+              yylloc.first_column, s);
+}
+

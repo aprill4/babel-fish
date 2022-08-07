@@ -1,0 +1,4 @@
+irs/40_unary_op.ll:19:10: error: expected instruction opcode
+  %v33 = not i32 %v31
+         ^
+1 error generated.

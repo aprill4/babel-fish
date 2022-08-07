@@ -1,5 +1,5 @@
 #pragma once
-#include "IR/include/Value.h"
+#include "IR.h"
 #include <iostream>
 #include <map>
 #include <memory>

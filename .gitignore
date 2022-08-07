@@ -3,9 +3,9 @@ build
 # *.sy
 *.json
 *.out
-*.yy.c
 *.cache
-*tab*
 *.elf
 *.ll
 *.o
+ast.cc
+sad

@@ -16,20 +16,30 @@ include_directories(${PROJECT_SOURCE_DIR}/IR/include/Instructions)
 
 add_subdirectory(IR)
 
-# add_executable(IRtest.out IRtest.cc)
-# add_executable(dominator_tree.out dominator_tree.cc)
-# add_executable(arm.out arm.cpp)
+find_package(BISON)
+bison_target(parser syntax_analyzer.y ${CMAKE_CURRENT_BINARY_DIR}/parser.cpp)
 
-set_source_files_properties(lex.yy.c PROPERTIES LANGUAGE CXX)
-set_source_files_properties(syntax_analyzer.tab.c PROPERTIES LANGUAGE CXX)
+find_package(FLEX)
+flex_target(lexer lexical_analyzer.l ${CMAKE_CURRENT_BINARY_DIR}/lexer.cpp)
 
-add_executable(check.out ast.h syntax_analyzer.tab.h lex.yy.c syntax_analyzer.tab.c ast.cc check.cc arm.cpp)
-add_executable(arm_test ast.h syntax_analyzer.tab.h lex.yy.c syntax_analyzer.tab.c ast.cc arm_test.cc arm.cpp)
+add_flex_bison_dependency(lexer parser)
 
-target_link_libraries(check.out PUBLIC IR)
-target_link_libraries(arm_test PUBLIC IR)
+configure_file(${PROJECT_SOURCE_DIR}/ast.cc.in ${PROJECT_SOURCE_DIR}/ast.cc @ONLY)
 
-# target_link_libraries(IRtest.out PUBLIC IR)
-#target_link_libraries(dominator_tree.out PUBLIC IR)
-#target_link_libraries(arm.out PUBLIC IR)
+#set_source_files_properties(lex.yy.c PROPERTIES LANGUAGE CXX)
+#set_source_files_properties(syntax_analyzer.tab.c PROPERTIES LANGUAGE CXX)
+
+add_executable(babel
+               ast.h
+               #syntax_analyzer.tab.h
+               #lex.yy.c 
+               #syntax_analyzer.tab.c
+               ast.cc
+               babel.cc
+               arm.cpp
+               ${BISON_parser_OUTPUTS}
+               ${FLEX_lexer_OUTPUTS}
+              )
+
+target_link_libraries(babel PUBLIC IR)
 

@@ -6,6 +6,12 @@
 void print_globals(FILE *fp, const std::set<GlobalVariable *> &globals);
 
 void MachineModule::print(FILE *fp) {
+    fprintf(fp, ".arch armv8-a\n");
+    fprintf(fp, ".text\n");
+    fprintf(fp, ".align 2\n");
+    fprintf(fp, ".syntax unified\n");
+    fprintf(fp, ".arm\n");
+    fprintf(fp, ".global main\n");
     for (auto func: functions) {
         func->print(fp);
     }
@@ -977,7 +983,7 @@ MachineFunction *emit_func(Function *func) {
 }
 
 void print_globals(FILE *fp, const std::set<GlobalVariable *> &globals) {
-    fprintf(fp, "\n; here are the globals +-+^_^+-=\n");
+    fprintf(fp, "\n@ here are the globals +-+^_^+-=\n");
     for (auto &glob : globals) {
         fprintf(fp, "%s:\n", glob->getName().c_str());
         auto init = glob->getInitValue();
