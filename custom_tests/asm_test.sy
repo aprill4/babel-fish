@@ -1,9 +1,11 @@
 int x = 1;
+
+void z() {
+}
+
 float main() {
-    int p = 2;
-    int t = 1;
-    int s = (p + t) * 2;
-    int c = t - 1;
+    int x[3];
+    x[1] = 3;
     float m = 1.3;
     return 1.3;
 }

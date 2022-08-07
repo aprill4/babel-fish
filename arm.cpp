@@ -942,6 +942,10 @@ MachineFunction *emit_func(Function *func) {
         mfunc->basic_blocks.emplace_back(mbb);
         bb_map[bb] = mbb;
     }
+
+    mfunc->stack_size = stack_offset;
+    mfunc->vreg_count = vreg_id;
+
     // CFG is not used?
     for (auto bb: func->basicBlocks_) {
         for (auto suc: bb->successorBlocks_) {

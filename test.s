@@ -4,32 +4,36 @@
 .syntax unified
 .arm
 .global main
+z:
+z27:
+  bx	lr
+
 main:
-main27:
+main28:
   mov	fp, sp
-  sub	sp, sp, #20
-  mov	vg0, #2
-  str	vg0, [fp, #-4]
-  mov	vg1, #1
-  str	vg1, [fp, #-8]
-  ldr	vg2, [fp, #-4]
-  ldr	vg3, [fp, #-8]
-  add	vg4, vg2, vg3
-  mov	vg5, #2
-  mul	vg6, vg4, vg5
-  str	vg6, [fp, #-12]
-  ldr	vg7, [fp, #-8]
-  sub	vg8, vg7, #1
-  str	vg8, [fp, #-16]
-  movw	vg9, #26214
-  movt	vg9, #16294
-  vmov	vf10, vg9
-  vstr	vg9, [fp, #-20]
-  movw	vg11, #26214
-  movt	vg11, #16294
-  vmov	vf12, vg11
-  vmov.f32	s0, vg11
-  add	sp, sp, #20
+  sub	sp, sp, #16
+  sub	vg0, fp, #12
+  mov	vg1, #0
+  str	vg1, [vg0]
+  sub	vg2, fp, #12
+  add	vg2, vg2, #4
+  str	vg1, [vg2]
+  sub	vg3, fp, #12
+  add	vg3, vg3, #8
+  str	vg1, [vg3]
+  sub	vg4, fp, #12
+  add	vg4, vg4, #4
+  mov	vg5, #3
+  str	vg5, [vg4]
+  movw	vg6, #26214
+  movt	vg6, #16294
+  vmov	vf7, vg6
+  vstr	vg6, [fp, #-16]
+  movw	vg8, #26214
+  movt	vg8, #16294
+  vmov	vf9, vg8
+  vmov.f32	s0, vg8
+  add	sp, sp, #16
   bx	lr
 
 
