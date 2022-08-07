@@ -25,12 +25,12 @@ main27:
   movt	vg9, #16294
   vmov	vf10, vg9
   vstr	vg9, [fp, #-20]
-  bx	lr
   movw	vg11, #26214
   movt	vg11, #16294
+  vmov	vf12, vg11
   vmov.f32	s0, vg11
   add	sp, sp, #20
-  vmov	vf12, vg11
+  bx	lr
 
 
 @ here are the globals +-+^_^+-=

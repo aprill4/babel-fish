@@ -557,8 +557,8 @@ void emit_ret(ReturnInst *inst, MachineBasicBlock *mbb) {
     mbb->parent->exit_blocks.emplace_back(mbb);
 
     auto ret = new Return;
-    mbb->insts.emplace_back(ret);
     if (inst->isRetVoid()) {
+        mbb->insts.emplace_back(ret);
         return;
     }
 
@@ -570,9 +570,8 @@ void emit_ret(ReturnInst *inst, MachineBasicBlock *mbb) {
     mv->dst = new MReg(is_int ? MReg::r0 : MReg::s0);
     mv->src = make_operand(inst->operands_[0], mbb);
 
-    auto it = mbb->insts.end();
-    it--;
-    mbb->insts.insert(it, mv);
+    mbb->insts.emplace_back(mv);
+    mbb->insts.emplace_back(ret);
 }
 
 void emit_args(std::vector<Argument *> &args, MachineBasicBlock *entry) {
