@@ -108,7 +108,7 @@ void Cmp::print(FILE *fp) {
 
 
 void Mov::print(FILE *fp) {
-    const char *mv_inst[] = { "mov", "vmov.f32", "vmov", "movw", "movt" };
+    const char *mv_inst[] = { "mov", "vmov.f32", "vmov", "movt", "movw" };
     if (dynamic_cast<Symbol *>(src)) {
         fprintf(fp, "movw%s\t%s, #:lower:%s\n", get_cond(), dst->print(), src->print());
         fprintf(fp, "  movt%s\t%s, #:upper:%s", get_cond(), dst->print(), src->print());
@@ -267,8 +267,8 @@ MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb, bool no_imm = fal
             auto h_imm = new IImm((val >> 16) & 0xffff);
             auto dst = make_vreg(MachineOperand::Int, v);
 
-            auto mvw = new Mov(Mov::H2I, dst, h_imm);
-            auto mvt = new Mov(Mov::L2I, dst, l_imm);
+            auto mvw = new Mov(Mov::L2I, dst, l_imm);
+            auto mvt = new Mov(Mov::H2I, dst, h_imm);
 
             mbb->insts.emplace_back(mvw);
             mbb->insts.emplace_back(mvt);
@@ -425,8 +425,8 @@ MachineOperand *emit_constant(int c, MachineBasicBlock *mbb) {
         auto l_imm = new IImm(0xffff & c);
         auto h_imm = new IImm((c >> 16) & 0xffff);
 
-        auto mvw = new Mov(Mov::H2I, dst, h_imm);
-        auto mvt = new Mov(Mov::L2I, dst, l_imm);
+        auto mvw = new Mov(Mov::L2I, dst, l_imm);
+        auto mvt = new Mov(Mov::H2I, dst, h_imm);
 
         mbb->insts.emplace_back(mvw);
         mbb->insts.emplace_back(mvt);
