@@ -537,7 +537,7 @@ char *yytext;
 #include "ast.h"
 #include "syntax_analyzer.tab.h"
 
-void yyerror(const char *s);
+extern "C" void yyerror(const char *s);
 int yycolumn = 1;
 
 #define SAVE_TOKEN     yylval.string = new std::string(yytext, yyleng)
@@ -2065,4 +2065,10 @@ void yyfree (void * ptr )
 #define YYTABLES_NAME "yytables"
 
 #line 117 "lexical_analyzer.l"
+
+
+void scan_string(const char* str)
+{
+    yy_switch_to_buffer(yy_scan_string(str));
+}
 

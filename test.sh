@@ -6,20 +6,57 @@ Green='\033[0;32m'
 Yellow='\033[0;33m'
 Blue='\033[0;34m'
 Red='\033[0;31m'
+Normal='\033[0m'
+
+SRCDIR=functional
+TMPDIR=sad
+CC=build/babel
+ASSEMBLER=gcc
+QEMU=
+ARCH=`uname -m`
 
 function err {
-    [[ $# -eq 1 ]] && printf "error: $1\n"
+    [[ $# -eq 1 ]] && printf "${Red}error:${Normal} $1\n"
     exit 1
 }
 
 function usage {
     cat <<EOF
-Usage: $0 <testcases-dir> [-g] [-t]
-<testcases-dir> contains source files to be tested
+Usage: $0 [ -d SOURCES ] [-g/-t]  [-q]
+    -d: specify the sources files directory (default: functional)
     -g: complie with clang/gcc to get the right answers
-    -t: test our compiler"
+    -t: test our compiler (default)
+    -q: use QEMU (default: disabled)
 EOF
     err
+}
+
+function parse_opts {
+    while getopts "d:gtc" options; do
+        case ${options} in
+            d)
+                SRCDIR=${OPTARG}
+                ;;
+            g)
+                CC=gcc
+                ;;
+            t)
+                CC=build/babel
+                ;;
+            c) 
+                ASSEMBLER="zig cc -target arm-linux-musleabi"
+                ARCH="armv7l"
+                QEMU="qemu-arm-static"
+                ;;
+            :) 
+                err "-${OPTARG} requries an argument."
+                usage
+                ;;
+            *)
+                usage
+                ;;
+        esac
+    done
 }
 
 function show_status {
@@ -36,26 +73,26 @@ function report_result {
 
 function run_test {
     local src=$1
-    local input=$srcdir/${src%.*}.in
-    local correct_out=$srcdir/${src%.*}.out
-    local asm_out=$tmpdir/${src%.*}.s
-    local bin_out=$tmpdir/${src%.*}
-    local err_out=$tmpdir/${src%.*}.err
-    local std_out=$tmpdir/${src%.*}.out
+    local input=$SRCDIR/${src%.*}.in
+    local correct_out=$SRCDIR/${src%.*}.out
+    local asm_out=$TMPDIR/${src%.*}.s
+    local bin_out=$TMPDIR/${src%.*}
+    local err_out=$TMPDIR/${src%.*}.err
+    local std_out=$TMPDIR/${src%.*}.out
 
     show_status $src
 
-    ${CC} $srcdir/$src -o $asm_out >/dev/null 2> $err_out
+    ${CC} $SRCDIR/$src -o $asm_out >/dev/null 2> $err_out
     [[ $? -ne 0 ]] && report_result $Red "compile error" && return
 
-    gcc $asm_out -L. -lsysy_`uname -m` -o $bin_out 2>> $err_out
+    ${ASSEMBLER} $asm_out libsysy_${ARCH}.a -o $bin_out 2>> $err_out
     [[ $? -ne 0 ]] && report_result $Red "assembler error" && return
 
     if [ -f $input ]
     then
-        timeout 5 $bin_out < $input > $std_out 2>>$err_out
+        timeout 5 $QEMU $bin_out < $input > $std_out 2>>$err_out
     else
-        timeout 5 $bin_out > $std_out 2>>$err_out
+        timeout 5 $QEMU $bin_out > $std_out 2>>$err_out
     fi
     ec=$?
     echo $ec > $std_out
@@ -70,31 +107,37 @@ function run_test {
 
 }
 
-[[ $# -ne 2 ]] && usage
+function run_all_tests {
+    file_num=`ls $SRCDIR/*.sy | wc -l | tr -d '[:space:]'`
+    current_file_count=1
 
-./build.sh || err "build failed"
+    for file in `find $SRCDIR -name '*.sy' -exec basename {} \; | sort`
+    do
+        run_test $file
+        current_file_count=`expr $current_file_count + 1`
+    done
+}
 
-srcdir=$1
-tmpdir=sad
-CC=gcc
+function main {
+    parse_opts $@
 
-mkdir -p $tmpdir
+    cat <<EOF
+environments
+    SRCDIR=${SRCDIR}
+    CC=${CC}
+    ASSEMBLER=${ASSEMBLER}
+    ARCH=${ARCH}
+    QEMU=${QEMU}
 
-if [ $2 = "-g" ]
-then 
-    CC=gcc
-elif [ $2 = "-t" ]
-then
-    CC=build/babel
-fi
+EOF
 
-file_num=`ls $srcdir/*.sy | wc -l | tr -d '[:space:]'`
-current_file_count=1
+    mkdir -p $TMPDIR
+    ./build.sh || err "build failed"
 
-for file in `find $srcdir -name '*.sy' -exec basename {} \; | sort`
-do
-    run_test $file
-    current_file_count=`expr $current_file_count + 1`
-done
+    run_all_tests
+}
+
+# TODO: returns non-zero if any test failed
+main $@
 
 exit 0
