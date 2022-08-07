@@ -598,9 +598,9 @@ void emit_args(std::vector<Argument *> &args, MachineBasicBlock *entry) {
         entry->insts.emplace_back(mv);
     }
 
-    if (num_of_ints > 4 || num_of_floats > 16) {
-        assert(false && "don't support passing arguments in stack, yet");
-    }
+    // if (num_of_ints > 4 || num_of_floats > 16) {
+    //     assert(false && "don't support passing arguments in stack, yet");
+    // }
 }
 
 void emit_br(Instruction *inst, MachineBasicBlock *mbb) {
@@ -819,9 +819,12 @@ void emit_call(Instruction *inst, MachineBasicBlock* mbb) {
     Call* call = new Call();
     call->callee = func->getName();
     call->arg_count = func_call->getOperandNum() - 1;
-
-    for (int i = func_call->getOperandNum() - 1; i >= 1; i++) {
+    call->args_type.resize(call->arg_count);
+    auto sp_sub = new Binary(Binary::Int, Binary::ISub, new MReg(MReg::sp), new MReg(MReg::sp), new IImm((call->arg_count - 4) * 4));
+    mbb->insts.emplace_back(sp_sub);
+    for (int i = func_call->getOperandNum() - 1; i >= 1; i--) {
         auto args = func_call->getOperand(i);
+        call->args_type[i - 1] = args->getType()->isIntegerType() ? Call::Int : Call::Float;
         if (i <= 4) {
             auto mreg = new MReg(MReg::Reg(i));
             auto mv = new Mov(args->getType()->isIntegerType() ? Mov::I2I : Mov::F2F
@@ -838,6 +841,8 @@ void emit_call(Instruction *inst, MachineBasicBlock* mbb) {
         }
     }
     mbb->insts.emplace_back(call);
+    auto sp_add = new Binary(Binary::Int, Binary::IAdd, new MReg(MReg::sp), new MReg(MReg::sp), new IImm((call->arg_count - 4) * 4));
+    mbb->insts.emplace_back(sp_add);
 }
 
 void push_pop(MachineFunction * func){

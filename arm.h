@@ -211,6 +211,8 @@ struct Branch : MachineInst {
 
 struct Call : MachineInst {
     std::string callee;
+    enum ArgType  { Int, Float };
+    std::vector<ArgType> args_type;
     int arg_count = 0;
     void print(FILE *fp);
 };
