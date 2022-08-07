@@ -45,8 +45,8 @@ function parse_opts {
                 ;;
             c) 
                 ASSEMBLER="zig cc -target arm-linux-musleabi"
-                ARCH="armv7l_zig"
-                QEMU="qemu-arm"
+                ARCH="armv7l"
+                QEMU="qemu-arm-static"
                 ;;
             :) 
                 err "-${OPTARG} requries an argument."
