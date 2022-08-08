@@ -116,8 +116,8 @@ void Cmp::print(FILE *fp) {
 void Mov::print(FILE *fp) {
     const char *mv_inst[] = { "mov", "vmov.f32", "vmov", "movt", "movw" };
     if (dynamic_cast<Symbol *>(src)) {
-        fprintf(fp, "movw%s\t%s, #:lower:%s\n", get_cond(), dst->print(), src->print());
-        fprintf(fp, "  movt%s\t%s, #:upper:%s", get_cond(), dst->print(), src->print());
+        fprintf(fp, "movw%s\t%s, #:lower16:%s\n", get_cond(), dst->print(), src->print());
+        fprintf(fp, "  movt%s\t%s, #:upper16:%s", get_cond(), dst->print(), src->print());
     } else {
         fprintf(fp, "%s%s\t%s, %s", mv_inst[tag], get_cond(), dst->print(), src->print());
     }
@@ -811,7 +811,7 @@ void emit_cmp(Instruction *inst, MachineBasicBlock* mbb) {
   } else {
     cmp->tag = Cmp::Float;
   }
-  cmp->lhs = make_operand(inst->getOperand(0), mbb);
+  cmp->lhs = make_operand(inst->getOperand(0), mbb, true);
   cmp->rhs = make_operand(inst->getOperand(1), mbb);
   mbb->insts.emplace_back(cmp);
 }
@@ -906,8 +906,9 @@ void emit_gep(Instruction *inst, MachineBasicBlock* mbb) {
     } else {
         auto m_operand = make_operand(first_item, mbb);
         MachineOperand* offset_operand = make_vreg(MachineOperand::OperandType::Int);
+	auto sth = emit_constant(arr_ty->getElementNum() * 4, mbb);
         Binary* offset = new Binary(Binary::Int, Binary::IMul, 
-            offset_operand, m_operand, new IImm(arr_ty->getElementNum() * 4));
+            offset_operand, m_operand, sth);
         mbb->insts.emplace_back(offset);
         auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, offset_operand);
         mbb->insts.emplace_back(offset_sum);                
@@ -934,8 +935,9 @@ void emit_gep(Instruction *inst, MachineBasicBlock* mbb) {
             if (element_type->isArrayType()) {
                 arr_ty = static_cast<ArrayType *>(element_type);
             }
+	    auto sth = emit_constant(arr_ty->getElementNum() * 4, mbb);
             Binary* offset = new Binary(Binary::Int, Binary::IMul, 
-                    offset_operand, m_operand, new IImm(arr_ty->getElementNum() * 4));
+                    offset_operand, m_operand, sth);
             mbb->insts.emplace_back(offset);
             auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, offset_operand);
             mbb->insts.emplace_back(offset_sum);
