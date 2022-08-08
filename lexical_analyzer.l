@@ -4,7 +4,7 @@
 #include "ast.h"
 #include "syntax_analyzer.tab.h"
 
-void yyerror(const char *s);
+extern "C" void yyerror(const char *s);
 int yycolumn = 1;
 
 #define SAVE_TOKEN     yylval.string = new std::string(yytext, yyleng)
@@ -115,3 +115,8 @@ TOKEN_IDENTIFIER ({LETTER}|_)({DIGIT}|{LETTER}|_)*
 .                   yyerror((std::string("Unknown token: ") + yytext).c_str()); yyterminate();
 
 %%
+
+void scan_string(const char* str)
+{
+    yy_switch_to_buffer(yy_scan_string(str));
+}

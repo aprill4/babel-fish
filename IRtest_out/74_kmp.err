@@ -1,0 +1,4 @@
+irs/74_kmp.ll:8316:13: error: expected instruction opcode
+  %v16523 = not i32 %v16522
+            ^
+1 error generated.

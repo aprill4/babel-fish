@@ -1,0 +1,4 @@
+irs/78_side_effect.ll:37:9: error: '%v54' defined with type 'i32' but expected 'i1'
+  br i1 %v54, label %l52, label %r53
+        ^
+1 error generated.

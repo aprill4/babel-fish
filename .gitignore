@@ -1,11 +1,12 @@
 test
 build
-# *.sy
+*.sy
 *.json
 *.out
-*.yy.c
 *.cache
-*tab*
 *.elf
 *.ll
 *.o
+ast.cc
+sad
+*.s

@@ -1,7 +1,4 @@
-TOTAL: 0H-0M-0S-0us
-differences between test_out and correct_out:
-1c1,2
-< 40
----
-> 4
-> 0
+irs/41_unary_op2.ll:27:10: error: expected instruction opcode
+  %v41 = not i32 %v39
+         ^
+1 error generated.
