@@ -1268,11 +1268,8 @@ void stack_ra_on_function(MachineFunction *mf)  {
                                            new MReg(MReg::Reg::sp), 
                                            new IImm(total_size));
 
-        auto it = mf->basic_blocks[0]->insts.begin();
-        mf->basic_blocks[0]->insts.insert(it, sub_sp);
-        it++;
-        mf->basic_blocks[0]->insts.insert(it, push);
-
+        mf->basic_blocks[0]->insts.push_front(sub_sp);
+        mf->basic_blocks[0]->insts.push_front(push);
 
         for(auto bb : mf->exit_blocks) 
             if (dynamic_cast<Return*>(bb->insts.back())) {
