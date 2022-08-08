@@ -336,16 +336,16 @@ void replace_uses(MachineInst *inst, MachineOperand *old_opr, int new_reg){
     else if(auto i = dynamic_cast<Cvt*>(inst)) 
         oprs.emplace_back(&(i->src));
 
-    //assuming old_opr is VReg kind, plz check 
+    //assuming old_opr is VReg kind, plz check  (thanks)
     for(auto opr: oprs) 
-        if(dynamic_cast<VReg*>(*opr) 
-           && dynamic_cast<VReg*>(*opr)->id == dynamic_cast<VReg*>(old_opr)->id) 
+        if(*opr == old_opr) 
             *opr = new MReg(MReg::Reg(new_reg));
 }
 
 MachineOperand::OperandType infer_type_from_value(Value *v) {
     switch (v->type_->typeId_) {
-        case Type::IntegerTypeId: return MachineOperand::Int;
+        case Type::IntegerTypeId:
+        case Type::PointerTypeId: return MachineOperand::Int;
         case Type::FloatTypeId: return MachineOperand::Float;
         default: assert(false && "don't support this type");
     }
@@ -805,6 +805,7 @@ void emit_cmp(Instruction *inst, MachineBasicBlock* mbb) {
   if (!inst->isIcmp() && !inst->isFcmp()) {
     throw Exception(std::string("Inst isn't IcmpInst or FcmpInst in ") + __FILE__ + " " + std::to_string(__LINE__));
   }
+  printf("hey\n");
   auto cmp = new Cmp();
   if (inst->isIcmp()) {
     cmp->tag = Cmp::Int;
@@ -1324,6 +1325,13 @@ void stack_ra_on_function(MachineFunction *mf)  {
             if (auto load = dynamic_cast<Load*>(I)) {
                 if (dynamic_cast<IImm*>(load->base)) 
                     goto done;
+            }
+
+            if (auto mv = dynamic_cast<Mov *>(I)) {
+                if (mv->tag == Mov::H2I || mv->tag == Mov::L2I) {
+                    // we assume movw and movt are fine by default
+                    goto done;
+                }
             }
 
             if (dynamic_cast<Load*>(I) || dynamic_cast<Store*>(I)) {
