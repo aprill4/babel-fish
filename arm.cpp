@@ -1178,7 +1178,7 @@ MachineModule *emit_asm(Module *IR) {
 
 void stack_ra_on_function(MachineFunction *mf)  {
     int callee_size      = 100, //calcation details: (r11 - r4 + 1 + lr + s31 - s16) * 4 = 100
-        local_array_size = mf->stack_size,
+        local_var_size   = mf->stack_size,
         spilled_size     = mf->vreg_count * 4,
         arg_size         = 0;
 
@@ -1215,8 +1215,8 @@ void stack_ra_on_function(MachineFunction *mf)  {
                 bool isInt = actual_reg->operand_type == MachineOperand::OperandType::Int;
                 auto str = new Store(isInt ? Store::Tag::Int : Store::Tag::Float,
                                                new MReg(isInt?MReg::Reg::r4 : MReg::Reg::s16),
-                                               new MReg(MReg::Reg::sp),
-                                               new IImm(arg_size + actual_reg->id * 4));
+                                               new MReg(MReg::Reg::fp),
+                                               new IImm(-(local_var_size + actual_reg->id * 4)));
 
                 auto it0 = it;
                 it0++; //awkward since the api's limitations
@@ -1242,8 +1242,8 @@ void stack_ra_on_function(MachineFunction *mf)  {
 
                 auto ldr = new Load(isInt ? Load::Tag::Int : Load::Tag::Float,
                                                new MReg(MReg::Reg(new_reg)),
-                                               new MReg(MReg::Reg::sp),
-                                               new IImm(arg_size + actual_reg->id * 4));
+                                               new MReg(MReg::Reg::fp),
+                                               new IImm(-(local_var_size + actual_reg->id * 4)));
 
                 mb->insts.insert(it, ldr);
                 replace_uses(inst, use, new_reg);
@@ -1262,7 +1262,7 @@ void stack_ra_on_function(MachineFunction *mf)  {
     for(int r = MReg::Reg::s16; r <= MReg::Reg::s31; r++) 
         push->regs.emplace_back(new MReg(MReg::Reg(r)));
 
-    auto total_size = local_array_size + spilled_size + arg_size;
+    auto total_size = local_var_size + spilled_size + arg_size;
     auto sub_sp = new Binary(Binary::Tag::Int, 
                                        Binary::Op::ISub,
                                        new MReg(MReg::Reg::sp), 
