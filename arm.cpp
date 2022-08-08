@@ -190,8 +190,13 @@ void Return::print(FILE *fp) {
 
 void Push_Pop::print(FILE *fp) {
     const char *inst[] = { "push", "pop" };
-    fprintf(fp, "v%s%s\t{ d8, d9, d10, d11, d12, d13, d14, d15 }\n", inst[tag], get_cond());
-    fprintf(fp, "  %s%s\t{ r4, r5, r6, r7, r8, r9, r10, r11, lr }", inst[tag], get_cond());
+    if (tag == 0) {
+	    fprintf(fp, "v%s%s\t{ d8, d9, d10, d11, d12, d13, d14, d15 }\n", inst[tag], get_cond());
+	    fprintf(fp, "  %s%s\t{ r4, r5, r6, r7, r8, r9, r10, r11, lr }", inst[tag], get_cond());
+    } else {
+	    fprintf(fp, "%s%s\t{ r4, r5, r6, r7, r8, r9, r10, r11, lr }\n", inst[tag], get_cond());
+	    fprintf(fp, "  v%s%s\t{ d8, d9, d10, d11, d12, d13, d14, d15 }", inst[tag], get_cond());
+    }
 }
 
 //-----------------------------------------------------------------
