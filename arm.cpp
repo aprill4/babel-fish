@@ -1199,7 +1199,7 @@ void stack_ra_on_function(MachineFunction *mf)  {
 
         // insert stores after defs, loads before uses
         for(auto mb: mf->basic_blocks) {
-            auto it = mb->insts.begin(); // for the convenience of insert into std::list
+            auto it = mb->insts.begin(); // for the convenience of insertion into std::list
             for(auto inst: mb->insts) {
                 auto defs = get_defs(inst);
                 for (auto def : defs) {
@@ -1219,7 +1219,7 @@ void stack_ra_on_function(MachineFunction *mf)  {
                 }
 
                 auto uses = get_uses(inst, mf->has_ret_val);
-                int ireg = MReg::Reg::r5; // using r5~r7 as temp
+                int ireg = MReg::Reg::r5;
                 int freg = MReg::Reg::s17;
 
                 // @TODO uses might be the same??
@@ -1232,6 +1232,7 @@ void stack_ra_on_function(MachineFunction *mf)  {
                     bool isInt = actual_reg->operand_type == MachineOperand::OperandType::Int;
                     int new_reg;
                     if(isInt) new_reg = ireg++;
+                    else new_reg = freg++;
 
                     auto ldr = new Load(isInt ? Load::Tag::Int : Load::Tag::Float,
                                                    new MReg(MReg::Reg(new_reg)),
