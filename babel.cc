@@ -98,9 +98,15 @@ int main(int argc, char** argv) {
     auto mm = emit_asm(m);
 
     mm->print(stdout);
+    printf("\n\n");
+
+    stack_ra(mm);
+
+    mm->print(stdout);
 
     FILE *out = fopen(output_file, "w");
     mm->print(out);
+
 
     return 0;
 }

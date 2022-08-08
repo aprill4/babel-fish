@@ -227,3 +227,4 @@ struct Push_Pop : MachineInst {
 };
 
 MachineModule *emit_asm(Module *IR);
+void stack_ra(MachineModule *mod);
