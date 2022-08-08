@@ -511,7 +511,7 @@ void emit_store(Instruction *inst, MachineBasicBlock *mbb) {
         // todo: de-duplicate
         auto base = load_addr->dst;
         auto offset = nullptr;
-        auto src = make_operand(inst->operands_[0], mbb);
+        auto src = make_operand(inst->operands_[0], mbb, true);
         auto st_tag = Store::Int;
         switch (inst->operands_[0]->type_->typeId_) {
             case Type::IntegerTypeId: {
@@ -1167,6 +1167,8 @@ void print_globals(FILE *fp, const std::set<GlobalVariable *> &globals) {
                 fprintf(fp, "  .zero\t%d\n", consecutive_zeros * 4);
             }
 
+        } else if (auto i = dynamic_cast<ConstantZero *>(init)) {
+            fprintf(fp, "  .word\t0");
         } else {
             assert(false && "what is this global");
         }
