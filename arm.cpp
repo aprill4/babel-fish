@@ -11,7 +11,7 @@ void MachineModule::print(FILE *fp) {
     fprintf(fp, ".align 2\n");
     fprintf(fp, ".syntax unified\n");
     fprintf(fp, ".arm\n");
-    fprintf(fp, ".global main\n");
+    fprintf(fp, ".global main\n\n");
     for (auto func: functions) {
         func->print(fp);
     }
@@ -191,10 +191,14 @@ void Return::print(FILE *fp) {
 void Push_Pop::print(FILE *fp) {
     const char *inst[] = { "push", "pop" };
     fprintf(fp, "%s%s\t{ ", inst[tag], get_cond());
-    for (auto reg: regs) {
-        fprintf(fp, "%s, ", reg->print());
+    for (size_t i = 0; i < regs.size(); i++) {
+        auto reg = regs[i];
+        fprintf(fp, "%s", reg->print());
+        if (i != regs.size() - 1) {
+            fprintf(fp, ", ");
+        }
     }
-    fprintf(fp, "\b\b }");
+    fprintf(fp, " }");
 }
 
 //-----------------------------------------------------------------
