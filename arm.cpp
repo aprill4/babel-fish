@@ -1085,6 +1085,7 @@ MachineFunction *emit_func(Function *func) {
     auto dst = new MReg(MReg::sp);
     auto offset = new IImm(stack_offset);
     auto sub = new Binary(Binary::Int, Binary::ISub, dst, dst, offset);
+    mfunc->stack_sub = sub;
     entry_bb->insts.emplace_front(sub);
     // mv sp to fp
     auto fp = new MReg(MReg::fp);
@@ -1096,6 +1097,7 @@ MachineFunction *emit_func(Function *func) {
         auto it = bb->insts.end();
         it--;
         auto add = new Binary(Binary::Int, Binary::IAdd, dst, dst, offset);
+        mfunc->stack_adds.push_back(add);
         bb->insts.insert(it, add);
     }
     stack_offset = 0;
@@ -1262,19 +1264,12 @@ void stack_ra_on_function(MachineFunction *mf)  {
     for(int r = MReg::Reg::s16; r <= MReg::Reg::s31; r++) 
         push->regs.emplace_back(new MReg(MReg::Reg(r)));
 
-    auto total_size = local_var_size + spilled_size + arg_size;
-    auto sub_sp = new Binary(Binary::Tag::Int, 
-                                       Binary::Op::ISub,
-                                       new MReg(MReg::Reg::sp), 
-                                       new MReg(MReg::Reg::sp), 
-                                       new IImm(total_size));
-    auto add_sp = new Binary(Binary::Tag::Int, 
-                                       Binary::Op::IAdd,
-                                       new MReg(MReg::Reg::sp), 
-                                       new MReg(MReg::Reg::sp), 
-                                       new IImm(total_size));
+    auto total_size = local_var_size + spilled_size;
+    mf->stack_sub->rhs = new IImm(total_size);
+    for (auto stack_add : mf->stack_adds) {
+        stack_add->rhs = new IImm(total_size);
+    }
 
-    mf->basic_blocks[0]->insts.push_front(sub_sp);
     mf->basic_blocks[0]->insts.push_front(push);
 
     for(auto bb : mf->exit_blocks) 
@@ -1282,7 +1277,6 @@ void stack_ra_on_function(MachineFunction *mf)  {
             auto pop = new Push_Pop();
             pop->tag = Push_Pop::Tag::Pop;
             pop->regs = push->regs; // share the set of MReg objects, plz check
-            bb->insts.push_back(add_sp);
             bb->insts.push_back(pop);
         }
     
