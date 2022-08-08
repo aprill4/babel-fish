@@ -83,10 +83,10 @@ function run_test {
     show_status $src
 
     ${CC} $SRCDIR/$src -o $asm_out >/dev/null 2> $err_out
-    [[ $? -ne 0 ]] && report_result $Red "compile error" && return
+    [[ $? -ne 0 ]] && report_result $Red "compile error" && return 1
 
     ${ASSEMBLER} $asm_out libsysy_${ARCH}.a -o $bin_out 2>> $err_out
-    [[ $? -ne 0 ]] && report_result $Red "assembler error" && return
+    [[ $? -ne 0 ]] && report_result $Red "assembler error" && return 1
 
     if [ -f $input ]
     then
@@ -96,26 +96,34 @@ function run_test {
     fi
     ec=$?
     echo $ec > $std_out
-    [[ $ec -eq 124 ]] && report_result $Blue "timeout after 5 seconds" && return
+    [[ $ec -eq 124 ]] && report_result $Blue "timeout after 5 seconds" && return 1
     [[ $ec -eq 139 ]] && \
-        report_result $Yellow "segfault" && return
+        report_result $Yellow "segfault" && return 1
 
     diff $std_out $correct_out >> $err_out
-    [[ $? -ne 0 ]] && report_result $Yellow "wrong answer" && return
+    [[ $? -ne 0 ]] && report_result $Yellow "wrong answer" && return 1
     
-    report_result $Green passed
-
+    report_result $Green passed && return 0
 }
 
 function run_all_tests {
     file_num=`ls $SRCDIR/*.sy | wc -l | tr -d '[:space:]'`
     current_file_count=1
+    current_failed=0
 
     for file in `find $SRCDIR -name '*.sy' -exec basename {} \; | sort`
     do
         run_test $file
+        failed=$?
+        current_failed=`expr $current_failed + $failed`
         current_file_count=`expr $current_file_count + 1`
     done
+
+    passed=`expr $current_file_count - $current_failed`
+
+    printf "statistics\n"
+    printf "    ${Green}$passed passed"
+    printf "    ${Red}$current_failed failed${Normal}"
 }
 
 function main {
