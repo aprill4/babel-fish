@@ -1215,7 +1215,7 @@ void stack_ra_on_function(MachineFunction *mf)  {
                     auto it0 = it;
                     it0++; //awkward since the api's limitations
                     mb->insts.insert(it0, str);
-                    replace_defs(inst, def, str->src);
+                    replace_defs(inst, def, isInt);
                 }
 
                 auto uses = get_uses(inst, mf->has_ret_val);
