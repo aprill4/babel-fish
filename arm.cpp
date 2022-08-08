@@ -1072,29 +1072,29 @@ MachineFunction *emit_func(Function *func) {
         }
     }
 
-    if (stack_offset) { 
-        auto entry_bb = mfunc->basic_blocks[0];
-        // insert `sub sp, sp, stack_offset` to the beginning of the entry block
-        auto dst = new MReg(MReg::sp);
-        auto offset = new IImm(stack_offset);
-        auto sub = new Binary(Binary::Int, Binary::ISub, dst, dst, offset);
-        entry_bb->insts.emplace_front(sub);
-        // mv sp to fp
-        auto fp = new MReg(MReg::fp);
-        auto sp = new MReg(MReg::sp);
-        auto mv = new Mov(Mov::I2I, fp, sp);
-        entry_bb->insts.emplace_front(mv);
-        // add sp, sp, stack_offset
-        for (auto bb: mfunc->exit_blocks) {
-            auto it = bb->insts.end();
-            it--;
-            auto add = new Binary(Binary::Int, Binary::IAdd, dst, dst, offset);
-            bb->insts.insert(it, add);
-        }
-        stack_offset = 0;
-        val_offset.clear();
-        v_m.clear();
+    //if (stack_offset) { 
+    auto entry_bb = mfunc->basic_blocks[0];
+    // insert `sub sp, sp, stack_offset` to the beginning of the entry block
+    auto dst = new MReg(MReg::sp);
+    auto offset = new IImm(stack_offset);
+    auto sub = new Binary(Binary::Int, Binary::ISub, dst, dst, offset);
+    entry_bb->insts.emplace_front(sub);
+    // mv sp to fp
+    auto fp = new MReg(MReg::fp);
+    auto sp = new MReg(MReg::sp);
+    auto mv = new Mov(Mov::I2I, fp, sp);
+    entry_bb->insts.emplace_front(mv);
+    // add sp, sp, stack_offset
+    for (auto bb: mfunc->exit_blocks) {
+        auto it = bb->insts.end();
+        it--;
+        auto add = new Binary(Binary::Int, Binary::IAdd, dst, dst, offset);
+        bb->insts.insert(it, add);
     }
+    stack_offset = 0;
+    val_offset.clear();
+    v_m.clear();
+    //}
 
     if (mfunc->call_func) {    
         push_pop(mfunc);
