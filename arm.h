@@ -7,6 +7,7 @@ struct MachineBasicBlock;
 struct MachineModule;
 struct MachineFunction;
 struct MachineInst;
+struct Binary;
 
 struct MachineOperand {
     enum FlexibleShift { NoShift, Lsl, Lsr, Asl, Asr };
@@ -81,6 +82,9 @@ struct MachineFunction {
     bool call_func = false;
     bool has_ret_val = false;
     std::vector<MachineBasicBlock *> exit_blocks;
+
+    Binary *stack_sub = nullptr;
+    std::vector<Binary *> stack_adds;
 
     size_t stack_size;
     int vreg_count;
@@ -227,3 +231,4 @@ struct Push_Pop : MachineInst {
 };
 
 MachineModule *emit_asm(Module *IR);
+void stack_ra(MachineModule *mod);
