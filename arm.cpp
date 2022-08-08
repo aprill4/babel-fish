@@ -190,15 +190,8 @@ void Return::print(FILE *fp) {
 
 void Push_Pop::print(FILE *fp) {
     const char *inst[] = { "push", "pop" };
-    fprintf(fp, "%s%s\t{ ", inst[tag], get_cond());
-    for (size_t i = 0; i < regs.size(); i++) {
-        auto reg = regs[i];
-        fprintf(fp, "%s", reg->print());
-        if (i != regs.size() - 1) {
-            fprintf(fp, ", ");
-        }
-    }
-    fprintf(fp, " }");
+    fprintf(fp, "v%s%s\t{ d8, d9, d10, d11, d12, d13, d14, d15 }\n", inst[tag], get_cond());
+    fprintf(fp, "  %s%s\t{ r4, r5, r6, r7, r8, r9, r10, r11, lr }", inst[tag], get_cond());
 }
 
 //-----------------------------------------------------------------
@@ -965,11 +958,15 @@ void emit_call(Instruction *inst, MachineBasicBlock* mbb) {
     }
     int32_t args_offset = ((int_args_num > 4 ?  int_args_num - 4 : 0) 
                 + (float_args_num > 16 ?  float_args_num - 16 : 0)) * 4;
-    auto sp_sub = new Binary(Binary::Int, Binary::ISub, 
-            new MReg(MReg::sp), new MReg(MReg::sp), new IImm(args_offset));
+
+    bool sp_subbed = args_offset > 0;
+    if (sp_subbed) {
+        auto sp_sub = new Binary(Binary::Int, Binary::ISub, 
+                new MReg(MReg::sp), new MReg(MReg::sp), new IImm(args_offset));
+        mbb->insts.emplace_back(sp_sub);
+    }
     int32_t old_args_offset = args_offset;
     args_offset -= 4;
-    mbb->insts.emplace_back(sp_sub);
     for (int i = func_call->getOperandNum() - 1; i >= 1 ; i--) {
         auto args = func_call->getOperand(i);
         if (!args->getType()->isFloatType()) {
@@ -1003,8 +1000,10 @@ void emit_call(Instruction *inst, MachineBasicBlock* mbb) {
         }
     }
     mbb->insts.emplace_back(call);
-    auto sp_add = new Binary(Binary::Int, Binary::IAdd, new MReg(MReg::sp), new MReg(MReg::sp), new IImm(old_args_offset));
-    mbb->insts.emplace_back(sp_add);
+    if (sp_subbed) {
+        auto sp_add = new Binary(Binary::Int, Binary::IAdd, new MReg(MReg::sp), new MReg(MReg::sp), new IImm(old_args_offset));
+        mbb->insts.emplace_back(sp_add);
+    }
     if (func_call->getFunctionType()->getReturnType()->isIntegerType()) {
         auto reg_r0 = new MReg(MReg::r0);
         auto ret = make_vreg(MachineOperand::OperandType::Int, inst);
@@ -1020,11 +1019,7 @@ void push_pop(MachineFunction * func){
     auto push = new Push_Pop(), pop = new Push_Pop();
     push->tag = Push_Pop::Push;
     pop->tag = Push_Pop::Pop;
-    std::vector<MReg*> push_pop_regs{new MReg(MReg::r11), new MReg(MReg::lr)};
-    for (auto reg : push_pop_regs) {
-        push->regs.emplace_back(reg);
-        pop->regs.emplace_back(reg);    
-    }
+
     auto start = *func->basic_blocks.begin();   // add push to MachineFunction's first MachineBlock
     start->insts.insert(start->insts.begin(), push);
 
@@ -1110,14 +1105,12 @@ MachineFunction *emit_func(Function *func) {
         mfunc->stack_adds.push_back(add);
         bb->insts.insert(it, add);
     }
+
     stack_offset = 0;
+    vreg_id = 0;
     val_offset.clear();
     v_m.clear();
     //}
-
-    if (mfunc->call_func) {    
-        push_pop(mfunc);
-    }
 
     return mfunc;
 }
@@ -1228,7 +1221,7 @@ void stack_ra_on_function(MachineFunction *mf)  {
                 auto str = new Store(isInt ? Store::Tag::Int : Store::Tag::Float,
                                                new MReg(isInt?MReg::Reg::r4 : MReg::Reg::s16),
                                                new MReg(MReg::Reg::fp),
-                                               new IImm(-(local_var_size + actual_reg->id * 4)));
+                                               new IImm(-(local_var_size + actual_reg->id * 4) - 4));
 
                 auto it0 = it;
                 it0++; //awkward since the api's limitations
@@ -1255,7 +1248,7 @@ void stack_ra_on_function(MachineFunction *mf)  {
                 auto ldr = new Load(isInt ? Load::Tag::Int : Load::Tag::Float,
                                                new MReg(MReg::Reg(new_reg)),
                                                new MReg(MReg::Reg::fp),
-                                               new IImm(-(local_var_size + actual_reg->id * 4)));
+                                               new IImm(-(local_var_size + actual_reg->id * 4) - 4));
 
                 mb->insts.insert(it, ldr);
                 replace_uses(inst, use, new_reg);
@@ -1266,13 +1259,6 @@ void stack_ra_on_function(MachineFunction *mf)  {
 
     // insert prologue and epilogue
     // insert add/sub sp & push/pops
-    auto push = new Push_Pop();
-    push->tag = Push_Pop::Tag::Push;
-    push->regs.emplace_back(new MReg(MReg::Reg::lr));
-    for(int r = MReg::Reg::r4; r < MReg::Reg::r12; r++) 
-        push->regs.emplace_back(new MReg(MReg::Reg(r)));
-    for(int r = MReg::Reg::s16; r <= MReg::Reg::s31; r++) 
-        push->regs.emplace_back(new MReg(MReg::Reg(r)));
 
     auto total_size = local_var_size + spilled_size;
     mf->stack_sub->rhs = new IImm(total_size);
@@ -1280,16 +1266,7 @@ void stack_ra_on_function(MachineFunction *mf)  {
         stack_add->rhs = new IImm(total_size);
     }
 
-    mf->basic_blocks[0]->insts.push_front(push);
-
-    for(auto bb : mf->exit_blocks) 
-        if (dynamic_cast<Return*>(bb->insts.back())) {
-            auto pop = new Push_Pop();
-            pop->tag = Push_Pop::Tag::Pop;
-            pop->regs = push->regs; // share the set of MReg objects, plz check
-            bb->insts.push_back(pop);
-        }
-    
+    push_pop(mf);
 
     // fixup local array base calc
     /*for(auto base : f->local_array_bases) {
@@ -1364,8 +1341,15 @@ void stack_ra_on_function(MachineFunction *mf)  {
                 //printf("%d cannot be imm!\n", use_of_imm.value);
 
                 auto temp = new MReg(MReg::Reg::r12);
-                auto ldr = new Load(temp, emit_constant(dynamic_cast<IImm*>(use_of_imm)->value, mb)) ;
-                mb->insts.insert(it, ldr);
+                auto val = dynamic_cast<IImm *>(use_of_imm)->value;
+                auto l_imm = new IImm(0xffff & val);
+                auto h_imm = new IImm((val >> 16) & 0xffff);
+
+                auto mvw = new Mov(Mov::L2I, temp, l_imm);
+                auto mvt = new Mov(Mov::H2I, temp, h_imm);
+
+                mb->insts.insert(it, mvw);
+                mb->insts.insert(it, mvt);
                 replace_uses(I, use_of_imm, MReg::Reg::r12);
             }
             it++;
