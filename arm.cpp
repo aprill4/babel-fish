@@ -704,6 +704,7 @@ void emit_args(std::vector<Argument *> &args, MachineBasicBlock *entry) {
     // and they are passed independently
     int num_of_ints = 0;
     int num_of_floats = 0;
+    int num_of_stack_args = 0;
 
     for (size_t i = 0; i < args.size(); i++) {
         auto arg = args[i];
@@ -712,12 +713,24 @@ void emit_args(std::vector<Argument *> &args, MachineBasicBlock *entry) {
         auto is_int = (ty->isPointerType() || ty->isIntegerType());
         printf("is_int: %d\n", is_int);
 
-        auto mv = new Mov;
-        mv->tag = is_int ? Mov::I2I : Mov::F2F;
-        mv->src = new MReg(MReg::Reg((is_int ? MReg::r0 : MReg::s0) +
-                      (is_int ? num_of_ints : num_of_floats)));
-        mv->dst = make_vreg(is_int ?
-                      MachineOperand::Int : MachineOperand::Float, arg);
+        auto dst = make_vreg(is_int ? MachineOperand::Int :
+                    MachineOperand::Float, arg);
+
+        if (num_of_ints >= 4 || num_of_floats >= 16) {
+            auto base = new MReg(MReg::fp);
+            auto offset = new IImm(num_of_stack_args * 4 + 100);
+            auto ld = new Load(is_int ? Load::Int : Load::Float,
+                        dst, base, offset);
+            entry->insts.emplace_back(ld);
+            num_of_stack_args++;
+        } else {
+            auto mv = new Mov;
+            mv->tag = is_int ? Mov::I2I : Mov::F2F;
+            mv->src = new MReg(MReg::Reg((is_int ? MReg::r0 : MReg::s0) +
+                          (is_int ? num_of_ints : num_of_floats)));
+            mv->dst = dst;
+            entry->insts.emplace_back(mv);
+        }
 
         if (is_int) {
             num_of_ints++;
@@ -725,7 +738,6 @@ void emit_args(std::vector<Argument *> &args, MachineBasicBlock *entry) {
             num_of_floats++;
         }
 
-        entry->insts.emplace_back(mv);
     }
 
     // if (num_of_ints > 4 || num_of_floats > 16) {
