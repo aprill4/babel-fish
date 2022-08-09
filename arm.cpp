@@ -995,7 +995,16 @@ void emit_gep(Instruction *inst, MachineBasicBlock* mbb) {
                     new Binary(
                         Binary::Int, Binary::ISub, res, new MReg(MReg::fp), new IImm(val_offset[ptr])));
         } else {
-            throw Exception("gep_error : about val_offset's ptr not find");
+            if (dynamic_cast<GlobalVariable*>(ptr)) {
+                auto global_var = dynamic_cast<GlobalVariable*>(ptr);
+                if (dynamic_cast<ConstantArray*>(global_var->getInitValue())) {
+                    mbb->insts.emplace_back(emit_load_global_addr(global_var));
+                } else {
+                    throw Exception("gep_error : global_initval isn't array");
+                }
+                mbb->insts.emplace_back(new Mov(Mov::I2I, res, make_operand(ptr, mbb))); 
+            }
+            else throw Exception("gep_error : about val_offset's ptr not find");
         }
     } else {
         mbb->insts.emplace_back(new Mov(Mov::I2I, res, make_operand(ptr, mbb)));        
