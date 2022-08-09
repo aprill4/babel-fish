@@ -543,7 +543,9 @@ void emit_binary(BinaryInst *inst, MachineBasicBlock *mbb) {
         case Instruction::Fsub: {
             tag = Binary::Float;
             kind = Binary::FSub;
-        }
+            associative = false;
+            can_rhs_be_imm = false;
+        } break;
 
         case Instruction::Fmul: {
             tag = Binary::Float;
@@ -1389,7 +1391,11 @@ void stack_ra_on_function(MachineFunction *mf)  {
                 if (dynamic_cast<IImm*>(load_or_store->offset)) {
                     use_of_imm = load_or_store->offset;
                     int val = dynamic_cast<IImm*>(load_or_store->offset)->value;
-                    need_legalize = val < -4095 || val > 4095;
+                    if (load_or_store->tag == Load::Int) {
+                        need_legalize = val < -4095 || val > 4095;
+                    } else {
+                        need_legalize = val < -255 || val > 255;
+                    }
                     goto done;
                 }
             }
