@@ -1191,8 +1191,8 @@ void print_globals(FILE *fp, const std::set<GlobalVariable *> &globals) {
                 }
 
                 if (nonzero && consecutive_zeros != 0) {
-                    consecutive_zeros = 0;
                     fprintf(fp, "  .zero\t%d\n", consecutive_zeros * 4);
+                    consecutive_zeros = 0;
                 }
 
                 fprintf(fp, "  .word\t%d\n", value);
