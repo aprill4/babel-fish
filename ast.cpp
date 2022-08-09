@@ -40,7 +40,7 @@ bool force_trans(IRBuilder *irBuilder, Value*& lhs, Value*& rhs) {
   return is_float;
 }
 
-void parse_nest_array(vector<Value *>&ans, ArrayValue *cur, int idx, vector<int>&nums, bool isInt, IRBuilder *irBuilder){
+void parse_nest_array(vector<Value *>&ans, ArrayValue *cur, int idx, vector<int>&nums, bool isInt, /*int&offset,*/ IRBuilder *irBuilder){
   Context &context = irBuilder->getContext();
   int remain = (idx == nums.size() - 1) ? 1 : nums[idx+1], 
       expect = nums[idx], 
@@ -55,18 +55,20 @@ void parse_nest_array(vector<Value *>&ans, ArrayValue *cur, int idx, vector<int>
       }
       ans.emplace_back(irBuilder->getTmpVal());
       if(++cnt == remain) cnt=0;
+      //offset = ans.size();
     }
     else {
       if(cnt) {
         ans.resize(ans.size() + remain - cnt, ConstantZero::get(context, isInt ? context.Int32Type : context.FloatType));
         cnt = 0;
       }
-      parse_nest_array(ans, val, idx + 1, nums, isInt, irBuilder);
+      parse_nest_array(ans, val, idx + 1, nums, isInt, /*offset,*/ irBuilder);
     }
   }
 
-  if(ans.size()-original<expect) 
+  if(ans.size()-original<expect) {
     ans.resize(expect + original, ConstantZero::get(context, isInt ? context.Int32Type : context.FloatType));
+  }
 }
 
 Value *find_symbol(Scope *scope, std::string symbol, bool is_var) {

@@ -108,7 +108,7 @@ void Cmp::print(FILE *fp) {
     const char *cmp_inst[] = { "cmp", "vcmp.f32"};
     fprintf(fp, "%s%s\t%s, %s", cmp_inst[tag], get_cond(), lhs->print(), rhs->print());
     if (tag == Float) {
-        fprintf(fp, "\nadd\tvmrs APSR_nzcv, FPSCR");
+        fprintf(fp, "\n  vmrs\tAPSR_nzcv, FPSCR");
     }
 }
 
@@ -420,9 +420,13 @@ MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb, bool no_imm = fal
 
         if (is_float) {
             auto src = ret;
-            auto dst = make_vreg(MachineOperand::Float, v);
-            auto mv = new Mov(Mov::F_I, dst, src);
+            auto dst = make_vreg(MachineOperand::Int, v);
+            auto mv = new Mov(Mov::I2I, dst, src);
             mbb->insts.emplace_back(mv);
+            auto vdst = make_vreg(MachineOperand::Float);
+            auto vmov = new Mov(Mov::F_I, vdst,  dst);
+            mbb->insts.emplace_back(vmov);
+            v_m[v] = ret = vdst;
         }
     } else {
         assert(false && "don't know what operand you want");
@@ -728,7 +732,9 @@ void emit_br(Instruction *inst, MachineBasicBlock *mbb) {
       }
     } else {
         auto m_cond = make_operand(cond, mbb, true);
+        bool is_float = m_cond->operand_type == MachineOperand::Float;
         auto m_cmp = new Cmp();
+        m_cmp->tag = is_float ? Cmp::Float : Cmp::Int; 
         m_cmp->lhs = m_cond;
         m_cmp->rhs = new IImm(0);
         mbb->insts.emplace_back(m_cmp);
