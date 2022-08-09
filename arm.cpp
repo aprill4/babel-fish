@@ -1247,6 +1247,7 @@ MachineFunction *emit_func(Function *func) {
 
 void print_globals(FILE *fp, const std::set<GlobalVariable *> &globals) {
     fprintf(fp, "\n@ here are the globals +-+^_^+-=\n");
+    fprintf(fp, ".data\n.align 2\n");
     for (auto &glob : globals) {
         fprintf(fp, "%s:\n", glob->getName().c_str());
         auto init = glob->getInitValue();
