@@ -938,7 +938,7 @@ void emit_gep(Instruction *inst, MachineBasicBlock* mbb) {
                 if (element_type->isPointerType()) {                    
                     MachineOperand * sth = nullptr;
                     if (element_type->getPtrElementType()->isArrayType()) {
-                        sth = emit_constant(static_cast<ArrayType*>(element_type)->getAllElementNum() * 4 * val, mbb);
+                        sth = emit_constant(static_cast<ArrayType*>(element_type->getPtrElementType())->getAllElementNum() * 4 * val, mbb);
                     } else {
                         sth = emit_constant(4 * val, mbb);
                     }
@@ -962,7 +962,7 @@ void emit_gep(Instruction *inst, MachineBasicBlock* mbb) {
             if (element_type->isPointerType()) {                    
                 MachineOperand * sth = nullptr;
                 if (element_type->getPtrElementType()->isArrayType()) {
-                    sth = emit_constant(static_cast<ArrayType*>(element_type)->getAllElementNum() * 4, mbb);
+                    sth = emit_constant(static_cast<ArrayType*>(element_type->getPtrElementType())->getAllElementNum() * 4, mbb);
                 } else {
                     sth = emit_constant(4, mbb);
                 }
