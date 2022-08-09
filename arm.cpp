@@ -813,6 +813,25 @@ void emit_br(Instruction *inst, MachineBasicBlock *mbb) {
   }
 }
 
+MachineInst::Cond trans_to_cond(int cond){
+    switch (cond) {
+    case 0:
+        return MachineInst::Eq;
+    case 1:
+        return MachineInst::Ne;
+    case 2:
+        return MachineInst::Gt;
+    case 3:
+        return MachineInst::Ge;
+    case 4:
+        return MachineInst::Lt;
+    case 5:
+        return MachineInst::Le;
+    default:
+        assert(false && "error cond");
+    }
+}
+
 void emit_cmp(Instruction *inst, MachineBasicBlock* mbb) {
   if (!inst->isIcmp() && !inst->isFcmp()) {
     throw Exception(std::string("Inst isn't IcmpInst or FcmpInst in ") + __FILE__ + " " + std::to_string(__LINE__));
@@ -821,11 +840,67 @@ void emit_cmp(Instruction *inst, MachineBasicBlock* mbb) {
   auto cmp = new Cmp();
   if (inst->isIcmp()) {
     cmp->tag = Cmp::Int;
+    auto icmp = dynamic_cast<IcmpInst*>(inst);
+    auto lval = icmp->getOperand(0);
+    auto rval = icmp->getOperand(1);
+    if (dynamic_cast<IcmpInst*>(lval) || dynamic_cast<FcmpInst*>(lval)) {
+        auto vreg = make_vreg(MachineOperand::OperandType::Int);
+        auto mv0 =  new Mov(Mov::I2I, vreg, new IImm(0));
+        auto mv1 = new Mov(Mov::I2I, vreg, new IImm(1));
+        if (dynamic_cast<IcmpInst*>(lval)) {
+            mv1->cond = trans_to_cond(static_cast<int>(dynamic_cast<IcmpInst*>(lval)->getIcmpOp()));
+        } else {
+            mv1->cond = trans_to_cond(static_cast<int>(dynamic_cast<FcmpInst*>(lval)->getFcmpOp()));        
+        }
+        mbb->insts.emplace_back(mv0);
+        mbb->insts.emplace_back(mv1);
+        cmp->lhs = vreg;
+    } else {
+        cmp->lhs = make_operand(inst->getOperand(0), mbb, true);
+    }
+    if (dynamic_cast<IcmpInst*>(rval) || dynamic_cast<FcmpInst*>(rval)) {
+        auto vreg = make_vreg(MachineOperand::OperandType::Int);
+        auto mv0 =  new Mov(Mov::I2I, vreg, new IImm(0));
+        auto mv1 = new Mov(Mov::I2I, vreg, new IImm(1));
+        if (dynamic_cast<IcmpInst*>(rval)) {
+            mv1->cond = trans_to_cond( static_cast<int>(dynamic_cast<IcmpInst*>(rval)->getIcmpOp()));
+        } else {
+            mv1->cond = trans_to_cond( static_cast<int>(dynamic_cast<FcmpInst*>(rval)->getFcmpOp()));        
+        }
+        mbb->insts.emplace_back(mv0);
+        mbb->insts.emplace_back(mv1);
+        cmp->rhs = vreg;
+    } else {
+        cmp->rhs = make_operand(inst->getOperand(1), mbb);
+    }
   } else {
     cmp->tag = Cmp::Float;
+    auto fcmp = dynamic_cast<FcmpInst*>(inst);
+    auto lval = fcmp->getOperand(0);
+    auto rval = fcmp->getOperand(1);
+    if (dynamic_cast<IcmpInst*>(lval) || dynamic_cast<FcmpInst*>(lval)) {
+        auto vreg = make_vreg(MachineOperand::OperandType::Int);
+        auto mv0 =  new Mov(Mov::I2I, vreg, new IImm(0));
+        auto mv1 = new Mov(Mov::I2I, vreg, new IImm(1));
+        mv1->cond = Mov::Eq;
+        mbb->insts.emplace_back(mv0);
+        mbb->insts.emplace_back(mv1);
+        cmp->lhs = vreg;
+    } else {
+        cmp->lhs = make_operand(inst->getOperand(0), mbb, true);    
+    }
+    if (dynamic_cast<IcmpInst*>(rval) || dynamic_cast<FcmpInst*>(rval)) {
+        auto vreg = make_vreg(MachineOperand::OperandType::Int);
+        auto mv0 =  new Mov(Mov::I2I, vreg, new IImm(0));
+        auto mv1 = new Mov(Mov::I2I, vreg, new IImm(1));
+        mv1->cond = Mov::Eq;    
+        mbb->insts.emplace_back(mv0);
+        mbb->insts.emplace_back(mv1);
+        cmp->rhs = vreg;
+    } else {
+        cmp->rhs = make_operand(inst->getOperand(1), mbb);        
+    }
   }
-  cmp->lhs = make_operand(inst->getOperand(0), mbb, true);
-  cmp->rhs = make_operand(inst->getOperand(1), mbb);
   mbb->insts.emplace_back(cmp);
 }
 
