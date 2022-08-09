@@ -804,6 +804,13 @@ void emit_br(Instruction *inst, MachineBasicBlock *mbb) {
         br1->cond = MachineInst::Le;
         break;
       }
+    } else {
+        auto m_cond = make_operand(cond, mbb, true);
+        auto m_cmp = new Cmp();
+        m_cmp->lhs = m_cond;
+        m_cmp->rhs = new IImm(1);
+        mbb->insts.emplace_back(m_cmp);
+        br1->cond = Branch::Eq;
     }
     mbb->insts.emplace_back(br1);
     mbb->insts.emplace_back(br2);
@@ -882,7 +889,11 @@ void emit_cmp(Instruction *inst, MachineBasicBlock* mbb) {
         auto vreg = make_vreg(MachineOperand::OperandType::Int);
         auto mv0 =  new Mov(Mov::I2I, vreg, new IImm(0));
         auto mv1 = new Mov(Mov::I2I, vreg, new IImm(1));
-        mv1->cond = Mov::Eq;
+        if (dynamic_cast<IcmpInst*>(lval)) {
+            mv1->cond = trans_to_cond( static_cast<int>(dynamic_cast<IcmpInst*>(rval)->getIcmpOp()));
+        } else {
+            mv1->cond = trans_to_cond( static_cast<int>(dynamic_cast<FcmpInst*>(rval)->getFcmpOp()));        
+        }
         mbb->insts.emplace_back(mv0);
         mbb->insts.emplace_back(mv1);
         cmp->lhs = vreg;
@@ -893,7 +904,11 @@ void emit_cmp(Instruction *inst, MachineBasicBlock* mbb) {
         auto vreg = make_vreg(MachineOperand::OperandType::Int);
         auto mv0 =  new Mov(Mov::I2I, vreg, new IImm(0));
         auto mv1 = new Mov(Mov::I2I, vreg, new IImm(1));
-        mv1->cond = Mov::Eq;    
+        if (dynamic_cast<IcmpInst*>(rval)) {
+            mv1->cond = trans_to_cond( static_cast<int>(dynamic_cast<IcmpInst*>(rval)->getIcmpOp()));
+        } else {
+            mv1->cond = trans_to_cond( static_cast<int>(dynamic_cast<FcmpInst*>(rval)->getFcmpOp()));        
+        }
         mbb->insts.emplace_back(mv0);
         mbb->insts.emplace_back(mv1);
         cmp->rhs = vreg;
