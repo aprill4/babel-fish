@@ -730,9 +730,9 @@ void emit_br(Instruction *inst, MachineBasicBlock *mbb) {
         auto m_cond = make_operand(cond, mbb, true);
         auto m_cmp = new Cmp();
         m_cmp->lhs = m_cond;
-        m_cmp->rhs = new IImm(1);
+        m_cmp->rhs = new IImm(0);
         mbb->insts.emplace_back(m_cmp);
-        br1->cond = Branch::Eq;
+        br1->cond = Branch::Ne;
     }
     mbb->insts.emplace_back(br1);
     mbb->insts.emplace_back(br2);
