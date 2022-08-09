@@ -14,6 +14,7 @@ CC=build/babel
 ASSEMBLER=gcc
 QEMU=
 ARCH=`uname -m`
+CASE=
 
 function err {
     [[ $# -eq 1 ]] && printf "${Red}error:${Normal} $1\n"
@@ -22,8 +23,9 @@ function err {
 
 function usage {
     cat <<EOF
-Usage: $0 [ -d SOURCES ] [-g/-t]  [-q]
+Usage: $0 [ -d SOURCES_DIR | -s SOURCE ] [-g/-t]  [-q]
     -d: specify the sources files directory (default: functional)
+    -s: test single case
     -g: complie with clang/gcc to get the right answers
     -t: test our compiler (default)
     -q: use QEMU (default: disabled)
@@ -32,7 +34,7 @@ EOF
 }
 
 function parse_opts {
-    while getopts "d:gtc" options; do
+    while getopts "d:gtcs:" options; do
         case ${options} in
             d)
                 SRCDIR=${OPTARG}
@@ -48,6 +50,10 @@ function parse_opts {
                 ARCH="armv7l"
                 QEMU="qemu-arm-static"
                 ;;
+            s) 
+                CASE=`basename ${OPTARG}`
+                SRCDIR=`dirname ${OPTARG}`
+                ;;
             :) 
                 err "-${OPTARG} requries an argument."
                 usage
@@ -61,8 +67,7 @@ function parse_opts {
 
 function show_status {
     local src=$1
-    progress="[$current_file_count/$file_num]"
-    printf "$progress $src ... "
+    printf "$src ... "
 }
 
 function report_result {
@@ -80,8 +85,6 @@ function run_test {
     local err_out=$TMPDIR/${src%.*}.err
     local std_out=$TMPDIR/${src%.*}.out
 
-    show_status $src
-
     ${CC} $SRCDIR/$src -o $asm_out >/dev/null 2> $err_out
     [[ $? -ne 0 ]] && report_result $Red "compile error" && return 1
 
@@ -95,7 +98,7 @@ function run_test {
         timeout 5 $QEMU $bin_out > $std_out 2>>$err_out
     fi
     ec=$?
-    echo $ec > $std_out
+    echo $ec >> $std_out
     [[ $ec -eq 124 ]] && report_result $Blue "timeout after 5 seconds" && return 1
     [[ $ec -eq 139 ]] && \
         report_result $Yellow "segfault" && return 1
@@ -113,17 +116,21 @@ function run_all_tests {
 
     for file in `find $SRCDIR -name '*.sy' -exec basename {} \; | sort`
     do
+        progress="[$current_file_count/$file_num]"
+        printf "$progress "
+        show_status $file
         run_test $file
         failed=$?
         current_failed=`expr $current_failed + $failed`
         current_file_count=`expr $current_file_count + 1`
     done
 
-    passed=`expr $current_file_count - $current_failed`
+    passed=`expr $current_file_count - 1 - $current_failed`
 
     printf "statistics\n"
-    printf "    ${Green}$passed passed"
-    printf "    ${Red}$current_failed failed${Normal}"
+    printf "    ${Green}$passed passed\n"
+    printf "    ${Red}$current_failed failed${Normal}\n"
+    return "$current_failed"
 }
 
 function main {
@@ -140,12 +147,16 @@ environments
 EOF
 
     mkdir -p $TMPDIR
-    ./build.sh || err "build failed"
+    #./build.sh || err "build failed"
 
-    run_all_tests
+    if [ "$CASE" = "" ]
+    then
+        run_all_tests
+    else
+        show_status "$CASE"
+        run_test "$CASE"
+    fi
 }
 
 # TODO: returns non-zero if any test failed
 main $@
-
-exit 0
