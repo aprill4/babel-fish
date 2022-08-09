@@ -3,6 +3,7 @@
 #include <deque>
 
 class Scope;
+class Expression;
 class IRBuilder {
 public:
   IRBuilder()
@@ -20,6 +21,9 @@ public:
   BasicBlock *getNextBlock() {
     return loop_.back().second;
   }
+  Expression *getCond() {
+    return cond_.back();
+  }
   Value *getTmpVal() { return val_; }
   Function *getFunction() { return func_; }
 
@@ -30,7 +34,9 @@ public:
   void setLoopBlock(BasicBlock *whileBlock, BasicBlock *nextBlock) {
     loop_.emplace_back(std::make_pair(whileBlock, nextBlock));
   }
+  void setCond(Expression *cond) { cond_.emplace_back(cond); }
   void popLoopBlock() { loop_.pop_back(); }
+  void popCond() { cond_.pop_back(); }
   std::size_t loopBlockSize() { return loop_.size(); }
 
 private:
@@ -40,5 +46,6 @@ private:
   Scope *scope_;
   BasicBlock *basicblock_;
   std::deque<std::pair<BasicBlock *, BasicBlock *>> loop_;
+  std::deque<Expression*> cond_;
   Function *func_;
 };

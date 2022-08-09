@@ -367,6 +367,7 @@ void Root::generate(IRBuilder *irBuilder) {
   addLibFn(irBuilder, "getch" , scope_, Type::getInt32Type(c),{});
   addLibFn(irBuilder, "getarray" , scope_, Type::getInt32Type(c),{PointerType::get(c, c.Int32Type)});
   addLibFn(irBuilder, "getfarray" , scope_, Type::getInt32Type(c),{PointerType::get(c, c.FloatType)});
+  addLibFn(irBuilder, "memset" , scope_, Type::getPtrType(c, c.VoidType),{PointerType::get(c, c.VoidType), Type::getInt32Type(c), Type::getInt32Type(c)});
   for (auto &decl : this->declareStatement_) {
     decl->generate(irBuilder);
   }
@@ -1298,7 +1299,9 @@ void WhileStatement::generate(IRBuilder *irBuilder) {
   irBuilder->setBasicBlock(while_bb);
   irBuilder->setLoopBlock(while_bb, next_bb);
   if (doStmt_) {
-    doStmt_->generate(irBuilder); 
+    irBuilder->setCond(cond_);
+    doStmt_->generate(irBuilder);
+    irBuilder->popCond(); 
   }
   irBuilder->popLoopBlock();
   if (!irBuilder->getBasicBlock()->hasTerminator()) {
@@ -1365,8 +1368,34 @@ void BreakStatement::generate(IRBuilder *irBuilder) {
 }
 
 void ContinueStatement::generate(IRBuilder *irBuilder) {
+  Context& c = irBuilder->getContext();
   irBuilder->getBasicBlock()->addSuccessor(irBuilder->getWhileBlock());
-  BranchInst::Create(irBuilder->getContext(),irBuilder->getWhileBlock(),irBuilder->getBasicBlock());
+  irBuilder->setLoopBlock(irBuilder->getWhileBlock(), irBuilder->getNextBlock());
+  irBuilder->getCond()->generate(irBuilder);
+  irBuilder->popLoopBlock();
+  auto tmpVal = irBuilder->getTmpVal();
+  if (tmpVal) {    
+    Value* condVal;
+    if (!dynamic_cast<IcmpInst*>(tmpVal) && !dynamic_cast<FcmpInst*>(tmpVal)) {
+      if (tmpVal->getType()->isPointerType()) {
+        tmpVal = LoadInst::Create(c,tmpVal,irBuilder->getBasicBlock());
+      }    
+      if (tmpVal->getType()->isIntegerType()) {
+        condVal = IcmpInst::Create(
+            c, IcmpInst::IcmpOp::NEQ, tmpVal,
+            ConstantInt::get(c, tmpVal->getType(), 0),
+            irBuilder->getBasicBlock());
+      } else {
+        condVal = IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
+                                  ConstantFloat::get(c, 0),
+                                  irBuilder->getBasicBlock());
+      }        
+    } else {
+      condVal = tmpVal;
+    }
+    BranchInst::Create(c, condVal, irBuilder->getWhileBlock(), irBuilder->getNextBlock(), irBuilder->getBasicBlock());    
+  }
+  // BranchInst::Create(irBuilder->getContext(),irBuilder->getWhileBlock(),irBuilder->getBasicBlock());
 }
 
 void EvalStatement::generate(IRBuilder *irBuilder) {
