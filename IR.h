@@ -147,6 +147,7 @@ public:
   ArrayType(Type *elementType, std::size_t elementNum);
   Type *getElementType();
   std::size_t getElementNum();
+  std::size_t getAllElementNum();
 
 public:
   static ArrayType *get(Context &context, Type *elementType,

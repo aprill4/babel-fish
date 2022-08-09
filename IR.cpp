@@ -160,6 +160,14 @@ Type *ArrayType::getElementType() { return elementType_; }
 
 std::size_t ArrayType::getElementNum() { return elementNum_; }
 
+std::size_t ArrayType::getAllElementNum(){
+  int size = getElementNum();
+  if (elementType_->isArrayType()) {
+    size *= static_cast<ArrayType*>(elementType_)->getAllElementNum();
+  }
+  return size;
+}
+
 FunctionType::FunctionType(Type *resultType)
     : Type(TypeId::FunctionTypeId), resultType_(resultType) {}
 
