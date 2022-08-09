@@ -377,7 +377,7 @@ MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb, bool no_imm = fal
     else if (auto global = dynamic_cast<GlobalVariable *>(v)) {
         auto load_addr = emit_load_global_addr(global);
         mbb->insts.emplace_back(load_addr);
-        v_m[v] = ret = load_addr->dst;
+        ret = load_addr->dst;
     }
     else if (auto const_val = dynamic_cast<Constant *>(v)) {
         int val = 0;
