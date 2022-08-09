@@ -172,7 +172,7 @@ void FNeg::print(FILE *fp) {
 }
 
 void Cvt::print(FILE *fp) {
-    const char *cvt_inst[] = { "vcvt.s32.f32", "vcvt.f32.s32" };
+    const char *cvt_inst[] = { "vcvt.f32.s32", "vcvt.s32.f32" };
     fprintf(fp, "%s%s\t%s, %s", cvt_inst[tag], get_cond(), dst->print(), src->print());
 }
 
@@ -457,7 +457,7 @@ void handle_alloca(AllocaInst *inst, MachineBasicBlock *mbb) {
 
 void emit_load(Instruction *inst, MachineBasicBlock *mbb) {
     auto op0 = inst->operands_[0];
-    auto dst = make_vreg(infer_type_from_value(op0), inst);
+    auto dst = make_vreg(infer_type_from_value(inst), inst);
     auto base = make_operand(op0, mbb);
     bool is_float = inst->type_->typeId_ == Type::FloatTypeId;
     auto load = new Load(dst, base);
@@ -470,7 +470,7 @@ void emit_store(Instruction *inst, MachineBasicBlock *mbb) {
     auto op1 = inst->operands_[1];
     auto src = make_operand(src_val, mbb, true);
     auto base = make_operand(op1, mbb);
-    bool is_float = inst->type_->typeId_ == Type::FloatTypeId;
+    bool is_float = src_val->type_->typeId_ == Type::FloatTypeId;
     auto store = new Store(src, base);
     store->tag = is_float ? Store::Float : Store::Int;
     mbb->insts.emplace_back(store);
@@ -866,6 +866,15 @@ void emit_cvt(Instruction *inst, MachineBasicBlock *mbb) {
 
     cvt->dst = make_vreg(MachineOperand::Float, inst);
     mbb->insts.emplace_back(cvt);
+
+    if (inst->isFp2si()) {
+        auto fmov = new Mov;
+        fmov->src = cvt->dst;
+        fmov->dst = make_vreg(MachineOperand::Int, inst);
+        fmov->tag = Mov::F_I;
+        mbb->insts.emplace_back(fmov);
+    }
+
 }
 
 
@@ -904,7 +913,7 @@ void emit_unary(Instruction *inst, MachineBasicBlock* mbb){
             } else { 
                 auto fneg = new FNeg();
                 fneg->src = make_operand(right_val, mbb);
-                fneg->dst = make_vreg(MachineOperand::OperandType::Int, unary_inst);
+                fneg->dst = make_vreg(MachineOperand::OperandType::Float, unary_inst);
                 mbb->insts.emplace_back(fneg);
             }
         break;
