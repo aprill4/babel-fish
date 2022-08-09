@@ -116,8 +116,8 @@ void Cmp::print(FILE *fp) {
 void Mov::print(FILE *fp) {
     const char *mv_inst[] = { "mov", "vmov.f32", "vmov", "movt", "movw" };
     if (dynamic_cast<Symbol *>(src)) {
-        fprintf(fp, "movw%s\t%s, #:lower:%s\n", get_cond(), dst->print(), src->print());
-        fprintf(fp, "  movt%s\t%s, #:upper:%s", get_cond(), dst->print(), src->print());
+        fprintf(fp, "movw%s\t%s, #:lower16:%s\n", get_cond(), dst->print(), src->print());
+        fprintf(fp, "  movt%s\t%s, #:upper16:%s", get_cond(), dst->print(), src->print());
     } else {
         fprintf(fp, "%s%s\t%s, %s", mv_inst[tag], get_cond(), dst->print(), src->print());
     }
@@ -190,8 +190,13 @@ void Return::print(FILE *fp) {
 
 void Push_Pop::print(FILE *fp) {
     const char *inst[] = { "push", "pop" };
-    fprintf(fp, "v%s%s\t{ d8, d9, d10, d11, d12, d13, d14, d15 }\n", inst[tag], get_cond());
-    fprintf(fp, "  %s%s\t{ r4, r5, r6, r7, r8, r9, r10, r11, lr }", inst[tag], get_cond());
+    if (tag == 0) {
+	    fprintf(fp, "v%s%s\t{ d8, d9, d10, d11, d12, d13, d14, d15 }\n", inst[tag], get_cond());
+	    fprintf(fp, "  %s%s\t{ r4, r5, r6, r7, r8, r9, r10, r11, lr }", inst[tag], get_cond());
+    } else {
+	    fprintf(fp, "%s%s\t{ r4, r5, r6, r7, r8, r9, r10, r11, lr }\n", inst[tag], get_cond());
+	    fprintf(fp, "  v%s%s\t{ d8, d9, d10, d11, d12, d13, d14, d15 }", inst[tag], get_cond());
+    }
 }
 
 //-----------------------------------------------------------------
@@ -331,16 +336,16 @@ void replace_uses(MachineInst *inst, MachineOperand *old_opr, int new_reg){
     else if(auto i = dynamic_cast<Cvt*>(inst)) 
         oprs.emplace_back(&(i->src));
 
-    //assuming old_opr is VReg kind, plz check 
+    //assuming old_opr is VReg kind, plz check  (thanks)
     for(auto opr: oprs) 
-        if(dynamic_cast<VReg*>(*opr) 
-           && dynamic_cast<VReg*>(*opr)->id == dynamic_cast<VReg*>(old_opr)->id) 
+        if(*opr == old_opr) 
             *opr = new MReg(MReg::Reg(new_reg));
 }
 
 MachineOperand::OperandType infer_type_from_value(Value *v) {
     switch (v->type_->typeId_) {
-        case Type::IntegerTypeId: return MachineOperand::Int;
+        case Type::IntegerTypeId:
+        case Type::PointerTypeId: return MachineOperand::Int;
         case Type::FloatTypeId: return MachineOperand::Float;
         default: assert(false && "don't support this type");
     }
@@ -446,7 +451,6 @@ void handle_alloca(AllocaInst *inst, MachineBasicBlock *mbb) {
     }
 }
 
-
 void emit_load(Instruction *inst, MachineBasicBlock *mbb) {
     auto op0 = inst->operands_[0];
     auto dst = make_vreg(infer_type_from_value(op0), inst);
@@ -466,64 +470,6 @@ void emit_store(Instruction *inst, MachineBasicBlock *mbb) {
     auto store = new Store(src, base);
     store->tag = is_float ? Store::Float : Store::Int;
     mbb->insts.emplace_back(store);
-    /*
-    if (auto const_val = dynamic_cast<Constant *>(inst->operands_[0])) {
-        auto imm = make_operand(const_val, mbb);
-        auto dst = make_vreg(infer_type_from_value(const_val), const_val);
-        int is_int = 0;
-        if (dst->operand_type == MachineOperand::Int) {
-            is_int = 1;
-        }
-        auto mv = new Mov(Mov::Tag(is_int + 1), dst, imm);
-        mbb->insts.emplace_back(mv);
-    }
-    */
-    /*
-    if (auto global = dynamic_cast<GlobalVariable *>(inst->operands_[1])) {
-        auto load_addr = emit_load_global_addr(global);
-        mbb->insts.emplace_back(load_addr);
-
-        // todo: de-duplicate
-        auto base = load_addr->dst;
-        auto offset = nullptr;
-        auto src = make_operand(inst->operands_[0], mbb);
-        auto st_tag = Store::Int;
-        switch (inst->operands_[0]->type_->typeId_) {
-            case Type::IntegerTypeId: {
-                st_tag = Store::Int;
-            } break;
-            case Type::FloatTypeId: {
-                st_tag = Store::Float;
-            } break;
-            default: assert(false && "don't support this type");
-        }
-        auto st = new Store(src, base, offset);
-        st->tag = st_tag;
-        mbb->insts.emplace_back(st);
-
-    } else if (auto alloca = dynamic_cast<AllocaInst *>(inst->operands_[1])) {
-        auto base = new MReg(MReg::fp);
-        auto offset = new IImm(-(val_offset[inst->operands_[1]]));
-        auto src = make_operand(inst->operands_[0], mbb, true);
-        auto st_tag = Store::Int;
-        if (inst->operands_[0]->type_->typeId_ == Type::FloatTypeId) {
-            st_tag = Store::Float;
-        }
-        auto st = new Store(src, base, offset);
-        st->tag = st_tag;
-        mbb->insts.emplace_back(st);
-    } else if (auto gep = dynamic_cast<GetElementPtrInst *>(inst->operands_[1])) {
-        auto base = make_operand(gep, mbb);
-        auto src = make_operand(inst->operands_[0], mbb, true);
-        auto st_tag = Store::Int;
-        if (inst->operands_[0]->type_->typeId_ == Type::FloatTypeId) {
-            st_tag = Store::Float;
-        }
-        auto st = new Store(src, base);
-        st->tag = st_tag;
-        mbb->insts.emplace_back(st);
-    } 
-    */
 }
 
 MachineOperand *emit_constant(int c, MachineBasicBlock *mbb) {
@@ -680,6 +626,7 @@ void emit_args(std::vector<Argument *> &args, MachineBasicBlock *entry) {
     // and they are passed independently
     int num_of_ints = 0;
     int num_of_floats = 0;
+    int num_of_stack_args = 0;
 
     for (size_t i = 0; i < args.size(); i++) {
         auto arg = args[i];
@@ -688,12 +635,24 @@ void emit_args(std::vector<Argument *> &args, MachineBasicBlock *entry) {
         auto is_int = (ty->isPointerType() || ty->isIntegerType());
         printf("is_int: %d\n", is_int);
 
-        auto mv = new Mov;
-        mv->tag = is_int ? Mov::I2I : Mov::F2F;
-        mv->src = new MReg(MReg::Reg((is_int ? MReg::r0 : MReg::s0) +
-                      (is_int ? num_of_ints : num_of_floats)));
-        mv->dst = make_vreg(is_int ?
-                      MachineOperand::Int : MachineOperand::Float, arg);
+        auto dst = make_vreg(is_int ? MachineOperand::Int :
+                    MachineOperand::Float, arg);
+
+        if (num_of_ints >= 4 || num_of_floats >= 16) {
+            auto base = new MReg(MReg::fp);
+            auto offset = new IImm(num_of_stack_args * 4 + 100);
+            auto ld = new Load(is_int ? Load::Int : Load::Float,
+                        dst, base, offset);
+            entry->insts.emplace_back(ld);
+            num_of_stack_args++;
+        } else {
+            auto mv = new Mov;
+            mv->tag = is_int ? Mov::I2I : Mov::F2F;
+            mv->src = new MReg(MReg::Reg((is_int ? MReg::r0 : MReg::s0) +
+                          (is_int ? num_of_ints : num_of_floats)));
+            mv->dst = dst;
+            entry->insts.emplace_back(mv);
+        }
 
         if (is_int) {
             num_of_ints++;
@@ -701,7 +660,6 @@ void emit_args(std::vector<Argument *> &args, MachineBasicBlock *entry) {
             num_of_floats++;
         }
 
-        entry->insts.emplace_back(mv);
     }
 
     // if (num_of_ints > 4 || num_of_floats > 16) {
@@ -768,6 +726,13 @@ void emit_br(Instruction *inst, MachineBasicBlock *mbb) {
         br1->cond = MachineInst::Le;
         break;
       }
+    } else {
+        auto m_cond = make_operand(cond, mbb, true);
+        auto m_cmp = new Cmp();
+        m_cmp->lhs = m_cond;
+        m_cmp->rhs = new IImm(1);
+        mbb->insts.emplace_back(m_cmp);
+        br1->cond = Branch::Eq;
     }
     mbb->insts.emplace_back(br1);
     mbb->insts.emplace_back(br2);
@@ -777,18 +742,102 @@ void emit_br(Instruction *inst, MachineBasicBlock *mbb) {
   }
 }
 
+MachineInst::Cond trans_to_cond(int cond){
+    switch (cond) {
+    case 0:
+        return MachineInst::Eq;
+    case 1:
+        return MachineInst::Ne;
+    case 2:
+        return MachineInst::Gt;
+    case 3:
+        return MachineInst::Ge;
+    case 4:
+        return MachineInst::Lt;
+    case 5:
+        return MachineInst::Le;
+    default:
+        assert(false && "error cond");
+    }
+}
+
 void emit_cmp(Instruction *inst, MachineBasicBlock* mbb) {
   if (!inst->isIcmp() && !inst->isFcmp()) {
     throw Exception(std::string("Inst isn't IcmpInst or FcmpInst in ") + __FILE__ + " " + std::to_string(__LINE__));
   }
+  printf("hey\n");
   auto cmp = new Cmp();
   if (inst->isIcmp()) {
     cmp->tag = Cmp::Int;
+    auto icmp = dynamic_cast<IcmpInst*>(inst);
+    auto lval = icmp->getOperand(0);
+    auto rval = icmp->getOperand(1);
+    if (dynamic_cast<IcmpInst*>(lval) || dynamic_cast<FcmpInst*>(lval)) {
+        auto vreg = make_vreg(MachineOperand::OperandType::Int);
+        auto mv0 =  new Mov(Mov::I2I, vreg, new IImm(0));
+        auto mv1 = new Mov(Mov::I2I, vreg, new IImm(1));
+        if (dynamic_cast<IcmpInst*>(lval)) {
+            mv1->cond = trans_to_cond(static_cast<int>(dynamic_cast<IcmpInst*>(lval)->getIcmpOp()));
+        } else {
+            mv1->cond = trans_to_cond(static_cast<int>(dynamic_cast<FcmpInst*>(lval)->getFcmpOp()));        
+        }
+        mbb->insts.emplace_back(mv0);
+        mbb->insts.emplace_back(mv1);
+        cmp->lhs = vreg;
+    } else {
+        cmp->lhs = make_operand(inst->getOperand(0), mbb, true);
+    }
+    if (dynamic_cast<IcmpInst*>(rval) || dynamic_cast<FcmpInst*>(rval)) {
+        auto vreg = make_vreg(MachineOperand::OperandType::Int);
+        auto mv0 =  new Mov(Mov::I2I, vreg, new IImm(0));
+        auto mv1 = new Mov(Mov::I2I, vreg, new IImm(1));
+        if (dynamic_cast<IcmpInst*>(rval)) {
+            mv1->cond = trans_to_cond( static_cast<int>(dynamic_cast<IcmpInst*>(rval)->getIcmpOp()));
+        } else {
+            mv1->cond = trans_to_cond( static_cast<int>(dynamic_cast<FcmpInst*>(rval)->getFcmpOp()));        
+        }
+        mbb->insts.emplace_back(mv0);
+        mbb->insts.emplace_back(mv1);
+        cmp->rhs = vreg;
+    } else {
+        cmp->rhs = make_operand(inst->getOperand(1), mbb);
+    }
   } else {
     cmp->tag = Cmp::Float;
+    auto fcmp = dynamic_cast<FcmpInst*>(inst);
+    auto lval = fcmp->getOperand(0);
+    auto rval = fcmp->getOperand(1);
+    if (dynamic_cast<IcmpInst*>(lval) || dynamic_cast<FcmpInst*>(lval)) {
+        auto vreg = make_vreg(MachineOperand::OperandType::Int);
+        auto mv0 =  new Mov(Mov::I2I, vreg, new IImm(0));
+        auto mv1 = new Mov(Mov::I2I, vreg, new IImm(1));
+        if (dynamic_cast<IcmpInst*>(lval)) {
+            mv1->cond = trans_to_cond( static_cast<int>(dynamic_cast<IcmpInst*>(rval)->getIcmpOp()));
+        } else {
+            mv1->cond = trans_to_cond( static_cast<int>(dynamic_cast<FcmpInst*>(rval)->getFcmpOp()));        
+        }
+        mbb->insts.emplace_back(mv0);
+        mbb->insts.emplace_back(mv1);
+        cmp->lhs = vreg;
+    } else {
+        cmp->lhs = make_operand(inst->getOperand(0), mbb, true);    
+    }
+    if (dynamic_cast<IcmpInst*>(rval) || dynamic_cast<FcmpInst*>(rval)) {
+        auto vreg = make_vreg(MachineOperand::OperandType::Int);
+        auto mv0 =  new Mov(Mov::I2I, vreg, new IImm(0));
+        auto mv1 = new Mov(Mov::I2I, vreg, new IImm(1));
+        if (dynamic_cast<IcmpInst*>(rval)) {
+            mv1->cond = trans_to_cond( static_cast<int>(dynamic_cast<IcmpInst*>(rval)->getIcmpOp()));
+        } else {
+            mv1->cond = trans_to_cond( static_cast<int>(dynamic_cast<FcmpInst*>(rval)->getFcmpOp()));        
+        }
+        mbb->insts.emplace_back(mv0);
+        mbb->insts.emplace_back(mv1);
+        cmp->rhs = vreg;
+    } else {
+        cmp->rhs = make_operand(inst->getOperand(1), mbb);        
+    }
   }
-  cmp->lhs = make_operand(inst->getOperand(0), mbb);
-  cmp->rhs = make_operand(inst->getOperand(1), mbb);
   mbb->insts.emplace_back(cmp);
 }
 
@@ -862,59 +911,71 @@ void emit_gep(Instruction *inst, MachineBasicBlock* mbb) {
     auto gep = dynamic_cast<GetElementPtrInst*>(inst);
     auto res = make_vreg(MachineOperand::OperandType::Int, inst);
     auto ptr = gep->getOperand(0);
-    mbb->insts.emplace_back(
-            new Binary(
-                Binary::Int, Binary::ISub, res, new MReg(MReg::fp), new IImm(val_offset[ptr])));
-    auto element_type = ptr->getType()->getPtrElementType();
-    ArrayType *arr_ty = nullptr;
-    if (element_type->isArrayType()) {
-        arr_ty = static_cast<ArrayType *>(element_type);        
-    } else if (element_type->isPointerType()) {
-        arr_ty = static_cast<ArrayType *>(element_type->getPtrElementType());
-    }
-    auto first_item = gep->getOperand(1);
-    if (dynamic_cast<ConstantInt*>(first_item)) {
-        if (dynamic_cast<ConstantInt*>(first_item)->getValue() != 0) {        
-            auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, 
-                        new IImm(dynamic_cast<ConstantInt*>(first_item)->getValue() * arr_ty->getElementNum() * 4));
-            mbb->insts.emplace_back(offset_sum);        
-        }
-    } else {
-        auto m_operand = make_operand(first_item, mbb);
-        MachineOperand* offset_operand = make_vreg(MachineOperand::OperandType::Int);
-        Binary* offset = new Binary(Binary::Int, Binary::IMul, 
-            offset_operand, m_operand, new IImm(arr_ty->getElementNum() * 4));
-        mbb->insts.emplace_back(offset);
-        auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, offset_operand);
-        mbb->insts.emplace_back(offset_sum);                
-    }
-    for (int i = 2; i < gep->getOperandNum(); i++) {
+    mbb->insts.emplace_back(new Mov(Mov::I2I, res, make_operand(ptr, mbb)));    
+    auto element_type = ptr->getType();
+    for (int i = 1; i < gep->getOperandNum(); i++) {
         auto item = gep->getOperand(i);
         if (dynamic_cast<ConstantInt*>(item)) {
             if (dynamic_cast<ConstantInt*>(item)->getValue() != 0) {
-                element_type = arr_ty->getElementType();
-                std::int32_t offset_num = 0;                
-                if (element_type->isArrayType()) {
-                    arr_ty = static_cast<ArrayType *>(element_type);
-                    offset_num = dynamic_cast<ConstantInt*>(item)->getValue() * arr_ty->getElementNum() * 4;
-                } else {
-                    offset_num = dynamic_cast<ConstantInt*>(item)->getValue() * 4;
+                auto val = dynamic_cast<ConstantInt*>(item)->getValue();
+                auto m_operand = make_operand(item, mbb);
+                MachineOperand* offset_operand = make_vreg(MachineOperand::OperandType::Int);
+                if (element_type->isPointerType()) {                    
+                    MachineOperand * sth = nullptr;
+                    if (element_type->getPtrElementType()->isArrayType()) {
+                        sth = emit_constant(static_cast<ArrayType*>(element_type)->getElementNum() * 4 * val, mbb);
+                    } else {
+                        sth = emit_constant(4 * val, mbb);
+                    }
+                    auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, sth);
+                    mbb->insts.emplace_back(offset_sum);            
+                } else if (element_type->isArrayType()) {
+                    auto arr_ty = static_cast<ArrayType*>(element_type);
+                    MachineOperand * sth = nullptr;
+                    if (arr_ty->getElementType()->isArrayType()) {
+                        sth = emit_constant(static_cast<ArrayType*>(arr_ty->getElementType())->getElementNum() * 4 * val, mbb);
+                    } else {
+                        sth = emit_constant(4 * val, mbb);                
+                    }
+                    auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, sth);
+                    mbb->insts.emplace_back(offset_sum);
                 }
-                auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, new IImm(offset_num));
-                mbb->insts.emplace_back(offset_sum);                    
             }
-        } else {        
+        } else {
             auto m_operand = make_operand(item, mbb);
             MachineOperand* offset_operand = make_vreg(MachineOperand::OperandType::Int);
-            element_type = arr_ty->getElementType();
-            if (element_type->isArrayType()) {
-                arr_ty = static_cast<ArrayType *>(element_type);
+            if (element_type->isPointerType()) {                    
+                MachineOperand * sth = nullptr;
+                if (element_type->getPtrElementType()->isArrayType()) {
+                    sth = emit_constant(static_cast<ArrayType*>(element_type)->getElementNum() * 4, mbb);
+                } else {
+                    sth = emit_constant(4, mbb);
+                }
+                Binary* offset = new Binary(Binary::Int, Binary::IMul, 
+                        offset_operand, m_operand, sth);
+                mbb->insts.emplace_back(offset);
+                auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, offset_operand);
+                mbb->insts.emplace_back(offset_sum);            
+            } else if (element_type->isArrayType()) {
+                auto arr_ty = static_cast<ArrayType*>(element_type);
+                MachineOperand * sth = nullptr;
+                if (arr_ty->getElementType()->isArrayType()) {
+                    sth = emit_constant(static_cast<ArrayType*>(arr_ty->getElementType())->getElementNum() * 4, mbb);
+                } else {
+                    sth = emit_constant(4, mbb);                
+                }
+                Binary* offset = new Binary(Binary::Int, Binary::IMul, 
+                        offset_operand, m_operand, sth);
+                mbb->insts.emplace_back(offset);
+                auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, offset_operand);
+                mbb->insts.emplace_back(offset_sum);
             }
-            Binary* offset = new Binary(Binary::Int, Binary::IMul, 
-                    offset_operand, m_operand, new IImm(arr_ty->getElementNum() * 4));
-            mbb->insts.emplace_back(offset);
-            auto offset_sum = new Binary(Binary::Int, Binary::IAdd, res, res, offset_operand);
-            mbb->insts.emplace_back(offset_sum);
+        }
+        if (element_type->isPointerType()) {
+            element_type = element_type->getPtrElementType();                
+        } else if (element_type->isArrayType()) {
+            auto arr_ty = static_cast<ArrayType*>(element_type);
+            element_type = arr_ty->getElementType();            
         }
     }
 }
@@ -1098,6 +1159,7 @@ MachineFunction *emit_func(Function *func) {
 
 void print_globals(FILE *fp, const std::set<GlobalVariable *> &globals) {
     fprintf(fp, "\n@ here are the globals +-+^_^+-=\n");
+    fprintf(fp, ".data\n.align 2\n");
     for (auto &glob : globals) {
         fprintf(fp, "%s:\n", glob->getName().c_str());
         auto init = glob->getInitValue();
@@ -1141,6 +1203,8 @@ void print_globals(FILE *fp, const std::set<GlobalVariable *> &globals) {
                 fprintf(fp, "  .zero\t%d\n", consecutive_zeros * 4);
             }
 
+        } else if (auto i = dynamic_cast<ConstantZero *>(init)) {
+            fprintf(fp, "  .word\t0");
         } else {
             assert(false && "what is this global");
         }
@@ -1296,6 +1360,13 @@ void stack_ra_on_function(MachineFunction *mf)  {
             if (auto load = dynamic_cast<Load*>(I)) {
                 if (dynamic_cast<IImm*>(load->base)) 
                     goto done;
+            }
+
+            if (auto mv = dynamic_cast<Mov *>(I)) {
+                if (mv->tag == Mov::H2I || mv->tag == Mov::L2I) {
+                    // we assume movw and movt are fine by default
+                    goto done;
+                }
             }
 
             if (dynamic_cast<Load*>(I) || dynamic_cast<Store*>(I)) {
