@@ -923,7 +923,7 @@ void emit_gep(Instruction *inst, MachineBasicBlock* mbb) {
                 if (element_type->isPointerType()) {                    
                     MachineOperand * sth = nullptr;
                     if (element_type->getPtrElementType()->isArrayType()) {
-                        sth = emit_constant(static_cast<ArrayType*>(element_type)->getElementNum() * 4 * val, mbb);
+                        sth = emit_constant(static_cast<ArrayType*>(element_type)->getAllElementNum() * 4 * val, mbb);
                     } else {
                         sth = emit_constant(4 * val, mbb);
                     }
@@ -933,7 +933,7 @@ void emit_gep(Instruction *inst, MachineBasicBlock* mbb) {
                     auto arr_ty = static_cast<ArrayType*>(element_type);
                     MachineOperand * sth = nullptr;
                     if (arr_ty->getElementType()->isArrayType()) {
-                        sth = emit_constant(static_cast<ArrayType*>(arr_ty->getElementType())->getElementNum() * 4 * val, mbb);
+                        sth = emit_constant(static_cast<ArrayType*>(arr_ty->getElementType())->getAllElementNum() * 4 * val, mbb);
                     } else {
                         sth = emit_constant(4 * val, mbb);                
                     }
@@ -947,7 +947,7 @@ void emit_gep(Instruction *inst, MachineBasicBlock* mbb) {
             if (element_type->isPointerType()) {                    
                 MachineOperand * sth = nullptr;
                 if (element_type->getPtrElementType()->isArrayType()) {
-                    sth = emit_constant(static_cast<ArrayType*>(element_type)->getElementNum() * 4, mbb);
+                    sth = emit_constant(static_cast<ArrayType*>(element_type)->getAllElementNum() * 4, mbb);
                 } else {
                     sth = emit_constant(4, mbb);
                 }
@@ -960,7 +960,7 @@ void emit_gep(Instruction *inst, MachineBasicBlock* mbb) {
                 auto arr_ty = static_cast<ArrayType*>(element_type);
                 MachineOperand * sth = nullptr;
                 if (arr_ty->getElementType()->isArrayType()) {
-                    sth = emit_constant(static_cast<ArrayType*>(arr_ty->getElementType())->getElementNum() * 4, mbb);
+                    sth = emit_constant(static_cast<ArrayType*>(arr_ty->getElementType())->getAllElementNum() * 4, mbb);
                 } else {
                     sth = emit_constant(4, mbb);                
                 }
