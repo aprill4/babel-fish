@@ -46,7 +46,6 @@ void parse_nest_array(vector<Value *>&ans, ArrayValue *cur, int idx, vector<int>
       expect = nums[idx], 
       cnt = 0,
       original = ans.size();
-  //bool change = false;
 
   for(auto&val : cur->valueList_) {
     if (val->isNumber_) {
@@ -56,10 +55,9 @@ void parse_nest_array(vector<Value *>&ans, ArrayValue *cur, int idx, vector<int>
       }
       ans.emplace_back(irBuilder->getTmpVal());
       if(++cnt == remain) cnt=0;
-      //change = true;
+      //offset = ans.size();
     }
     else {
-      //if(!change) offset = ans.size();
       if(cnt) {
         ans.resize(ans.size() + remain - cnt, ConstantZero::get(context, isInt ? context.Int32Type : context.FloatType));
         cnt = 0;
@@ -69,7 +67,6 @@ void parse_nest_array(vector<Value *>&ans, ArrayValue *cur, int idx, vector<int>
   }
 
   if(ans.size()-original<expect) {
-    //if(change) offset = ans.size();
     ans.resize(expect + original, ConstantZero::get(context, isInt ? context.Int32Type : context.FloatType));
   }
 }
