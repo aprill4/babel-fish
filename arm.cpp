@@ -442,7 +442,7 @@ void handle_alloca(AllocaInst *inst, MachineBasicBlock *mbb) {
         } break;
         case Type::ArrayTypeId: {
             auto array_type = static_cast<ArrayType *>(inst->allocaType_);
-            auto array_size = array_type->elementNum_;
+            auto array_size = array_type->getAllElementNum();
             auto sub = new Binary(Binary::Int, Binary::ISub, make_vreg(MachineOperand::Int), new MReg(MReg::fp), new IImm(allocate(4 * array_size)));
             v_m[inst] = sub->dst;
             mbb->insts.emplace_back(sub);
