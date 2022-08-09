@@ -1225,7 +1225,7 @@ void IfElseStatement::generate(IRBuilder *irBuilder) {
                                   irBuilder->getBasicBlock());
       } else {
         condVal =
-            IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
+            FcmpInst::Create(c, FcmpInst::FcmpOp::NEQ, tmpVal,
                             ConstantFloat::get(c, 0), irBuilder->getBasicBlock());
       }
     } else {
@@ -1287,7 +1287,7 @@ void WhileStatement::generate(IRBuilder *irBuilder) {
             ConstantInt::get(c, tmpVal->getType(), 0),
             irBuilder->getBasicBlock());
       } else {
-        condVal = IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
+        condVal = FcmpInst::Create(c, FcmpInst::FcmpOp::NEQ, tmpVal,
                                   ConstantFloat::get(c, 0),
                                   irBuilder->getBasicBlock());
       }
@@ -1325,7 +1325,7 @@ void WhileStatement::generate(IRBuilder *irBuilder) {
               ConstantInt::get(c, tmpVal->getType(), 0),
               irBuilder->getBasicBlock());
         } else {
-          condVal = IcmpInst::Create(c, IcmpInst::IcmpOp::NEQ, tmpVal,
+          condVal = FcmpInst::Create(c, FcmpInst::FcmpOp::NEQ, tmpVal,
                                     ConstantFloat::get(c, 0),
                                     irBuilder->getBasicBlock());
         }        
