@@ -125,7 +125,7 @@ struct Binary : MachineInst {
 struct Cmp : MachineInst {
     MachineOperand *lhs, *rhs;
     enum Tag { Int, Float };
-    Tag tag;
+    Tag tag = Int;
     Cmp() = default;
     Cmp(Tag t, MachineOperand *l , MachineOperand *r): tag(t), lhs(l), rhs(r) {}
     //if tag is Float, `add vmrs APSR_nzcv, FPSCR`
