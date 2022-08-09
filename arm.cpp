@@ -989,26 +989,7 @@ void emit_gep(Instruction *inst, MachineBasicBlock* mbb) {
     auto gep = dynamic_cast<GetElementPtrInst*>(inst);
     auto res = make_vreg(MachineOperand::OperandType::Int, inst);
     auto ptr = gep->getOperand(0);
-    if (!dynamic_cast<LoadInst*>(ptr)) {    
-        if (val_offset.find(ptr) != val_offset.end()) {        
-            mbb->insts.emplace_back(
-                    new Binary(
-                        Binary::Int, Binary::ISub, res, new MReg(MReg::fp), new IImm(val_offset[ptr])));
-        } else {
-            if (dynamic_cast<GlobalVariable*>(ptr)) {
-                auto global_var = dynamic_cast<GlobalVariable*>(ptr);
-                if (dynamic_cast<ConstantArray*>(global_var->getInitValue())) {
-                    mbb->insts.emplace_back(emit_load_global_addr(global_var));
-                } else {
-                    throw Exception("gep_error : global_initval isn't array");
-                }
-                mbb->insts.emplace_back(new Mov(Mov::I2I, res, make_operand(ptr, mbb))); 
-            }
-            else throw Exception("gep_error : about val_offset's ptr not find");
-        }
-    } else {
-        mbb->insts.emplace_back(new Mov(Mov::I2I, res, make_operand(ptr, mbb)));        
-    }
+    mbb->insts.emplace_back(new Mov(Mov::I2I, res, make_operand(ptr, mbb)));    
     auto element_type = ptr->getType();
     for (int i = 1; i < gep->getOperandNum(); i++) {
         auto item = gep->getOperand(i);
