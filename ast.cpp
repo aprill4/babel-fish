@@ -1415,13 +1415,6 @@ void FuncCallExpression::generate(IRBuilder *irBuilder) {
     if (val->getType()->isPointerType()) {
       if (!dynamic_cast<GetElementPtrInst*>(val)){
         val = LoadInst::Create(context, val, irBuilder->getBasicBlock());
-        if (val->getType() != funcType->getArgumentType(u)) {
-          if (funcType->getArgumentType(u)->isIntegerType()) {
-            val = FpToSiInst::Create(context, funcType->getArgumentType(u), val, irBuilder->getBasicBlock());
-          } else {
-            val = SiToFpInst::Create(context, funcType->getArgumentType(u), val, irBuilder->getBasicBlock());      
-          }
-        }
       } else {
         if (!funcType->getArgumentType(u)->isPointerType()) {          
           val = LoadInst::Create(context, val, irBuilder->getBasicBlock());
@@ -1431,13 +1424,12 @@ void FuncCallExpression::generate(IRBuilder *irBuilder) {
             ConstantInt::get(context, context.Int32Type, 0)
           }, irBuilder->getBasicBlock());
         }
-        if (val->getType() != funcType->getArgumentType(u)) {
-          if (funcType->getArgumentType(u)->isIntegerType()) {
-            val = FpToSiInst::Create(context, funcType->getArgumentType(u), val, irBuilder->getBasicBlock());
-          } else {
-            val = SiToFpInst::Create(context, funcType->getArgumentType(u), val, irBuilder->getBasicBlock());      
-          }
-          // val = ZextInst::Create(context, funcType->getArgumentType(u), val, irBuilder->getBasicBlock());
+      }
+      if (val->getType() != funcType->getArgumentType(u)) {
+        if (funcType->getArgumentType(u)->isIntegerType()) {
+          val = FpToSiInst::Create(context, funcType->getArgumentType(u), val, irBuilder->getBasicBlock());
+        } else {
+          val = SiToFpInst::Create(context, funcType->getArgumentType(u), val, irBuilder->getBasicBlock());      
         }
       }
     } else if (val->getType() != funcType->getArgumentType(u)) {
