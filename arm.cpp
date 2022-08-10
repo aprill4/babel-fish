@@ -635,7 +635,6 @@ void emit_args(std::vector<Argument *> &args, MachineBasicBlock *entry) {
 
         auto ty = arg->getType();
         auto is_int = (ty->isPointerType() || ty->isIntegerType());
-        printf("is_int: %d\n", is_int);
 
         auto dst = make_vreg(is_int ? MachineOperand::Int :
                     MachineOperand::Float, arg);
@@ -769,7 +768,6 @@ void emit_cmp(Instruction *inst, MachineBasicBlock* mbb) {
   if (!inst->isIcmp() && !inst->isFcmp()) {
     throw Exception(std::string("Inst isn't IcmpInst or FcmpInst in ") + __FILE__ + " " + std::to_string(__LINE__));
   }
-  printf("hey\n");
   auto cmp = new Cmp();
   if (inst->isIcmp()) {
     cmp->tag = Cmp::Int;
