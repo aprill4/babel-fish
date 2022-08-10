@@ -1355,8 +1355,6 @@ void stack_ra_on_function(MachineFunction *mf)  {
                     int val = dynamic_cast<IImm*>(load_or_store->offset)->value;
                     if (load_or_store->tag == Load::Int) {
                         need_legalize = val < -4095 || val > 4095;
-                    } else {
-                        assert(false && "float does not exist");
                     }
                     goto done;
                 }
