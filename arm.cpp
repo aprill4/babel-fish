@@ -394,10 +394,9 @@ MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb, bool no_imm = fal
 
         if (can_be_iimm_ror(val)) {
             auto imm = new IImm(val);
-            v_m[v] = imm;
             ret = imm;
             if (no_imm) {
-                auto dst = make_vreg(MachineOperand::Int, v);
+                auto dst = make_vreg(MachineOperand::Int);
                 auto mv = new Mov(Mov::I2I, dst, imm);
                 mbb->insts.emplace_back(mv);
                 ret = dst;
@@ -405,7 +404,7 @@ MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb, bool no_imm = fal
         } else {
             auto l_imm = new IImm(0xffff & val);
             auto h_imm = new IImm((val >> 16) & 0xffff);
-            auto dst = make_vreg(MachineOperand::Int, v);
+            auto dst = make_vreg(MachineOperand::Int);
 
             auto mvw = new Mov(Mov::L2I, dst, l_imm);
             auto mvt = new Mov(Mov::H2I, dst, h_imm);
@@ -418,11 +417,11 @@ MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb, bool no_imm = fal
 
         if (is_float) {
             auto src = ret;
-            auto dst = make_vreg(MachineOperand::Int, v);
+            auto dst = make_vreg(MachineOperand::Int);
             auto mv = new Mov(Mov::I2I, dst, src);
             mbb->insts.emplace_back(mv);
             auto vdst = make_vreg(MachineOperand::Float);
-            auto vmov = new Mov(Mov::F_I, vdst,  dst);
+            auto vmov = new Mov(Mov::F_I, vdst, dst);
             mbb->insts.emplace_back(vmov);
             ret = vdst;
         }
