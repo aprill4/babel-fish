@@ -1365,6 +1365,37 @@ void stack_ra_on_function(MachineFunction *mf)  {
         }
     }*/
 
+    for (auto mb : mf->basic_blocks) {
+        auto it = mb->insts.begin();
+        for(auto I: mb->insts) {
+            if (dynamic_cast<Load*>(I) || dynamic_cast<Store*>(I)) {
+                auto load_or_store = static_cast<Load*>(I);
+                bool need_legalize = false;
+                MachineOperand *use_of_offset;
+                use_of_offset = load_or_store->offset;
+                if (dynamic_cast<MReg*>(load_or_store->offset)) {
+                    // throw Exception(" error 0\n");
+                    need_legalize = true;
+                } else if (dynamic_cast<IImm*>(load_or_store->offset)) {
+                    int val = dynamic_cast<IImm*>(load_or_store->offset)->value;
+                    if (load_or_store->tag == Load::Float) {
+                        // throw Exception(" error 1\n");
+                        need_legalize = (val < -1020 ) || ( val > 1020 );
+                    }
+                }
+                if (need_legalize) {
+                    // throw Exception(" error 2\n");
+                    auto add = new Binary(Binary::Int, Binary::IAdd, new MReg(MReg::ip), 
+                                load_or_store->base, use_of_offset);
+                    mb->insts.insert(it, add);
+                    load_or_store->offset = nullptr;
+                    replace_uses(I, load_or_store->base, MReg::ip);
+                }
+            }
+            it++;
+        }
+    }
+
     // legalize imm, use r12 as temp
     for(auto mb : mf->basic_blocks) {
         auto it = mb->insts.begin();
@@ -1394,7 +1425,7 @@ void stack_ra_on_function(MachineFunction *mf)  {
                     if (load_or_store->tag == Load::Int) {
                         need_legalize = val < -4095 || val > 4095;
                     } else {
-                        need_legalize = val < -255 || val > 255;
+                        // need_legalize = val < -255 || val > 255;
                     }
                     goto done;
                 }
