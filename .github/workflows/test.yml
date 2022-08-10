@@ -20,6 +20,8 @@ jobs:
         run: qemu-arm-static --version && zig version && bison --version && flex --version
       - name: Build
         run: bash build.sh
+      - name: Unlimited Stack
+        run: ulimit -s unlimited
       - name: Test
         run: bash test.sh -c
       #- uses: actions/upload-artifact@v3

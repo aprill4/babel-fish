@@ -203,7 +203,6 @@ void Push_Pop::print(FILE *fp) {
 std::map<Value*, MachineOperand*> v_m;
 int vreg_id = 0;
 size_t stack_offset = 0;
-std::map<Value*, size_t> val_offset;
 //-----------------------------------------------------------------
 
 size_t allocate(size_t size) {
@@ -636,7 +635,6 @@ void emit_args(std::vector<Argument *> &args, MachineBasicBlock *entry) {
 
         auto ty = arg->getType();
         auto is_int = (ty->isPointerType() || ty->isIntegerType());
-        printf("is_int: %d\n", is_int);
 
         auto dst = make_vreg(is_int ? MachineOperand::Int :
                     MachineOperand::Float, arg);
@@ -770,7 +768,6 @@ void emit_cmp(Instruction *inst, MachineBasicBlock* mbb) {
   if (!inst->isIcmp() && !inst->isFcmp()) {
     throw Exception(std::string("Inst isn't IcmpInst or FcmpInst in ") + __FILE__ + " " + std::to_string(__LINE__));
   }
-  printf("hey\n");
   auto cmp = new Cmp();
   if (inst->isIcmp()) {
     cmp->tag = Cmp::Int;
@@ -1164,7 +1161,6 @@ MachineFunction *emit_func(Function *func) {
 
     stack_offset = 0;
     vreg_id = 0;
-    val_offset.clear();
     v_m.clear();
     //}
 
@@ -1243,29 +1239,7 @@ MachineModule *emit_asm(Module *IR) {
 void stack_ra_on_function(MachineFunction *mf)  {
     int callee_size      = 100, //calcation details: (r11 - r4 + 1 + lr + s31 - s16) * 4 = 100
         local_var_size   = mf->stack_size,
-        spilled_size     = mf->vreg_count * 4,
-        arg_size         = 0;
-
-    // calculate arg size
-    if(mf->call_func){
-        short max_icnt = 0, max_fcnt = 0;
-
-        for(auto mb : mf->basic_blocks) {
-            for(auto inst: mb->insts) {
-                if (dynamic_cast<Call*>(inst)) {
-                    auto call = dynamic_cast<Call*>(inst);
-                    short icnt = 0, fcnt = 0;
-                    for(auto&type: call->args_type)
-                        if(type == Call::ArgType::Int) icnt++;
-                        else fcnt++; 
-                    max_icnt = std::max(max_icnt, icnt);
-                    max_fcnt = std::max(max_fcnt, fcnt);
-                }
-            }
-        }
-
-        arg_size = std::max(0, max_icnt - 4) * 4 + std::max(0, max_fcnt - 16) * 4;
-    }
+        spilled_size     = mf->vreg_count * 4;
 
     // insert stores after defs, loads before uses
     for(auto mb: mf->basic_blocks) {
@@ -1327,41 +1301,6 @@ void stack_ra_on_function(MachineFunction *mf)  {
 
     push_pop(mf);
 
-    // fixup local array base calc
-    /*for(auto base : f->local_array_bases) {
-        assert(base->tag == MI_BINARY);
-        auto sub = (MI_Binary *) base;
-        assert(sub->op == BINARY_SUBTRACT);
-        assert(sub->lhs == make_reg(sp));
-        assert(sub->rhs.tag == IMM && sub->rhs.value > 0);
-
-        int32 offset_relative_to_sp = arg_size + spilled_size + local_array_size - sub->rhs.value;
-        // @TODO replace with a mov directly
-        // if offset relative to sp is 0
-
-        sub->op = BINARY_ADD;
-        sub->lhs = make_reg(sp);
-        sub->rhs = make_imm(offset_relative_to_sp);
-
-    }
-
-
-    // fixup arg loading calc
-    for(auto mb : f->mbs) {
-        for(auto I=mb->inst; I; I=I->next) {
-            if (I->tag != MI_LOAD) continue;
-            auto ldr = (MI_Load *) I;
-            if (!ldr) continue;
-            if (ldr->mem_tag != MEM_LOAD_ARG) continue;
-
-            int32 offset_value = ((ldr->offset.tag == SHAYEBUSHI) ? 0 : ldr->offset.value);
-            uint32 ofst_rel_to_sp = arg_size + spilled_size + local_array_size + callee_size + offset_value;
-            ldr->base.value = sp;
-            ldr->offset = make_imm(ofst_rel_to_sp);
-
-        }
-    }*/
-
     for (auto mb : mf->basic_blocks) {
         auto it = mb->insts.begin();
         for(auto I: mb->insts) {
@@ -1402,27 +1341,18 @@ void stack_ra_on_function(MachineFunction *mf)  {
             bool need_legalize = false;
             MachineOperand *use_of_imm;
 
-            if (auto load = dynamic_cast<Load*>(I)) {
-                if (dynamic_cast<IImm*>(load->base)) 
-                    goto done;
-            }
-
             if (auto mv = dynamic_cast<Mov *>(I)) {
                 if (mv->tag == Mov::H2I || mv->tag == Mov::L2I) {
                     // we assume movw and movt are fine by default
                     goto done;
                 }
-            }
-
-            if (dynamic_cast<Load*>(I) || dynamic_cast<Store*>(I)) {
+            } else if (dynamic_cast<Load*>(I) || dynamic_cast<Store*>(I)) {
                 auto load_or_store = static_cast<Load*>(I);
                 if (dynamic_cast<IImm*>(load_or_store->offset)) {
                     use_of_imm = load_or_store->offset;
                     int val = dynamic_cast<IImm*>(load_or_store->offset)->value;
                     if (load_or_store->tag == Load::Int) {
                         need_legalize = val < -4095 || val > 4095;
-                    } else {
-                        // need_legalize = val < -255 || val > 255;
                     }
                     goto done;
                 }
