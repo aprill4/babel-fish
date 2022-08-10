@@ -400,7 +400,6 @@ MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb, bool no_imm = fal
                 auto dst = make_vreg(MachineOperand::Int, v);
                 auto mv = new Mov(Mov::I2I, dst, imm);
                 mbb->insts.emplace_back(mv);
-                v_m[v] = dst;
                 ret = dst;
             }
         } else {
@@ -414,7 +413,6 @@ MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb, bool no_imm = fal
             mbb->insts.emplace_back(mvw);
             mbb->insts.emplace_back(mvt);
 
-            v_m[v] = dst;
             ret = dst;
         }
 
@@ -426,7 +424,7 @@ MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb, bool no_imm = fal
             auto vdst = make_vreg(MachineOperand::Float);
             auto vmov = new Mov(Mov::F_I, vdst,  dst);
             mbb->insts.emplace_back(vmov);
-            v_m[v] = ret = vdst;
+            ret = vdst;
         }
     } else {
         assert(false && "don't know what operand you want");
