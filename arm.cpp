@@ -393,19 +393,17 @@ MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb, bool no_imm = fal
 
         if (can_be_iimm_ror(val)) {
             auto imm = new IImm(val);
-            v_m[v] = imm;
             ret = imm;
             if (no_imm) {
-                auto dst = make_vreg(MachineOperand::Int, v);
+                auto dst = make_vreg(MachineOperand::Int);
                 auto mv = new Mov(Mov::I2I, dst, imm);
                 mbb->insts.emplace_back(mv);
-                v_m[v] = dst;
                 ret = dst;
             }
         } else {
             auto l_imm = new IImm(0xffff & val);
             auto h_imm = new IImm((val >> 16) & 0xffff);
-            auto dst = make_vreg(MachineOperand::Int, v);
+            auto dst = make_vreg(MachineOperand::Int);
 
             auto mvw = new Mov(Mov::L2I, dst, l_imm);
             auto mvt = new Mov(Mov::H2I, dst, h_imm);
@@ -413,19 +411,18 @@ MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb, bool no_imm = fal
             mbb->insts.emplace_back(mvw);
             mbb->insts.emplace_back(mvt);
 
-            v_m[v] = dst;
             ret = dst;
         }
 
         if (is_float) {
             auto src = ret;
-            auto dst = make_vreg(MachineOperand::Int, v);
+            auto dst = make_vreg(MachineOperand::Int);
             auto mv = new Mov(Mov::I2I, dst, src);
             mbb->insts.emplace_back(mv);
             auto vdst = make_vreg(MachineOperand::Float);
-            auto vmov = new Mov(Mov::F_I, vdst,  dst);
+            auto vmov = new Mov(Mov::F_I, vdst, dst);
             mbb->insts.emplace_back(vmov);
-            v_m[v] = ret = vdst;
+            ret = vdst;
         }
     } else {
         assert(false && "don't know what operand you want");
@@ -1305,6 +1302,37 @@ void stack_ra_on_function(MachineFunction *mf)  {
     }
 
     push_pop(mf);
+
+    for (auto mb : mf->basic_blocks) {
+        auto it = mb->insts.begin();
+        for(auto I: mb->insts) {
+            if (dynamic_cast<Load*>(I) || dynamic_cast<Store*>(I)) {
+                auto load_or_store = static_cast<Load*>(I);
+                bool need_legalize = false;
+                MachineOperand *use_of_offset;
+                use_of_offset = load_or_store->offset;
+                if (dynamic_cast<MReg*>(load_or_store->offset)) {
+                    // throw Exception(" error 0\n");
+                    need_legalize = true;
+                } else if (dynamic_cast<IImm*>(load_or_store->offset)) {
+                    int val = dynamic_cast<IImm*>(load_or_store->offset)->value;
+                    if (load_or_store->tag == Load::Float) {
+                        // throw Exception(" error 1\n");
+                        need_legalize = (val < -1020 ) || ( val > 1020 );
+                    }
+                }
+                if (need_legalize) {
+                    // throw Exception(" error 2\n");
+                    auto add = new Binary(Binary::Int, Binary::IAdd, new MReg(MReg::ip), 
+                                load_or_store->base, use_of_offset);
+                    mb->insts.insert(it, add);
+                    load_or_store->offset = nullptr;
+                    replace_uses(I, load_or_store->base, MReg::ip);
+                }
+            }
+            it++;
+        }
+    }
 
     // legalize imm, use r12 as temp
     for(auto mb : mf->basic_blocks) {
