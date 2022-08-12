@@ -2,4 +2,5 @@
 set -eu
 
 mkdir -p build
-clang++ babel.cc lex.yy.cpp syntax_analyzer.tab.cpp ast.cpp IR.cpp arm.cpp -o build/babel -g
+# basd
+clang++ babel.cc lex.yy.cpp syntax_analyzer.tab.cpp ast.cpp IR.cpp arm.cpp RemoveRedundantLoad.cpp -o build/babel -g
