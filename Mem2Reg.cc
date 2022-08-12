@@ -3,8 +3,7 @@
 #define IS_GLOBAL_VARIABLE(l_val) dynamic_cast<GlobalVariable *>(l_val)
 #define IS_GEP_INSTR(l_val) dynamic_cast<GetElementPtrInst *>(l_val)
 
-std::map<Value *, std::vector<Value *>>
-    var_val_stack; //全局变量初值提前存入栈中
+std::map<Value *, std::vector<Value *>> var_val_stack;
 
 void Mem2Reg::run() {
   // get info from Dominators
