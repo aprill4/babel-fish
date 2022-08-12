@@ -103,7 +103,7 @@ int main(int argc, char** argv) {
 
     stack_ra(mm);
     //mm->print(stdout);
-    remove_redundant_load(mm);
+    // remove_redundant_load(mm);
 
     //mm->print(stdout);
 
