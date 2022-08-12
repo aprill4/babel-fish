@@ -216,7 +216,21 @@ size_t Value::getNO() { return no_; }
 
 void Value::addUse(const Use &u) { useList_.emplace_front(u); }
 
-Use::Use(User *user,Value* value) : user_(user),value_(value) {}
+void Value::removeUse(Value *val) { 
+  auto is_val = [val] (Use &use) { return use.getUser() == val; };
+  useList_.remove_if(is_val);
+}
+
+void Value::replaceAllUseWith(Value *new_val) {
+  for (auto use : useList_) {
+    auto val = dynamic_cast<User *>(use.getUser());
+    assert(val && "new_val is not a user");
+    val->setOperand(new_val, use.getArgNo());
+  }
+}
+
+
+Use::Use(User *user,Value* value, unsigned argNo) : user_(user),value_(value), argNo_(argNo) {}
 
 Value *Use::getValue() { return value_; }
 
@@ -243,7 +257,14 @@ std::string User::getOperandTypeName(std::size_t idx) {
 void User::setOperand(Value *value, std::size_t idx) {
   assert(idx < operandNum_ && "setOperand out of index");
   operands_[idx] = value;
-  value->addUse(Use(this, value));
+  value->addUse(Use(this, value, idx));
+}
+
+void User::addOperand(Value *value) {
+  operands_.emplace_back(value);  
+  Use u(this, value, operandNum_);
+  value->addUse(u);
+  operandNum_++;
 }
 
 std::string ConstantInt::print() {
@@ -554,6 +575,11 @@ void BasicBlock::eraseFromParent(){
   parent_->remove(this);
 }
 
+void BasicBlock::deleteInst(Instruction *inst) {
+  instructionList_.remove(inst);
+  inst->removeUseOfOps();
+}
+
 
 Module *BasicBlock::getModule() { return parent_->getModule(); }
 
@@ -562,12 +588,16 @@ void BasicBlock::addInstruction(Instruction *instruction) {
 }
 
 void BasicBlock::addPredecessor(BasicBlock* pre) {
- predecessorBlocks_.emplace_back(pre);
+  if (std::find(predecessorBlocks_.begin(), predecessorBlocks_.end(), pre) == predecessorBlocks_.end()) {  
+    predecessorBlocks_.emplace_back(pre);
+  }
 }
 
 void BasicBlock::addSuccessor(BasicBlock* suc) {
- successorBlocks_.emplace_back(suc);
- suc->addPredecessor(this);
+  if (std::find(successorBlocks_.begin(), successorBlocks_.end(), suc) == successorBlocks_.end()) {  
+    successorBlocks_.emplace_back(suc);
+  }
+  suc->addPredecessor(this);
 }
 
 void BasicBlock::addDominator(BasicBlock *dom) {
@@ -581,6 +611,10 @@ void BasicBlock::setDominators(std::set<BasicBlock *> &doms) {
 
 std::set<BasicBlock *>& BasicBlock::getDominators() {
   return dominators_;
+}
+
+std::list<BasicBlock *>& BasicBlock::getSuccessor() {
+  return successorBlocks_;
 }
 
 std::list<BasicBlock *>& BasicBlock::getPredecessors() {
@@ -1265,13 +1299,17 @@ PhiInst::PhiInst(Context &c, Type *type,
     setOperand(valAndLabels[i].first, 2 * i);
     setOperand(valAndLabels[i].second, 2 * i + 1);
   }
-  insertedBlock->addInstruction(this);
+  // insertedBlock->addInstruction(this);
 }
 
-PhiInst *
-PhiInst::Create(Context &c, Type *type,
+PhiInst* PhiInst::Create(Context &c, Type *type,
                 std::vector<std::pair<Value *, BasicBlock *>> valAndLabels,
                 BasicBlock *insertedBlock, std::string name) {
+  return new PhiInst(c, type, valAndLabels, insertedBlock, name);
+}
+
+PhiInst* PhiInst::Create(Context &c, Type *type, BasicBlock *insertedBlock, std::string name) {
+  std::vector<std::pair<Value *, BasicBlock *>> valAndLabels;
   return new PhiInst(c, type, valAndLabels, insertedBlock, name);
 }
 

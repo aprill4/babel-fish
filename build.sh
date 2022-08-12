@@ -3,4 +3,4 @@ set -eu
 
 mkdir -p build
 # basd
-clang++ babel.cc lex.yy.cpp syntax_analyzer.tab.cpp ast.cpp IR.cpp arm.cpp RemoveRedundantLoad.cpp -o build/babel -g
+g++ babel.cc lex.yy.cpp syntax_analyzer.tab.cpp ast.cpp IR.cpp Dominators.cc Mem2Reg.cc LoopSearch.cc arm.cpp RemoveRedundantLoad.cpp -o build/babel -g

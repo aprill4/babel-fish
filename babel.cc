@@ -93,8 +93,11 @@ int main(int argc, char** argv) {
     //cout << R"(target triple = "x86_64-pc-linux-gnu")" << endl << endl;
 
     auto m = irBuilder->getModule();
-
-    //cout << m->print() << endl;
+    PassManager pm(m);
+    pm.add_pass<Mem2Reg>(true);
+    // pm.add_pass<LoopSearch>(true);
+    pm.run();
+    // cout << m->print() << endl;
 
     auto mm = emit_asm(m);
 
