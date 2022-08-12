@@ -456,8 +456,6 @@ void VarDeclare::generate(IRBuilder *irBuilder) {
           }
         }
         StoreInst::Create(context, init_val, value, irBuilder->getBasicBlock());
-      } else {
-        StoreInst::Create(context, ConstantZero::get(context, type), value, irBuilder->getBasicBlock());        
       }
     }
   }
@@ -666,186 +664,229 @@ void BinaryExpression::generate(IRBuilder *irBuilder) {
   switch(op_) {
 			case BinaryOp::ADD:
 				if(is_float) {
-          if(irBuilder->getScope()->parent) 
-            res = BinaryInst::CreateFadd(context, lhs, rhs, irBuilder->getBasicBlock());
-          else 
+          if (dynamic_cast<ConstantFloat*>(lhs) && dynamic_cast<ConstantFloat*>(rhs)) {
             res = ConstantFloat::get(context, 
                   dynamic_cast<ConstantFloat*>(lhs)->getValue() + dynamic_cast<ConstantFloat*>(rhs)->getValue());
-        }
-				else {
+          } else {
+            if (dynamic_cast<ConstantFloat*>(lhs) && dynamic_cast<ConstantFloat*>(lhs)->getValue() == 0) {
+              res = rhs;
+            } else if (dynamic_cast<ConstantFloat*>(rhs) && dynamic_cast<ConstantFloat*>(rhs)->getValue() == 0) {
+              res = lhs;
+            } else {
+              res = BinaryInst::CreateFadd(context, lhs, rhs, irBuilder->getBasicBlock());
+            }
+          }
+        } else {
           if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(rhs)) {
             res = ConstantInt::get(context, context.Int32Type,
                   dynamic_cast<ConstantInt*>(lhs)->getValue() + dynamic_cast<ConstantInt*>(rhs)->getValue());
+          } else {
+            if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(lhs)->getValue() == 0) {
+              res = rhs;
+            } else if (dynamic_cast<ConstantInt*>(rhs) && dynamic_cast<ConstantInt*>(rhs)->getValue() == 0) {
+              res = lhs;
+            } else {
+              res = BinaryInst::CreateAdd(context, lhs, rhs, irBuilder->getBasicBlock());
+            }
           }
-          else if(!irBuilder->getScope()->inGlobal()) 
-            res = BinaryInst::CreateAdd(context, lhs, rhs, irBuilder->getBasicBlock());
         }
 				break;
 			case BinaryOp::SUB:
 				if(is_float) {
-          if(irBuilder->getScope()->parent) 
-            res = BinaryInst::CreateFsub(context, lhs, rhs, irBuilder->getBasicBlock());
-          else 
+          if (dynamic_cast<ConstantFloat*>(lhs) && dynamic_cast<ConstantFloat*>(rhs)) {
             res = ConstantFloat::get(context, 
                   dynamic_cast<ConstantFloat*>(lhs)->getValue() - dynamic_cast<ConstantFloat*>(rhs)->getValue());
-        }
-				else {
+          } else {
+            if (dynamic_cast<ConstantFloat*>(lhs) && dynamic_cast<ConstantFloat*>(lhs)->getValue() == 0) {
+              res = UnaryInst::CreateNegative(context, rhs, irBuilder->getBasicBlock());
+            } else if (dynamic_cast<ConstantFloat*>(rhs) && dynamic_cast<ConstantFloat*>(rhs)->getValue() == 0) {
+              res = lhs;
+            } else {
+              res = BinaryInst::CreateFsub(context, lhs, rhs, irBuilder->getBasicBlock());
+            }
+          }
+        } else {
           if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(rhs)) {
             res = ConstantInt::get(context, context.Int32Type,
                   dynamic_cast<ConstantInt*>(lhs)->getValue() - dynamic_cast<ConstantInt*>(rhs)->getValue());
           }
-          else if(irBuilder->getScope()->parent) 
-            res = BinaryInst::CreateSub(context, lhs, rhs, irBuilder->getBasicBlock());
+          else {
+            if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(lhs)->getValue() == 0) {
+              res = UnaryInst::CreateNegative(context, rhs, irBuilder->getBasicBlock());
+            } else if (dynamic_cast<ConstantInt*>(rhs) && dynamic_cast<ConstantInt*>(rhs)->getValue() == 0) {
+              res = lhs;
+            } else { 
+              res = BinaryInst::CreateSub(context, lhs, rhs, irBuilder->getBasicBlock());
+            }
+          } 
         }
 				break;
 			case BinaryOp::MUL:
 				if(is_float) {
-          if(irBuilder->getScope()->parent) 
-            res = BinaryInst::CreateFmul(context, lhs, rhs, irBuilder->getBasicBlock());
-          else 
+          if (dynamic_cast<ConstantFloat*>(lhs) && dynamic_cast<ConstantFloat*>(rhs)) {
             res = ConstantFloat::get(context, 
                   dynamic_cast<ConstantFloat*>(lhs)->getValue() * dynamic_cast<ConstantFloat*>(rhs)->getValue());
-        }
-				else {
+          } else {
+            if (dynamic_cast<ConstantFloat*>(lhs) && dynamic_cast<ConstantFloat*>(lhs)->getValue() == 1) {
+              res = rhs;
+            } else if (dynamic_cast<ConstantFloat*>(rhs) && dynamic_cast<ConstantFloat*>(rhs)->getValue() == 1) {
+              res = lhs;
+            } else {
+              res = BinaryInst::CreateFmul(context, lhs, rhs, irBuilder->getBasicBlock());
+            }
+          }
+        } else {
           if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(rhs)) {
             res = ConstantInt::get(context, context.Int32Type,
                   dynamic_cast<ConstantInt*>(lhs)->getValue() * dynamic_cast<ConstantInt*>(rhs)->getValue());
+          } else {
+            if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(lhs)->getValue() == 1) {
+              res = rhs;
+            } else if (dynamic_cast<ConstantInt*>(rhs) && dynamic_cast<ConstantInt*>(rhs)->getValue() == 1) {
+              res = lhs;
+            } else { 
+              res = BinaryInst::CreateMul(context, lhs, rhs, irBuilder->getBasicBlock());
+            }
           }
-          else if(irBuilder->getScope()->parent) 
-            res = BinaryInst::CreateMul(context, lhs, rhs, irBuilder->getBasicBlock());
         }
 				break;
 			case BinaryOp::DIV:
 				if(is_float) {
-          if(irBuilder->getScope()->parent) 
-            res = BinaryInst::CreateFdiv(context, lhs, rhs, irBuilder->getBasicBlock());
-          else 
+          if (dynamic_cast<ConstantFloat*>(lhs) && dynamic_cast<ConstantFloat*>(rhs)) {
             res = ConstantFloat::get(context, 
                   dynamic_cast<ConstantFloat*>(lhs)->getValue() / dynamic_cast<ConstantFloat*>(rhs)->getValue());
-        }
-				else {
+          } else {
+            if (dynamic_cast<ConstantFloat*>(rhs) && dynamic_cast<ConstantFloat*>(rhs)->getValue() == 1) {
+              res = lhs;
+            } else { 
+              res = BinaryInst::CreateFdiv(context, lhs, rhs, irBuilder->getBasicBlock());
+            }
+          }
+        } else {
           if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(rhs)) {
             res = ConstantInt::get(context, context.Int32Type,
                   dynamic_cast<ConstantInt*>(lhs)->getValue() / dynamic_cast<ConstantInt*>(rhs)->getValue());
-          }
-          else if(irBuilder->getScope()->parent) 
-            res = BinaryInst::CreateSdiv(context, lhs, rhs, irBuilder->getBasicBlock());
+          } else {
+            if (dynamic_cast<ConstantInt*>(rhs) && dynamic_cast<ConstantInt*>(rhs)->getValue() == 1) {
+              res = lhs;
+            } else { 
+              res = BinaryInst::CreateSdiv(context, lhs, rhs, irBuilder->getBasicBlock());
+            }
+          } 
         }
 				break;
 			case BinaryOp::MOD:
           if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(rhs)) {
             res = ConstantInt::get(context, context.Int32Type,
                   dynamic_cast<ConstantInt*>(lhs)->getValue() % dynamic_cast<ConstantInt*>(rhs)->getValue());
-          }
-          else if(irBuilder->getScope()->parent) 
-            res = BinaryInst::CreateMod(context, lhs, rhs, irBuilder->getBasicBlock());
+          } else {
+            if (dynamic_cast<ConstantInt*>(rhs) && dynamic_cast<ConstantInt*>(rhs)->getValue() == 1) {
+              res = ConstantInt::get(context, context.Int32Type, 0);
+            } else {
+              res = BinaryInst::CreateMod(context, lhs, rhs, irBuilder->getBasicBlock());
+            }
+          } 
 				break;
 			case BinaryOp::LT:
         if(is_float) {
-          if(irBuilder->getScope()->parent) 
-            res = FcmpInst::Create(context, FcmpInst::FcmpOp::LT, lhs, rhs, irBuilder->getBasicBlock());
-          else 
+          if (dynamic_cast<ConstantFloat*>(lhs) && dynamic_cast<ConstantFloat*>(rhs)) {
             res = ConstantInt::get(context, context.Int1Type,
                   dynamic_cast<ConstantFloat*>(lhs)->getValue() < dynamic_cast<ConstantFloat*>(rhs)->getValue());
+          } else {
+            res = FcmpInst::Create(context, FcmpInst::FcmpOp::LT, lhs, rhs, irBuilder->getBasicBlock());
+          }
         } else {
-          if(irBuilder->getScope()->parent) 
-            res = IcmpInst::Create(context, IcmpInst::IcmpOp::LT, lhs, rhs, irBuilder->getBasicBlock());
-          else 
+          if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(rhs)) {
             res = ConstantInt::get(context, context.Int1Type,
                   dynamic_cast<ConstantInt*>(lhs)->getValue() < dynamic_cast<ConstantInt*>(rhs)->getValue());
+          } else {
+            res = IcmpInst::Create(context, IcmpInst::IcmpOp::LT, lhs, rhs, irBuilder->getBasicBlock());
+          }
         }
         break;
 			case BinaryOp::LTE:
         if(is_float) {
-          if(irBuilder->getScope()->parent) 
-            res = FcmpInst::Create(context, FcmpInst::FcmpOp::LTE, lhs, rhs, irBuilder->getBasicBlock());
-          else 
+          if (dynamic_cast<ConstantFloat*>(lhs) && dynamic_cast<ConstantFloat*>(rhs)) {
             res = ConstantInt::get(context, context.Int1Type,
                   dynamic_cast<ConstantFloat*>(lhs)->getValue() <= dynamic_cast<ConstantFloat*>(rhs)->getValue());
+          } else {
+            res = FcmpInst::Create(context, FcmpInst::FcmpOp::LTE, lhs, rhs, irBuilder->getBasicBlock());
+          }
         } else {
-          if(irBuilder->getScope()->parent) 
-            res = IcmpInst::Create(context, IcmpInst::IcmpOp::LTE, lhs, rhs, irBuilder->getBasicBlock());
-          else 
+          if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(rhs)) {
             res = ConstantInt::get(context, context.Int1Type,
                   dynamic_cast<ConstantInt*>(lhs)->getValue() <= dynamic_cast<ConstantInt*>(rhs)->getValue());
+          } else {            
+            res = IcmpInst::Create(context, IcmpInst::IcmpOp::LTE, lhs, rhs, irBuilder->getBasicBlock());
+          }
         }
         break;
 			case BinaryOp::GT:
         if(is_float) {
-          if(irBuilder->getScope()->parent) 
-            res = FcmpInst::Create(context, FcmpInst::FcmpOp::GT, lhs, rhs, irBuilder->getBasicBlock());
-          else 
+          if (dynamic_cast<ConstantFloat*>(lhs) && dynamic_cast<ConstantFloat*>(rhs)) {
             res = ConstantInt::get(context, context.Int1Type,
                   dynamic_cast<ConstantFloat*>(lhs)->getValue() > dynamic_cast<ConstantFloat*>(rhs)->getValue());
+          } else {            
+            res = FcmpInst::Create(context, FcmpInst::FcmpOp::GT, lhs, rhs, irBuilder->getBasicBlock());
+          }
         } else {
-          if(irBuilder->getScope()->parent) 
-            res = IcmpInst::Create(context, IcmpInst::IcmpOp::GT, lhs, rhs, irBuilder->getBasicBlock());
-          else 
+          if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(rhs)) {
             res = ConstantInt::get(context, context.Int1Type,
                   dynamic_cast<ConstantInt*>(lhs)->getValue() > dynamic_cast<ConstantInt*>(rhs)->getValue());
+          } else {            
+            res = IcmpInst::Create(context, IcmpInst::IcmpOp::GT, lhs, rhs, irBuilder->getBasicBlock());
+          }
         } 
         break;
 			case BinaryOp::GTE:
         if(is_float) {
-          if(irBuilder->getScope()->parent) 
-            res = FcmpInst::Create(context, FcmpInst::FcmpOp::GTE, lhs, rhs, irBuilder->getBasicBlock());
-          else 
+          if (dynamic_cast<ConstantFloat*>(lhs) && dynamic_cast<ConstantFloat*>(rhs)) {
             res = ConstantInt::get(context, context.Int1Type,
                   dynamic_cast<ConstantFloat*>(lhs)->getValue() >= dynamic_cast<ConstantFloat*>(rhs)->getValue());
+          } else {            
+            res = FcmpInst::Create(context, FcmpInst::FcmpOp::GTE, lhs, rhs, irBuilder->getBasicBlock());
+          }
         } else {
-          if(irBuilder->getScope()->parent) 
-            res = IcmpInst::Create(context, IcmpInst::IcmpOp::GTE, lhs, rhs, irBuilder->getBasicBlock());
-          else 
+          if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(rhs)) {
             res = ConstantInt::get(context, context.Int1Type,
                   dynamic_cast<ConstantInt*>(lhs)->getValue() >= dynamic_cast<ConstantInt*>(rhs)->getValue());
+          } else {
+            res = IcmpInst::Create(context, IcmpInst::IcmpOp::GTE, lhs, rhs, irBuilder->getBasicBlock());            
+          }
         } 
         break;
 			case BinaryOp::EQ:
         if(is_float) {
-          if(irBuilder->getScope()->parent) 
-            res = FcmpInst::Create(context, FcmpInst::FcmpOp::EQ, lhs, rhs, irBuilder->getBasicBlock());
-          else 
+          if (dynamic_cast<ConstantFloat*>(lhs) && dynamic_cast<ConstantFloat*>(rhs)) {
             res = ConstantInt::get(context, context.Int1Type,
                   dynamic_cast<ConstantFloat*>(lhs)->getValue() == dynamic_cast<ConstantFloat*>(rhs)->getValue());
-        } else {
-          if(irBuilder->getScope()->parent) {
-            if (lhs->getType() != rhs->getType()) {
-              if (dynamic_cast<ConstantInt*>(lhs)) {
-                lhs = ConstantInt::get(context, rhs->getType(), dynamic_cast<ConstantInt*>(lhs)->getValue());
-              } else if (dynamic_cast<ConstantInt*>(rhs)) {
-                rhs = ConstantInt::get(context, lhs->getType(), dynamic_cast<ConstantInt*>(rhs)->getValue());              
-              } else {
-              }
-            }
-            res = IcmpInst::Create(context, IcmpInst::IcmpOp::EQ, lhs, rhs, irBuilder->getBasicBlock());
+          } else {            
+            res = FcmpInst::Create(context, FcmpInst::FcmpOp::EQ, lhs, rhs, irBuilder->getBasicBlock());
           }
-          else 
+        } else {
+          if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(rhs)) {
             res = ConstantInt::get(context, context.Int1Type,
                   dynamic_cast<ConstantInt*>(lhs)->getValue() == dynamic_cast<ConstantInt*>(rhs)->getValue());
+          } else {
+            res = IcmpInst::Create(context, IcmpInst::IcmpOp::EQ, lhs, rhs, irBuilder->getBasicBlock());            
+          }
         } 
         break;
 			case BinaryOp::NEQ:
         if(is_float) {
-          if(irBuilder->getScope()->parent) 
-            res = FcmpInst::Create(context, FcmpInst::FcmpOp::NEQ, lhs, rhs, irBuilder->getBasicBlock());
-          else 
+          if (dynamic_cast<ConstantFloat*>(lhs) && dynamic_cast<ConstantFloat*>(rhs)) {
             res = ConstantInt::get(context, context.Int1Type,
                   dynamic_cast<ConstantFloat*>(lhs)->getValue() != dynamic_cast<ConstantFloat*>(rhs)->getValue());
-        } else {
-          if(irBuilder->getScope()->parent) {
-            if (lhs->getType() != rhs->getType()) {
-              if (dynamic_cast<ConstantInt*>(lhs)) {
-                lhs = ConstantInt::get(context, rhs->getType(), dynamic_cast<ConstantInt*>(lhs)->getValue());
-              } else if (dynamic_cast<ConstantInt*>(rhs)) {
-                rhs = ConstantInt::get(context, lhs->getType(), dynamic_cast<ConstantInt*>(rhs)->getValue());              
-              } else {
-              }
-            }
-            res = IcmpInst::Create(context, IcmpInst::IcmpOp::NEQ, lhs, rhs, irBuilder->getBasicBlock());
+          } else {
+            res = FcmpInst::Create(context, FcmpInst::FcmpOp::NEQ, lhs, rhs, irBuilder->getBasicBlock());            
           }
-          else 
+        } else {
+          if (dynamic_cast<ConstantInt*>(lhs) && dynamic_cast<ConstantInt*>(rhs)) {
             res = ConstantInt::get(context, context.Int1Type,
                   dynamic_cast<ConstantInt*>(lhs)->getValue() != dynamic_cast<ConstantInt*>(rhs)->getValue());
+          } else {
+            res = IcmpInst::Create(context, IcmpInst::IcmpOp::NEQ, lhs, rhs, irBuilder->getBasicBlock());            
+          }
         } 
         break;
 			case BinaryOp::AND:{
@@ -936,7 +977,9 @@ void UnaryExpression::generate(IRBuilder *irBuilder) {
   switch(op_){
 			case UnaryOp::NEGATIVE:
         if(rhs->getType()->isFloatType()) {
-          if(irBuilder->getScope()->parent) {
+          if (dynamic_cast<ConstantInt*>(rhs)) {
+            res = ConstantFloat::get(context, -dynamic_cast<ConstantFloat*>(rhs)->getValue());          
+          } else {
             if (dynamic_cast<Instruction*>(rhs) && dynamic_cast<Instruction*>(rhs)->isNegative()) {
               auto& inst_list = irBuilder->getBasicBlock()->instructionList_;
               inst_list.erase(--inst_list.end());
@@ -951,11 +994,10 @@ void UnaryExpression::generate(IRBuilder *irBuilder) {
               }
             }
           }
-          else 
-            res = ConstantFloat::get(context, -dynamic_cast<ConstantFloat*>(rhs)->getValue());
-        }
-        else {
-          if(irBuilder->getScope()->parent) {
+        } else {
+          if (dynamic_cast<ConstantInt*>(rhs)) {
+            res = ConstantInt::get(context, context.Int32Type, -dynamic_cast<ConstantInt*>(rhs)->getValue());          
+          } else {
             if (dynamic_cast<Instruction*>(rhs) && dynamic_cast<Instruction*>(rhs)->isNegative()) {
               auto& inst_list = irBuilder->getBasicBlock()->instructionList_;
               inst_list.erase(--inst_list.end());
@@ -970,12 +1012,12 @@ void UnaryExpression::generate(IRBuilder *irBuilder) {
               }
             }
           }
-          else 
-            res = ConstantInt::get(context, context.Int32Type, -dynamic_cast<ConstantInt*>(rhs)->getValue());
         }
         break;
 			case UnaryOp::NOT:
-        if(irBuilder->getScope()->parent) {
+        if (dynamic_cast<ConstantInt*>(rhs)) {
+          res = ConstantInt::get(context, context.Int1Type, !(dynamic_cast<ConstantInt*>(rhs)->getValue()));          
+        } else {
           if (dynamic_cast<Instruction*>(rhs) && dynamic_cast<Instruction*>(rhs)->isNot()) {
             auto& inst_list = irBuilder->getBasicBlock()->instructionList_;
             inst_list.erase(--inst_list.end());
@@ -989,8 +1031,6 @@ void UnaryExpression::generate(IRBuilder *irBuilder) {
             }         
           }
         }
-        else
-          res = ConstantInt::get(context, context.Int1Type, !(dynamic_cast<ConstantInt*>(rhs)->getValue()));
         break;
       case UnaryOp::POSITIVE:
         res = rhs;
@@ -1094,9 +1134,9 @@ void LValExpression::generate(IRBuilder *irBuilder) {
             }
           } else if (size >= 2) {
             if (is_func_array) {
-              ptr = GetElementPtrInst::Create(context, ptr, { *indice.begin() }, irBuilder->getBasicBlock());
-              indice.erase(indice.begin());
-              indice.insert(indice.begin(), ConstantInt::get(context, context.Int32Type, 0));
+              // ptr = GetElementPtrInst::Create(context, ptr, { *indice.begin() }, irBuilder->getBasicBlock());
+              // indice.erase(indice.begin());
+              // indice.insert(indice.begin(), ConstantInt::get(context, context.Int32Type, 0));
               ptr = GetElementPtrInst::Create(context, 
                                       ptr, 
                                       indice,
@@ -1107,7 +1147,6 @@ void LValExpression::generate(IRBuilder *irBuilder) {
                                       ptr, 
                                       indice,
                                       irBuilder->getBasicBlock());
-              
             }
           }
         }
@@ -1121,7 +1160,6 @@ void LValExpression::generate(IRBuilder *irBuilder) {
                   ConstantInt::get(context, context.Int32Type, 0),
                   ConstantInt::get(context, context.Int32Type, 0)}, 
                   irBuilder->getBasicBlock());
-
           }
         } else if (size == 1) {
           if (is_func_array){
@@ -1131,9 +1169,9 @@ void LValExpression::generate(IRBuilder *irBuilder) {
           }
         } else if (size >= 2) {
           if (is_func_array) {
-            ptr = GetElementPtrInst::Create(context, ptr, { *indice.begin() }, irBuilder->getBasicBlock());
-            indice.erase(indice.begin());
-            indice.insert(indice.begin(), ConstantInt::get(context, context.Int32Type, 0));
+            // ptr = GetElementPtrInst::Create(context, ptr, { *indice.begin() }, irBuilder->getBasicBlock());
+            // indice.erase(indice.begin());
+            // indice.insert(indice.begin(), ConstantInt::get(context, context.Int32Type, 0));
             ptr = GetElementPtrInst::Create(context, 
                                     ptr, 
                                     indice,
@@ -1397,7 +1435,6 @@ void ContinueStatement::generate(IRBuilder *irBuilder) {
     }
     BranchInst::Create(c, condVal, irBuilder->getWhileBlock(), irBuilder->getNextBlock(), irBuilder->getBasicBlock());    
   }
-  // BranchInst::Create(irBuilder->getContext(),irBuilder->getWhileBlock(),irBuilder->getBasicBlock());
 }
 
 void EvalStatement::generate(IRBuilder *irBuilder) {
@@ -1425,20 +1462,13 @@ void FuncCallExpression::generate(IRBuilder *irBuilder) {
           }, irBuilder->getBasicBlock());
         }
       }
-      if (val->getType() != funcType->getArgumentType(u)) {
-        if (funcType->getArgumentType(u)->isIntegerType()) {
-          val = FpToSiInst::Create(context, funcType->getArgumentType(u), val, irBuilder->getBasicBlock());
-        } else {
-          val = SiToFpInst::Create(context, funcType->getArgumentType(u), val, irBuilder->getBasicBlock());      
-        }
-      }
-    } else if (val->getType() != funcType->getArgumentType(u)) {
+    } 
+    if (val->getType() != funcType->getArgumentType(u)) {
       if (funcType->getArgumentType(u)->isIntegerType()) {
         val = FpToSiInst::Create(context, funcType->getArgumentType(u), val, irBuilder->getBasicBlock());
       } else {
         val = SiToFpInst::Create(context, funcType->getArgumentType(u), val, irBuilder->getBasicBlock());      
       }
-      // val = ZextInst::Create(context, funcType->getArgumentType(u), val, irBuilder->getBasicBlock());
     }
     if(dynamic_cast<ConstantInt*>(val) && funcType->getArgumentType(u) == context.FloatType)
       funcArgs.emplace_back(ConstantFloat::get(context, static_cast<float>(dynamic_cast<ConstantInt*>(val)->getValue())));
@@ -1452,5 +1482,4 @@ void FuncCallExpression::generate(IRBuilder *irBuilder) {
                    funcArgs, 
                    irBuilder->getBasicBlock());
   irBuilder->setTmpVal(tmp);
-  //return value will be set by ReturnStatement::generate
 } 
