@@ -1398,7 +1398,13 @@ void stack_ra(MachineModule *mod) {
 
 
 
-
+struct LiveInterval{
+    std::vector<MachineInst*> insts;
+    int startpoint;
+    int endpoint;
+};
+using Vreg_LiveIntervalMap = std::map<VReg*,LiveInterval> ;
+using Vreg_LiveInterval    = std::pair<VReg*,LiveInterval>;
 
 void Traveral(MachineBasicBlock * bb,int num){
     if(bb->sucs.empty()){
@@ -1416,64 +1422,75 @@ void numbering_instructions(MachineFunction * F){
     int num=0;
     Traveral(b0,num);
 }
-std::vector<MachineOperand*> get_all_oprands(MachineInst* inst){
-    std::vector<MachineOperand*> oprs;
+std::vector<MachineOperand**> get_all_oprands(MachineInst* inst){
+    std::vector<MachineOperand**> oprs;
     if(auto i = dynamic_cast<Mov*>(inst)) {
-        oprs.emplace_back(i->src);
-    }
-    else if(auto i = dynamic_cast<Binary*>(inst)) {
-        oprs.emplace_back((i->lhs));
-        oprs.emplace_back((i->rhs));
+        oprs.emplace_back(&(i->src));
+        oprs.emplace_back(&(i->dst));
+    }else if(auto i = dynamic_cast<Binary*>(inst)) {
+        oprs.emplace_back(&(i->lhs));
+        oprs.emplace_back(&(i->rhs));
+        oprs.emplace_back(&(i->dst));
     }
     else if(auto i = dynamic_cast<Cmp*>(inst)) {
-        oprs.emplace_back((i->lhs));
-        oprs.emplace_back((i->rhs));
+        oprs.emplace_back(&(i->lhs));
+        oprs.emplace_back(&(i->rhs));
     }
     else if(auto i = dynamic_cast<Store*>(inst)) {
-        oprs.emplace_back((i->src));
-        oprs.emplace_back((i->base));
-        oprs.emplace_back((i->offset));
+        oprs.emplace_back(&(i->src));
+        oprs.emplace_back(&(i->base));
+        oprs.emplace_back(&(i->offset));
     }
     else if(auto i = dynamic_cast<Load*>(inst)) {
-        oprs.emplace_back((i->base));
-        oprs.emplace_back((i->offset));
+        oprs.emplace_back(&(i->base));
+        oprs.emplace_back(&(i->offset));
+        oprs.emplace_back(&(i->dst));
     }
-    else if(auto i = dynamic_cast<IClz*>(inst)) 
-        oprs.emplace_back((i->src));
-    else if(auto i = dynamic_cast<FNeg*>(inst)) 
-        oprs.emplace_back((i->src));
+    else if(auto i = dynamic_cast<IClz*>(inst)){
+        oprs.emplace_back(&(i->dst));
+        oprs.emplace_back(&(i->src));
+    }
+    else if(auto i = dynamic_cast<FNeg*>(inst)){
+        oprs.emplace_back(&(i->dst));
+        oprs.emplace_back(&(i->src));
+    } 
     else if(auto i = dynamic_cast<Cvt*>(inst)) 
-        oprs.emplace_back((i->src));
-
-    //assuming old_opr is VReg kind, plz check  (thanks)
-    for(auto opr: oprs) 
-        if(*opr == old_opr) 
-            *opr = new MReg(MReg::Reg(new_reg));
+    {
+        oprs.emplace_back(&(i->dst));
+        oprs.emplace_back(&(i->src));
+    }
+    return oprs;
 }
-Vreg_LiveIntervalMap& create_live_intervals(MachineFunction *F){
-    Vreg_LiveIntervalMap* result = new Vreg_LiveIntervalMap;
+Vreg_LiveIntervalMap create_live_interval(MachineFunction *F){
+    Vreg_LiveIntervalMap result;
     for(auto bb:F->basic_blocks){
         for(auto inst:bb->insts){
-            get_all_oprands(inst);
+            auto oprs = get_all_oprands(inst);
+            for(auto opr:oprs){
+                if(auto vr = dynamic_cast<VReg*>(*opr))
+                {   
+                    if(result.find(vr) != result.end()){
+                        result[vr].endpoint = result[vr].startpoint = inst->number;
+                    }else{
+                        if(result[vr].endpoint < inst->number) result[vr].endpoint = inst->number;
+                    }
+                    result[vr].insts.emplace_back(inst);
+                }
+            }
         }
     }
+    return result;
 }
 void allocate_register(MachineFunction * F){
     numbering_instructions(F);
-    Vreg_LiveIntervalMap live_intervals = create_live_intervals(F);
+    //Vreg_LiveIntervalMap live_intervals = create_live_interval(F);
 }
 void ExpireOldIntervals(Vreg_LiveInterval i,std::vector<VReg*> active){
     for(auto variable:active){
         if()
     }
 }
-struct LiveInterval{
-    std::vector<MachineInst*> insts;
-    int startpoint;
-    int endpoint;
-};
-using Vreg_LiveIntervalMap = std::map<VReg*,LiveInterval> ;
-using Vreg_LiveInterval    = std::pair<VReg*,LiveInterval>;
+
 /*
 *@param live_intervals 一个map，代表每个变量的存储活性区间
 *每一个entry是一个vector，代表一个变量存活在那些指令 
