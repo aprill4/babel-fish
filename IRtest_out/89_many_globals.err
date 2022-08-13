@@ -1,7 +1,0 @@
-TOTAL: 0H-0M-0S-0us
-differences between test_out and correct_out:
-1c1,2
-< 28221180
----
-> 2822118
-> 0

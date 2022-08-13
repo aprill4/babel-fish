@@ -1,4 +1,0 @@
-irs/21_if_test2.ll:62:10: error: expected instruction opcode
-  %v70 = negative i32 %v69
-         ^
-1 error generated.

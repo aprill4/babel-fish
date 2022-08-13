@@ -5,10 +5,10 @@ void remove_redundant_load(MachineModule *m) {
         for (auto mbb: mf->basic_blocks) {
             for (auto it = mbb->insts.begin(); it != mbb->insts.end(); it++) {
                 auto next = std::next(it, 1);
-                auto next_next = std::next(next, 1);
                 if (next == mbb->insts.end()) {
                     break;
                 }
+                auto next_next = std::next(next, 1);
 
                 auto cur_store = dynamic_cast<Store *>(*it);
                 auto next_load = dynamic_cast<Load *>(*next);
@@ -18,41 +18,49 @@ void remove_redundant_load(MachineModule *m) {
                     auto str_base = dynamic_cast<MReg *>(cur_store->base);
                     auto ldr_base = dynamic_cast<MReg *>(next_load->base);
 
-                    if (!cur_store->offset && !next_load->offset) {
-                        auto mv = new Mov(next_load->dst, cur_store->src);
-                        bool is_float = next_load->dst->operand_type == MachineOperand::Float;
-                        mv->tag = is_float ? Mov::F2F : Mov::I2I;
-                        mbb->insts.insert(it, mv);
-                        mbb->insts.remove(*it);
-                        mbb->insts.remove(*next);
-                        continue;
-                    } else if (!cur_store->offset || !next_load->offset) {
-                        continue;
-                    }
+                    if (str_base->reg == ldr_base->reg) {
+                        if (!cur_store->offset && !next_load->offset) {
+                            auto mv = new Mov(next_load->dst, cur_store->src);
+                            bool is_float = next_load->dst->operand_type == MachineOperand::Float;
+                            mv->tag = is_float ? Mov::F2F : Mov::I2I;
+                            mbb->insts.insert(it, mv);
+                            mbb->insts.erase(it);
+                            mbb->insts.erase(next);
 
-                    auto str_off_mreg = dynamic_cast<MReg *>(cur_store->offset);
-                    auto ldr_off_mreg = dynamic_cast<MReg *>(next_load->offset);
+                            next_next--;
+                            it = next_next;
 
-                    auto str_off_imm = dynamic_cast<IImm *>(cur_store->offset);
-                    auto ldr_off_imm = dynamic_cast<IImm *>(next_load->offset);
+                        } else if (cur_store->offset && next_load->offset) {
+                            auto str_off_mreg = dynamic_cast<MReg *>(cur_store->offset);
+                            auto ldr_off_mreg = dynamic_cast<MReg *>(next_load->offset);
 
-                    bool is_mreg = str_off_mreg && ldr_off_mreg;
-                    bool is_imm = str_off_imm && ldr_off_imm;
+                            auto str_off_imm = dynamic_cast<IImm *>(cur_store->offset);
+                            auto ldr_off_imm = dynamic_cast<IImm *>(next_load->offset);
 
-                    if (str_base->reg == ldr_base->reg && 
-                        ((is_mreg && (str_off_mreg->reg == ldr_off_mreg->reg)) || 
-                        (is_imm && (str_off_imm->value == ldr_off_imm->value)))) {
-                        
-                        printf("%d\n", str_base->reg);
-                        auto mv = new Mov(next_load->dst, cur_store->src);
-                        bool is_float = next_load->dst->operand_type == MachineOperand::Float;
-                        mv->tag = is_float ? Mov::F2F : Mov::I2I;
-                        mbb->insts.insert(it, mv);
+                            bool is_mreg = str_off_mreg && ldr_off_mreg;
+                            bool is_imm = str_off_imm && ldr_off_imm;
 
-                        mbb->insts.remove(*it);
-                        mbb->insts.remove(*next);
+                            if ((is_mreg && (str_off_mreg->reg == ldr_off_mreg->reg)) || 
+                                (is_imm && (str_off_imm->value == ldr_off_imm->value))) {
+                                
+                                printf("%d\n", str_base->reg);
+                                auto mv = new Mov(next_load->dst, cur_store->src);
+                                bool is_float = next_load->dst->operand_type == MachineOperand::Float;
+                                mv->tag = is_float ? Mov::F2F : Mov::I2I;
+                                mbb->insts.insert(it, mv);
 
-                        it = next_next;
+                                mbb->insts.erase(it);
+                                mbb->insts.erase(next);
+                                
+                                next_next--;
+                                it = next_next;
+                            }
+                        } else {
+                            it = next;
+                        }
+
+                    } else {
+                        it = next;
                     }
                 } 
             }

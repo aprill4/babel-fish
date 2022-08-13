@@ -1,4 +1,0 @@
-irs/50_short_circuit.ll:51:9: error: '%v49' defined with type 'i32' but expected 'i1'
-  br i1 %v49, label %if_true_entry40, label %r44
-        ^
-1 error generated.
