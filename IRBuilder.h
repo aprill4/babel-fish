@@ -1,6 +1,7 @@
 #pragma once
 #include "IR.h"
 #include "LoopSearch.hpp"
+#include "LoopInvHoist.hpp"
 #include "Dominators.h"
 #include "Mem2Reg.h"
 #include <deque>
