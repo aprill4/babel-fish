@@ -660,7 +660,8 @@ public:
     this->addOperand(val);
     this->addOperand(pre_bb);
   }
-
+  std::vector<Value*> getInComingVal();
+  std::vector<BasicBlock*> getInComingBlock();
 public:
   static PhiInst *
   Create(Context &c, Type *type, std::vector<std::pair<Value *, BasicBlock *>> valAndLabels,

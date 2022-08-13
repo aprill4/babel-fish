@@ -1313,6 +1313,23 @@ PhiInst* PhiInst::Create(Context &c, Type *type, BasicBlock *insertedBlock, std:
   return new PhiInst(c, type, valAndLabels, insertedBlock, name);
 }
 
+std::vector<Value*> PhiInst::getInComingVal(){
+  std::vector<Value*> val;
+  for (int i = 0; i < getOperandNum() / 2; i++) {
+    val.emplace_back(getOperand(2 * i));
+  }
+  return val;
+}
+
+std::vector<BasicBlock*> PhiInst::getInComingBlock() {
+  std::vector<BasicBlock*> bb;
+  for (int i = 0; i < getOperandNum() / 2; i++) {
+    auto block = dynamic_cast<BasicBlock*>(getOperand(2 * i + 1));
+    bb.emplace_back(block);
+  }
+  return bb;
+}
+
 std::string PhiInst::print() {
   std::string IR;
   char IRtemp[100];

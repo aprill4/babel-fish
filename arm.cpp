@@ -203,6 +203,8 @@ void Push_Pop::print(FILE *fp) {
 std::map<Value*, MachineOperand*> v_m;
 int vreg_id = 0;
 size_t stack_offset = 0;
+std::map<BasicBlock*, MachineBasicBlock*> bb2mb;
+std::map<std::pair<PhiInst*, MachineOperand*> , MachineBasicBlock*> phi2mb;
 //-----------------------------------------------------------------
 
 size_t allocate(size_t size) {
@@ -425,7 +427,7 @@ MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb, bool no_imm = fal
             ret = vdst;
         }
     } else {
-        assert(false && "don't know what operand you want");
+        throw Exception("don't know what operand you want\n" + v->print());
     }
     assert(ret && "src of mov is nullptr in function make_operand");
     return ret;
@@ -1083,6 +1085,21 @@ void push_pop(MachineFunction * func){
     }
 }
 
+void emit_phi(Instruction *inst, MachineBasicBlock* mbb) {
+    auto phi = dynamic_cast<PhiInst*>(inst);
+    if (phi->getType()->isIntegerType()) {
+        auto vreg = make_vreg(MachineOperand::OperandType::Int);
+        auto mv = new Mov(Mov::I2I, make_vreg(MachineOperand::OperandType::Int, inst), vreg);
+        phi2mb[std::make_pair(phi, vreg)] = mbb;
+        mbb->insts.emplace_back(mv);
+    } else if (phi->getType()->isFloatType()) {
+        auto vreg = make_vreg(MachineOperand::OperandType::Float);
+        auto mv = new Mov(Mov::F2F, make_vreg(MachineOperand::OperandType::Float, inst), vreg);
+        phi2mb[std::make_pair(phi, vreg)] = mbb;
+        mbb->insts.emplace_back(mv);
+    } else throw Exception("phi error: type\n");
+}
+
 void emit_inst(Instruction *inst, MachineBasicBlock *mbb) {
     if (auto ret_inst = dynamic_cast<ReturnInst *>(inst)) { emit_ret(ret_inst, mbb); return; }
     else if (auto binary_inst = dynamic_cast<BinaryInst *>(inst)) { emit_binary(binary_inst, mbb); return; }
@@ -1096,6 +1113,7 @@ void emit_inst(Instruction *inst, MachineBasicBlock *mbb) {
     else if (inst->isStore()) {emit_store(inst, mbb); return; }
     else if (inst->isFp2si() || inst->isSi2fp()) { emit_cvt(inst, mbb); return; }
     else if (inst->isGep()) { emit_gep(inst, mbb); return; }
+    else if (inst->isPhi()) { emit_phi(inst, mbb); return; }
     assert(false && "illegal instrustion");
 }
 
@@ -1113,19 +1131,35 @@ MachineFunction *emit_func(Function *func) {
 
     auto first_bb = true;
     std::map<BasicBlock *, MachineBasicBlock *> bb_map;
+    bb2mb.clear();
+    phi2mb.clear();
     for (auto bb: func->basicBlocks_) {
         auto mbb = new MachineBasicBlock;
         mbb->parent = mfunc;
+        bb_map[bb] = mbb;
+        bb2mb[bb] = mbb;
+    }
+    for (auto bb: func->basicBlocks_) {
         if (first_bb) {
             first_bb = false;
-
-            emit_args(func->arguments_, mbb);
+            emit_args(func->arguments_, bb_map[bb]);
         }
-        emit_bb(bb, mbb);
-        mfunc->basic_blocks.emplace_back(mbb);
-        bb_map[bb] = mbb;
+        emit_bb(bb, bb_map[bb]);
+        mfunc->basic_blocks.emplace_back(bb_map[bb]);
     }
-
+    for (auto [phiAndVreg, mbb] : phi2mb) {
+        for (int i = 0; i < phiAndVreg.first->getOperandNum() / 2; i++) {
+            auto val = phiAndVreg.first->getOperand(2 * i);
+            auto bb = dynamic_cast<BasicBlock*>(phiAndVreg.first->getOperand(2 * i + 1));
+            auto mbb_i = bb2mb[bb];
+            for (auto end = mbb_i->insts.rbegin(); end != mbb_i->insts.rend(); end++) {
+                if (!dynamic_cast<Branch*>(*end)) {
+                    mbb_i->insts.insert(end.base(), new Mov(Mov::I2I, phiAndVreg.second, make_operand(val, mbb_i)));
+                    break;
+                }
+            }
+        }
+    }
     mfunc->stack_size = stack_offset;
     mfunc->vreg_count = vreg_id;
 
