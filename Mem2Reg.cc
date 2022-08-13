@@ -23,7 +23,7 @@ void Mem2Reg::generate_phi() {
   // step 1: find all global_live_var_name x and get their blocks
   std::set<Value *> global_live_var_name;
   std::map<Value *, std::set<BasicBlock *>> live_var_2blocks;
-  for (auto bb : func_->getBasicBlocks()) {
+  for (auto bb : func_->basicBlocks_) {
     std::set<Value *> var_is_killed;
     for (auto instr : bb->instructionList_) {
       if (instr->isStore()) {
@@ -101,16 +101,21 @@ void Mem2Reg::re_name(BasicBlock *bb) {
       }
     }
   }
-
+  std::cout << bb->getLLVM_Name() << std::endl;
   for (auto succ_bb : bb->getSuccessor()) {
+    std::cout << "\t" + succ_bb->getLLVM_Name() << std::endl;
     for (auto instr : succ_bb->instructionList_) {
       if (instr->isPhi()) {
         auto l_val = static_cast<PhiInst *>(instr)->getLval();
         if (var_val_stack.find(l_val) != var_val_stack.end()) {
-          assert(var_val_stack[l_val].size() != 0);
+          // assert(var_val_stack[l_val].size() != 0);
           // step 6: fill phi pair parameters
-          static_cast<PhiInst *>(instr)->add_phi_pair_operand(
-              var_val_stack[l_val].back(), bb);
+          if (var_val_stack[l_val].empty()) {
+
+          } else {
+            static_cast<PhiInst *>(instr)->add_phi_pair_operand(
+                var_val_stack[l_val].back(), bb);
+          }
         }
         // else phi parameter is [ undef, bb ]
       }

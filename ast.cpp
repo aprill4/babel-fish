@@ -1237,9 +1237,9 @@ void IfElseStatement::generate(IRBuilder *irBuilder) {
   auto false_bb =
       BasicBlock::Create(c, "if_false_entry", irBuilder->getFunction());
   auto next_bb = BasicBlock::Create(c, "next_entry", irBuilder->getFunction());
-  true_bb->addSuccessor(next_bb);
+  // true_bb->addSuccessor(next_bb);
   if (elseStmt_) {
-    false_bb->addSuccessor(next_bb);
+    // false_bb->addSuccessor(next_bb);
     irBuilder->setLoopBlock(true_bb, false_bb);  
   } else {
     irBuilder->setLoopBlock(true_bb, next_bb);
@@ -1304,7 +1304,7 @@ void WhileStatement::generate(IRBuilder *irBuilder) {
   irBuilder->setScope(scope_);
   auto while_bb = BasicBlock::Create(c, "while_entry", irBuilder->getFunction());
   auto next_bb = BasicBlock::Create(c, "next_entry", irBuilder->getFunction());
-  while_bb->addSuccessor(next_bb);
+  // while_bb->addSuccessor(next_bb);
   irBuilder->setLoopBlock(while_bb, next_bb);
   cond_->generate(irBuilder);
   irBuilder->popLoopBlock();

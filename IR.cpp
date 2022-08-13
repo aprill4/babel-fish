@@ -1336,7 +1336,7 @@ std::string PhiInst::print() {
   // <result> = phi <ty> [ <val0>, <label0>], ...
   std::string fmt("%%%s = phi %s ");
   std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getLLVM_Name().c_str(),
-                getOperandType(0)->getTypeName().c_str());
+                type_->getTypeName().c_str());
   IR.assign(IRtemp);
   for (int i = 0; i < getOperandNum() / 2; i++) {
     if (i > 0)
