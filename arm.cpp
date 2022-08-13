@@ -1154,7 +1154,11 @@ MachineFunction *emit_func(Function *func) {
             auto mbb_i = bb2mb[bb];
             for (auto end = mbb_i->insts.rbegin(); end != mbb_i->insts.rend(); end++) {
                 if (!dynamic_cast<Branch*>(*end)) {
-                    mbb_i->insts.insert(end.base(), new Mov(Mov::I2I, phiAndVreg.second, make_operand(val, mbb_i)));
+                    if (phiAndVreg.first->getType()->isIntegerType()) {
+                        mbb_i->insts.insert(end.base(), new Mov(Mov::I2I, phiAndVreg.second, make_operand(val, mbb_i)));
+                    } else if (phiAndVreg.first->getType()->isFloatType()) {
+                        mbb_i->insts.insert(end.base(), new Mov(Mov::F2F, phiAndVreg.second, make_operand(val, mbb_i)));
+                    }
                     break;
                 }
             }
