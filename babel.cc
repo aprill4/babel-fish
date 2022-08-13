@@ -102,10 +102,10 @@ int main(int argc, char** argv) {
     printf("\n\n");
 
     stack_ra(mm);
-    //mm->print(stdout);
-    // remove_redundant_load(mm);
+    mm->print(stdout);
 
-    //mm->print(stdout);
+    remove_redundant_load(mm);
+    mm->print(stdout);
 
     FILE *out = fopen(output_file, "w");
     mm->print(out);
