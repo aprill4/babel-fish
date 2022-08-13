@@ -103,7 +103,8 @@ struct MachineBasicBlock {
 struct MachineInst {
     enum Cond { NoCond, Le, Lt, Ge, Gt, Eq, Ne };
     Cond cond = NoCond;
-
+    //number用于寄存器分配，方便确认变量活性区间是否重合
+    int number;
     virtual void print(FILE *fp) {};
     void newline(FILE *fp);
     const char *get_cond();
