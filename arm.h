@@ -54,7 +54,7 @@ struct MReg : MachineOperand {
     MReg(Reg r): reg(r) {
         if (r >= r0 && r <= r15) {
             operand_type = MachineOperand::Int;
-        } else if (r >= s0 && r <= s15) {
+        } else if (r >= s0 && r <= s31) {
             operand_type = MachineOperand::Float;
         }
     }

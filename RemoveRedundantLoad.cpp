@@ -8,7 +8,6 @@ void remove_redundant_load(MachineModule *m) {
                 if (next == mbb->insts.end()) {
                     break;
                 }
-                auto next_next = std::next(next, 1);
 
                 auto cur_store = dynamic_cast<Store *>(*it);
                 auto next_load = dynamic_cast<Load *>(*next);
@@ -24,11 +23,7 @@ void remove_redundant_load(MachineModule *m) {
                             bool is_float = next_load->dst->operand_type == MachineOperand::Float;
                             mv->tag = is_float ? Mov::F2F : Mov::I2I;
                             mbb->insts.insert(it, mv);
-                            mbb->insts.erase(it);
                             mbb->insts.erase(next);
-
-                            next_next--;
-                            it = next_next;
 
                         } else if (cur_store->offset && next_load->offset) {
                             auto str_off_mreg = dynamic_cast<MReg *>(cur_store->offset);
@@ -49,18 +44,10 @@ void remove_redundant_load(MachineModule *m) {
                                 mv->tag = is_float ? Mov::F2F : Mov::I2I;
                                 mbb->insts.insert(it, mv);
 
-                                mbb->insts.erase(it);
                                 mbb->insts.erase(next);
-                                
-                                next_next--;
-                                it = next_next;
                             }
-                        } else {
-                            it = next;
                         }
 
-                    } else {
-                        it = next;
                     }
                 } 
             }
