@@ -1122,9 +1122,6 @@ void emit_bb(BasicBlock *bb, MachineBasicBlock *mbb) {
     for (auto inst: bb->instructionList_) {
         emit_inst(inst, mbb);
     }
-    for (auto succ : bb->successorBlocks_) {
-        emit_bb(succ, bb2mb[succ]);
-    }
 }
 
 MachineFunction *emit_func(Function *func) {
@@ -1132,6 +1129,7 @@ MachineFunction *emit_func(Function *func) {
     
     mfunc->name = func->name_;
 
+    auto first_bb = true;
     std::map<BasicBlock *, MachineBasicBlock *> bb_map;
     bb2mb.clear();
     phi2mb.clear();
@@ -1141,9 +1139,12 @@ MachineFunction *emit_func(Function *func) {
         bb_map[bb] = mbb;
         bb2mb[bb] = mbb;
     }
-    emit_args(func->arguments_, bb_map[func->getEntryBlock()]);
-    emit_bb(func->getEntryBlock(), bb_map[func->getEntryBlock()]);
     for (auto bb: func->basicBlocks_) {
+        if (first_bb) {
+            first_bb = false;
+            emit_args(func->arguments_, bb_map[bb]);
+        }
+        emit_bb(bb, bb_map[bb]);
         mfunc->basic_blocks.emplace_back(bb_map[bb]);
     }
     for (auto [phiAndVreg, mbb] : phi2mb) {

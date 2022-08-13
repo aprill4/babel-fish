@@ -101,9 +101,7 @@ void Mem2Reg::re_name(BasicBlock *bb) {
       }
     }
   }
-  std::cout << bb->getLLVM_Name() << std::endl;
   for (auto succ_bb : bb->getSuccessor()) {
-    std::cout << "\t" + succ_bb->getLLVM_Name() << std::endl;
     for (auto instr : succ_bb->instructionList_) {
       if (instr->isPhi()) {
         auto l_val = static_cast<PhiInst *>(instr)->getLval();
