@@ -1,4 +1,0 @@
-irs/95_float.ll:4:24: error: floating point constant invalid for type
-@PI29 = constant float 3.14159274
-                       ^
-1 error generated.

@@ -1,4 +1,0 @@
-irs/93_nested_calls.ll:107:11: error: expected instruction opcode
-  %v105 = negative i32 %v104
-          ^
-1 error generated.

@@ -1,4 +1,0 @@
-irs/80_chaos_token.ll:51:51: error: '@__HELLO55' defined with type '<{ i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, [72 x i32] }>*' but expected '[100 x i32]*'
-  %v186 = getelementptr [100 x i32], [100 x i32]* @__HELLO55, i32 0, i32 0
-                                                  ^
-1 error generated.
