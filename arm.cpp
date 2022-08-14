@@ -1400,6 +1400,8 @@ void stack_ra(MachineModule *mod) {
 
 struct LiveInterval{
     std::vector<MachineInst*> insts;
+    MReg* reg;
+    int location;
     int startpoint;
     int endpoint;
 };
@@ -1483,36 +1485,82 @@ Vreg_LiveIntervalMap create_live_interval(MachineFunction *F){
 }
 void allocate_register(MachineFunction * F){
     numbering_instructions(F);
-    //Vreg_LiveIntervalMap live_intervals = create_live_interval(F);
-}
-void ExpireOldIntervals(Vreg_LiveInterval i,std::vector<VReg*> active){
-    for(auto variable:active){
-        if()
+    Vreg_LiveIntervalMap live_intervals = create_live_interval(F);
+    std::vector<MReg*>free_registers;//@TODO insert actual registers
+    LinearScanRegisterALLOCATION(live_intervals,free_registers);
+    for(auto entry:live_intervals){
+        for(auto inst:live_intervals[entry.first].insts){
+            std::vector<MachineOperand**> oprs;
+            oprs=get_all_oprands(inst);
+            for(auto opr:oprs){
+                if(auto x = dynamic_cast<VReg*>(*opr)){
+                    if(x == entry.first){
+                        (*opr)=entry.second.reg;
+                    }
+                }
+
+
+            }
+            
+        }
     }
 }
+
 
 /*
 *@param live_intervals 一个map，代表每个变量的存储活性区间
 *每一个entry是一个vector，代表一个变量存活在那些指令 
 *@param free_registers 代表可用寄存器
 */
-void LinearScanRegisterALLOCATION(Vreg_LiveIntervalMap& live_intervals,std::vector<MReg*>free_registers){
-    std::vector<VReg *> active;
+void LinearScanRegisterALLOCATION(Vreg_LiveIntervalMap& live_intervals,std::vector<MReg*>& free_registers){
+    std::list<LiveInterval *> active;
     int R = free_registers.size();
-    auto SpillAtIntervals = [&](Vreg_LiveInterval i){
-
-    };
-    for(auto i:live_intervals){
-        ExpireOldIntervals(i,active);
-        if(active.size() == R){//??不是应该>=R
-            SpillAtIntervals(i);
+    int stack_size = 0;
+    auto SpillAtIntervals = [&](LiveInterval* i){
+        auto spill = active.back();
+        if(spill->endpoint > i->endpoint){
+            i->reg=spill->reg;
+            spill->location = stack_size;
+            stack_size+=4;
+            active.remove(spill);
+            active.emplace_back(i);
+            //sort active by increasing end point
+            std::sort(active.begin(),active.end(),[](LiveInterval * & a,LiveInterval * & b)->bool{
+            return a->endpoint < b->endpoint;}
+            );
         }else{
-            auto actual_reg = free_registers.pop();
-            //对于活性区间每一条指令
-            for(auto inst:i.second){
-                replace(inst,i.first,actual_reg);
+            i->location=stack_size;
+            stack_size+=4;
+        }
+    };
+    auto ExpireOldIntervals = [&](LiveInterval* i){
+        for(auto j:active){//in order of increasing end point
+            if(j->endpoint >= i->endpoint){
+                return;
             }
-            active.emplace_back(i);//@TODO increasing store
+            // remove j from active 
+            active.remove(j);
+            assert(j->reg != nullptr,"j->reg is nullptr");
+            //add register to pool of free registers
+            free_registers.emplace_back(j->reg);
+        }
+    };
+    std::sort(live_intervals.begin(),live_intervals.end(),[](Vreg_LiveInterval& a,Vreg_LiveInterval& b)->bool{
+        return a.second.startpoint < b.second.startpoint;}
+        );
+
+    for(auto i:live_intervals){//in order of increasing start point 
+        ExpireOldIntervals(&(i.second));
+        if(active.size() == R){
+            SpillAtIntervals(&(i.second));
+        }else{
+            auto actual_reg = free_registers.back();
+            free_registers.pop_back();
+            i.second.reg = actual_reg;
+            active.emplace_back(&(i.second));//@TODO increasing store
+            std::sort(active.begin(),active.end(),[](LiveInterval* & a,LiveInterval * & b)->bool{
+            return a->endpoint < b->endpoint;}
+            );
         }
     }
 }
