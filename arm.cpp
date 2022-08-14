@@ -1387,10 +1387,11 @@ void stack_ra_on_function(MachineFunction *mf)  {
         }
     }
 }
-
+void allocate_register(MachineFunction* );
 void stack_ra(MachineModule *mod) {
     for (auto func: mod->functions) {
-        stack_ra_on_function(func);
+        //stack_ra_on_function(func);
+        allocate_register(func);
     }
 }
 
@@ -1483,28 +1484,7 @@ Vreg_LiveIntervalMap create_live_interval(MachineFunction *F){
     }
     return result;
 }
-void allocate_register(MachineFunction * F){
-    numbering_instructions(F);
-    Vreg_LiveIntervalMap live_intervals = create_live_interval(F);
-    std::vector<MReg*>free_registers;//@TODO insert actual registers
-    LinearScanRegisterALLOCATION(live_intervals,free_registers);
-    for(auto entry:live_intervals){
-        for(auto inst:live_intervals[entry.first].insts){
-            std::vector<MachineOperand**> oprs;
-            oprs=get_all_oprands(inst);
-            for(auto opr:oprs){
-                if(auto x = dynamic_cast<VReg*>(*opr)){
-                    if(x == entry.first){
-                        (*opr)=entry.second.reg;
-                    }
-                }
 
-
-            }
-            
-        }
-    }
-}
 
 
 /*
@@ -1525,8 +1505,8 @@ void LinearScanRegisterALLOCATION(Vreg_LiveIntervalMap& live_intervals,std::vect
             active.remove(spill);
             active.emplace_back(i);
             //sort active by increasing end point
-            std::sort(active.begin(),active.end(),[](LiveInterval * & a,LiveInterval * & b)->bool{
-            return a->endpoint < b->endpoint;}
+            active.sort([](LiveInterval *  a,LiveInterval *  b)->bool{
+                return a->endpoint < b->endpoint;}
             );
         }else{
             i->location=stack_size;
@@ -1540,16 +1520,17 @@ void LinearScanRegisterALLOCATION(Vreg_LiveIntervalMap& live_intervals,std::vect
             }
             // remove j from active 
             active.remove(j);
-            assert(j->reg != nullptr,"j->reg is nullptr");
+            assert(j->reg != nullptr&&"j->reg is nullptr");
             //add register to pool of free registers
             free_registers.emplace_back(j->reg);
         }
     };
-    std::sort(live_intervals.begin(),live_intervals.end(),[](Vreg_LiveInterval& a,Vreg_LiveInterval& b)->bool{
+    std::vector<Vreg_LiveInterval> vec(live_intervals.begin(),live_intervals.end());
+    std::sort(vec.begin(),vec.end(),[](Vreg_LiveInterval & a,Vreg_LiveInterval& b)->bool{
         return a.second.startpoint < b.second.startpoint;}
         );
 
-    for(auto i:live_intervals){//in order of increasing start point 
+    for(auto i:vec){//in order of increasing start point 
         ExpireOldIntervals(&(i.second));
         if(active.size() == R){
             SpillAtIntervals(&(i.second));
@@ -1558,9 +1539,31 @@ void LinearScanRegisterALLOCATION(Vreg_LiveIntervalMap& live_intervals,std::vect
             free_registers.pop_back();
             i.second.reg = actual_reg;
             active.emplace_back(&(i.second));//@TODO increasing store
-            std::sort(active.begin(),active.end(),[](LiveInterval* & a,LiveInterval * & b)->bool{
+            active.sort([](const LiveInterval* a,const LiveInterval * b)->bool{
             return a->endpoint < b->endpoint;}
             );
+        }
+    }
+}
+void allocate_register(MachineFunction * F){
+    numbering_instructions(F);
+    Vreg_LiveIntervalMap live_intervals = create_live_interval(F);
+    std::vector<MReg*>free_registers;//@TODO insert actual registers
+    LinearScanRegisterALLOCATION(live_intervals,free_registers);
+    for(auto entry:live_intervals){
+        for(auto inst:live_intervals[entry.first].insts){
+            std::vector<MachineOperand**> oprs;
+            oprs=get_all_oprands(inst);
+            for(auto opr:oprs){
+                if(auto x = dynamic_cast<VReg*>(*opr)){
+                    if(x == entry.first){
+                        (*opr)=entry.second.reg;
+                    }
+                }
+
+
+            }
+            
         }
     }
 }
