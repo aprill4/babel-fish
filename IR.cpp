@@ -216,11 +216,24 @@ size_t Value::getNO() { return no_; }
 
 void Value::addUse(const Use &u) { useList_.emplace_front(u); }
 
-Use::Use(User *user,Value* value) : user_(user),value_(value) {}
+void Value::addUse(Value *val, unsigned no) { useList_.emplace_front(val, no); }
 
-Value *Use::getValue() { return value_; }
+void Value::removeUse(Value *val) { 
+  auto is_val = [val] (Use &use) { return use.getUser() == val; };
+  useList_.remove_if(is_val);
+}
 
-User *Use::getUser() { return user_; }
+void Value::replaceAllUseWith(Value *new_val) {
+  for (auto use : useList_) {
+    auto val = dynamic_cast<User *>(use.getUser());
+    assert(val && "new_val is not a user");
+    val->setOperand(new_val, use.getNo());
+  }
+}
+
+Use::Use(Value *user, unsigned no) : user_(user), no_(no) {}
+
+Value *Use::getUser() { return user_; }
 
 User::User(Type *type, const std::string &name, std::size_t operandNum)
     : Value(type, name), operandNum_(operandNum), operands_(operandNum) {}
@@ -243,7 +256,13 @@ std::string User::getOperandTypeName(std::size_t idx) {
 void User::setOperand(Value *value, std::size_t idx) {
   assert(idx < operandNum_ && "setOperand out of index");
   operands_[idx] = value;
-  value->addUse(Use(this, value));
+  value->addUse(this, idx);
+}
+
+void User::addOperand(Value *value) {
+  operands_.emplace_back(value);  
+  value->addUse(this, operandNum_);
+  operandNum_++;
 }
 
 std::string ConstantInt::print() {
@@ -552,6 +571,17 @@ bool BasicBlock::hasTerminator(){
 
 void BasicBlock::eraseFromParent(){
   parent_->remove(this);
+  for (auto pred : predecessorBlocks_){
+    pred->successorBlocks_.remove(this);
+  }
+  for (auto succ : successorBlocks_){
+    succ->predecessorBlocks_.remove(this);
+  }
+}
+
+void BasicBlock::deleteInst(Instruction *inst) {
+  instructionList_.remove(inst);
+  inst->removeUseOfOps();
 }
 
 
@@ -562,12 +592,16 @@ void BasicBlock::addInstruction(Instruction *instruction) {
 }
 
 void BasicBlock::addPredecessor(BasicBlock* pre) {
- predecessorBlocks_.emplace_back(pre);
+  if (std::find(predecessorBlocks_.begin(), predecessorBlocks_.end(), pre) == predecessorBlocks_.end()) {  
+    predecessorBlocks_.emplace_back(pre);
+  }
 }
 
 void BasicBlock::addSuccessor(BasicBlock* suc) {
- successorBlocks_.emplace_back(suc);
- suc->addPredecessor(this);
+  if (std::find(successorBlocks_.begin(), successorBlocks_.end(), suc) == successorBlocks_.end()) {  
+    successorBlocks_.emplace_back(suc);
+  }
+  suc->addPredecessor(this);
 }
 
 void BasicBlock::addDominator(BasicBlock *dom) {
@@ -581,6 +615,10 @@ void BasicBlock::setDominators(std::set<BasicBlock *> &doms) {
 
 std::set<BasicBlock *>& BasicBlock::getDominators() {
   return dominators_;
+}
+
+std::list<BasicBlock *>& BasicBlock::getSuccessor() {
+  return successorBlocks_;
 }
 
 std::list<BasicBlock *>& BasicBlock::getPredecessors() {
@@ -1265,14 +1303,35 @@ PhiInst::PhiInst(Context &c, Type *type,
     setOperand(valAndLabels[i].first, 2 * i);
     setOperand(valAndLabels[i].second, 2 * i + 1);
   }
-  insertedBlock->addInstruction(this);
+  // insertedBlock->addInstruction(this);
 }
 
-PhiInst *
-PhiInst::Create(Context &c, Type *type,
+PhiInst* PhiInst::Create(Context &c, Type *type,
                 std::vector<std::pair<Value *, BasicBlock *>> valAndLabels,
                 BasicBlock *insertedBlock, std::string name) {
   return new PhiInst(c, type, valAndLabels, insertedBlock, name);
+}
+
+PhiInst* PhiInst::Create(Context &c, Type *type, BasicBlock *insertedBlock, std::string name) {
+  std::vector<std::pair<Value *, BasicBlock *>> valAndLabels;
+  return new PhiInst(c, type, valAndLabels, insertedBlock, name);
+}
+
+std::vector<Value*> PhiInst::getInComingVal(){
+  std::vector<Value*> val;
+  for (int i = 0; i < getOperandNum() / 2; i++) {
+    val.emplace_back(getOperand(2 * i));
+  }
+  return val;
+}
+
+std::vector<BasicBlock*> PhiInst::getInComingBlock() {
+  std::vector<BasicBlock*> bb;
+  for (int i = 0; i < getOperandNum() / 2; i++) {
+    auto block = dynamic_cast<BasicBlock*>(getOperand(2 * i + 1));
+    bb.emplace_back(block);
+  }
+  return bb;
 }
 
 std::string PhiInst::print() {
@@ -1281,7 +1340,7 @@ std::string PhiInst::print() {
   // <result> = phi <ty> [ <val0>, <label0>], ...
   std::string fmt("%%%s = phi %s ");
   std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getLLVM_Name().c_str(),
-                getOperandType(0)->getTypeName().c_str());
+                type_->getTypeName().c_str());
   IR.assign(IRtemp);
   for (int i = 0; i < getOperandNum() / 2; i++) {
     if (i > 0)
