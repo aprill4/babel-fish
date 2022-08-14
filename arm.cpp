@@ -1406,17 +1406,18 @@ struct LiveInterval{
     int startpoint;
     int endpoint;
 };
-using Vreg_LiveIntervalMap = std::map<VReg*,LiveInterval> ;
-using Vreg_LiveInterval    = std::pair<VReg*,LiveInterval>;
+using Vreg_LiveIntervalMap = std::map<VReg*,LiveInterval*> ;
+using Vreg_LiveInterval    = std::pair<VReg*,LiveInterval*>;
 
 void Traveral(MachineBasicBlock * bb,int num){
-    if(bb->sucs.empty()){
+    if(bb->visited){
         return ;
     }
+    bb->visited=true;
+    for(auto inst:bb->insts){
+        inst->number = num++;
+    }
     for(auto b:bb->sucs){
-        for(auto inst:b->insts){
-            inst->number=num++;
-        }
         Traveral(b,num);
     }
 }
@@ -1464,7 +1465,7 @@ std::vector<MachineOperand**> get_all_oprands(MachineInst* inst){
     }
     return oprs;
 }
-Vreg_LiveIntervalMap create_live_interval(MachineFunction *F){
+Vreg_LiveIntervalMap create_live_interval(MachineFunction *F,MachineOperand::OperandType ty= MachineOperand::Int){
     Vreg_LiveIntervalMap result;
     for(auto bb:F->basic_blocks){
         for(auto inst:bb->insts){
@@ -1472,12 +1473,18 @@ Vreg_LiveIntervalMap create_live_interval(MachineFunction *F){
             for(auto opr:oprs){
                 if(auto vr = dynamic_cast<VReg*>(*opr))
                 {   
-                    if(result.find(vr) != result.end()){
-                        result[vr].endpoint = result[vr].startpoint = inst->number;
-                    }else{
-                        if(result[vr].endpoint < inst->number) result[vr].endpoint = inst->number;
+                    if(vr->operand_type != ty){
+                        continue;
                     }
-                    result[vr].insts.emplace_back(inst);
+                    if(result.find(vr) == result.end()){
+                        result[vr] = new LiveInterval;
+                        result[vr]->endpoint = result[vr]->startpoint = inst->number;
+                    }else{
+                        if(result[vr]->endpoint < inst->number) {
+                            result[vr]->endpoint = inst->number;
+                        }
+                    }
+                    result[vr]->insts.emplace_back(inst);
                 }
             }
         }
@@ -1495,6 +1502,7 @@ Vreg_LiveIntervalMap create_live_interval(MachineFunction *F){
 void LinearScanRegisterALLOCATION(Vreg_LiveIntervalMap& live_intervals,std::vector<MReg*>& free_registers){
     std::list<LiveInterval *> active;
     int R = free_registers.size();
+    //printf("free register num is %d\n",R);
     int stack_size = 0;
     auto SpillAtIntervals = [&](LiveInterval* i){
         auto spill = active.back();
@@ -1514,31 +1522,44 @@ void LinearScanRegisterALLOCATION(Vreg_LiveIntervalMap& live_intervals,std::vect
         }
     };
     auto ExpireOldIntervals = [&](LiveInterval* i){
+        std::vector<LiveInterval*> expire_liveintervals;
         for(auto j:active){//in order of increasing end point
-            if(j->endpoint >= i->endpoint){
-                return;
+            if(j->endpoint >= i->startpoint){
+                goto deal_remove_interval;
             }
             // remove j from active 
-            active.remove(j);
+            //active.remove(j);
+            expire_liveintervals.emplace_back(j);
             assert(j->reg != nullptr&&"j->reg is nullptr");
             //add register to pool of free registers
             free_registers.emplace_back(j->reg);
         }
+        deal_remove_interval:
+        for(auto x:expire_liveintervals){
+            active.remove(x);
+            //printf("expire mreg ");
+            //std::cout<<x->reg->print()<<std::endl;
+        }
     };
+
+
     std::vector<Vreg_LiveInterval> vec(live_intervals.begin(),live_intervals.end());
     std::sort(vec.begin(),vec.end(),[](Vreg_LiveInterval & a,Vreg_LiveInterval& b)->bool{
-        return a.second.startpoint < b.second.startpoint;}
+        return a.second->startpoint < b.second->startpoint;}
         );
-
-    for(auto i:vec){//in order of increasing start point 
-        ExpireOldIntervals(&(i.second));
+    printf("done sort vreg_liverintervals.....\n");
+    for(auto i:vec){//in order of increasing start point
+        //std::cout<<i.first->print()<<std::endl; 
+        //printf("start :%d ,end %d \n",i.second->startpoint,i.second->endpoint);
+        ExpireOldIntervals(i.second);
         if(active.size() == R){
-            SpillAtIntervals(&(i.second));
+            SpillAtIntervals(i.second);
         }else{
             auto actual_reg = free_registers.back();
             free_registers.pop_back();
-            i.second.reg = actual_reg;
-            active.emplace_back(&(i.second));//@TODO increasing store
+            i.second->reg = actual_reg;
+            //printf("%s was allocate with %s\n",i.first->print(),actual_reg->print());
+            active.emplace_back(i.second);//@TODO increasing store
             active.sort([](const LiveInterval* a,const LiveInterval * b)->bool{
             return a->endpoint < b->endpoint;}
             );
@@ -1547,23 +1568,39 @@ void LinearScanRegisterALLOCATION(Vreg_LiveIntervalMap& live_intervals,std::vect
 }
 void allocate_register(MachineFunction * F){
     numbering_instructions(F);
+    
+    printf("done numbering....\n");
     Vreg_LiveIntervalMap live_intervals = create_live_interval(F);
+    printf("done vreg liveinterval map....\n");
     std::vector<MReg*>free_registers;//@TODO insert actual registers
+    for(int k=MReg::r1;k<=MReg::r9;k++){
+        free_registers.emplace_back(new MReg((MReg::Reg)k));
+    }
+    printf("store free register....\n");
     LinearScanRegisterALLOCATION(live_intervals,free_registers);
+    printf("done Linearscan .....\n");
+    
+
     for(auto entry:live_intervals){
-        for(auto inst:live_intervals[entry.first].insts){
+        
+        //std::cout<<entry.first->print()<<std::endl;
+        for(auto inst:live_intervals[entry.first]->insts){
             std::vector<MachineOperand**> oprs;
             oprs=get_all_oprands(inst);
+            //printf("begin doing inst : ");
+            //inst->print(stdout);
+            //printf("\n");
+
             for(auto opr:oprs){
                 if(auto x = dynamic_cast<VReg*>(*opr)){
                     if(x == entry.first){
-                        (*opr)=entry.second.reg;
+                        (*opr)=entry.second->reg;
                     }
                 }
-
-
             }
-            
+            //printf("done inst : ");
+            //inst->print(stdout);
+            //printf("\n");
         }
     }
 }
