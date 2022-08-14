@@ -1,5 +1,5 @@
 int k;
-/*
+
 float params_f40(float x0, float x1, float x2, float x3, float x4, float x5,
                  float x6, float x7, float x8, float x9, float x10, float x11,
                  float x12, float x13, float x14, float x15, float x16,
@@ -89,7 +89,6 @@ float params_fa40(float x0[], float x1[], float x2[], float x3[], float x4[],
                        x36, x37, x38, x39, arr);
   }
 }
-*/
 
 int params_mix(float x0, int i1[], int i2, float x3[], float x4, int i5,
                float x6, float x7, float x8[], int i9[], int i10, int i11,
@@ -147,7 +146,6 @@ int main() {
     i = i + 1;
   }
 
-/*
   float ret0 = params_f40(
       arr[0][k], arr[1][k], arr[2][k], arr[3][k], arr[4][k], arr[5][k],
       arr[6][k], arr[7][k], arr[8][k], arr[9][k], arr[10][k], arr[11][k],
@@ -174,7 +172,6 @@ int main() {
       arr[17], arr[18], arr[19], arr[20], arr[21], arr[22], arr[23], arr[24],
       arr[25], arr[26], arr[27], arr[28], arr[29], arr[30], arr[31], arr[32],
       arr[33], arr[34], arr[35], arr[36], arr[37], arr[38], arr[39]);
-  */
   int ret3 = params_mix(
       arr[0][k], arr2[0], arr2[1][k], arr[1], arr[2][k], arr2[2][k], arr[3][k],
       arr[4][k], arr[5], arr2[3], arr2[4][k], arr2[5][k], arr[6], arr2[6],
@@ -187,12 +184,12 @@ int main() {
       arr2[0][k], arr2[1], arr[30], arr[31][k], arr2[2][k], arr[32][k], arr[33],
       arr[34], arr[35][k], arr2[3][k]);
 
-  //putfloat(ret0);
-  //putch(10);
-  //putfloat(ret1);
-  //putch(10);
-  //putfloat(ret2);
-  //putch(10);
+  putfloat(ret0);
+  putch(10);
+  putfloat(ret1);
+  putch(10);
+  putfloat(ret2);
+  putch(10);
   putint(ret3);
   putch(10);
   return 0;
