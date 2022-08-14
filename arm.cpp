@@ -1387,11 +1387,22 @@ void stack_ra_on_function(MachineFunction *mf)  {
         }
     }
 }
-void allocate_register(MachineFunction* );
+void allocate_register(MachineFunction* ,MachineOperand::OperandType,std::vector<MReg*>);
 void stack_ra(MachineModule *mod) {
     for (auto func: mod->functions) {
         //stack_ra_on_function(func);
-        allocate_register(func);
+        std::vector<MReg*>free_registers_int;
+        for(int i=MReg::r1;i<=MReg::r9;i++){
+            free_registers_int.emplace_back(new MReg((MReg::Reg)i));
+        }
+        allocate_register(func,MachineOperand::Int,free_registers_int);
+        
+        std::vector<MReg*>free_registers_float;
+        for(int i=MReg::s1;i<=MReg::s9;i++){
+            free_registers_float.emplace_back(new MReg((MReg::Reg)i));
+        }
+        allocate_register(func,MachineOperand::Float,free_registers_float);
+        
     }
 }
 
@@ -1566,17 +1577,11 @@ void LinearScanRegisterALLOCATION(Vreg_LiveIntervalMap& live_intervals,std::vect
         }
     }
 }
-void allocate_register(MachineFunction * F){
+void allocate_register(MachineFunction * F,MachineOperand::OperandType ty,std::vector<MReg*>free_registers){
     numbering_instructions(F);
-    
     printf("done numbering....\n");
-    Vreg_LiveIntervalMap live_intervals = create_live_interval(F);
+    Vreg_LiveIntervalMap live_intervals = create_live_interval(F,ty);
     printf("done vreg liveinterval map....\n");
-    std::vector<MReg*>free_registers;//@TODO insert actual registers
-    for(int k=MReg::r1;k<=MReg::r9;k++){
-        free_registers.emplace_back(new MReg((MReg::Reg)k));
-    }
-    printf("store free register....\n");
     LinearScanRegisterALLOCATION(live_intervals,free_registers);
     printf("done Linearscan .....\n");
     
