@@ -571,8 +571,16 @@ void FunctionDefinition::generate(IRBuilder *irBuilder) {
       for (auto i : arg->identifier_->dimension_) {
         if (i) {
           i->generate(irBuilder);
-          dimension.emplace_back(
-              dynamic_cast<ConstantInt *>(irBuilder->getTmpVal())->getValue());
+          auto tmp = irBuilder->getTmpVal();
+          if (dynamic_cast<GlobalVariable*>(tmp)) {
+            if (!dynamic_cast<GlobalVariable*>(tmp)->isConst()) {
+              throw Exception("array dimension is not const");    
+            }
+            tmp = dynamic_cast<GlobalVariable*>(tmp)->getInitValue();
+          } else if (!dynamic_cast<ConstantInt*>(tmp)) {
+              throw Exception("array dimension is not const");    
+          }
+          dimension.emplace_back(dynamic_cast<ConstantInt *>(tmp)->getValue());
         }
       }
       if (dimension.size() != 0) {
