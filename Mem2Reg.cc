@@ -16,6 +16,7 @@ void Mem2Reg::run() {
       re_name(func_->getEntryBlock());
     }
     remove_alloca();
+    dead_code_delete();
   }
 }
 
@@ -157,6 +158,20 @@ void Mem2Reg::remove_alloca() {
         if (is_int || is_float) {
           wait_delete.emplace_back(instr);
         }
+      }
+    }
+    for (auto instr : wait_delete) {
+      bb->deleteInst(instr);
+    }
+  }
+}
+
+void Mem2Reg::dead_code_delete() {
+  for (auto bb : func_->basicBlocks_) {
+    std::vector<Instruction *> wait_delete;
+    for (auto inst : bb->instructionList_) {
+      if (inst->isPhi() && inst->useList_.size() == 0) {
+        wait_delete.emplace_back(inst);
       }
     }
     for (auto instr : wait_delete) {

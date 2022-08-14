@@ -204,7 +204,9 @@ std::map<Value*, MachineOperand*> v_m;
 int vreg_id = 0;
 size_t stack_offset = 0;
 std::map<BasicBlock*, MachineBasicBlock*> bb2mb;
-std::map<std::pair<PhiInst*, MachineOperand*> , MachineBasicBlock*> phi2mb;
+std::map<PhiInst*, MachineOperand*> phi2vreg;
+std::map<BasicBlock* ,bool> bbok;
+
 //-----------------------------------------------------------------
 
 size_t allocate(size_t size) {
@@ -432,6 +434,74 @@ MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb, bool no_imm = fal
     assert(ret && "src of mov is nullptr in function make_operand");
     return ret;
 }
+
+MachineOperand *make_operand(Value *v, MachineBasicBlock *mbb, std::list<MachineInst *>::iterator& iterator, bool no_imm = false) {
+    MachineOperand *ret = nullptr;
+    if (v_m.find(v) != v_m.end()) { ret = v_m[v]; }
+    else if (auto global = dynamic_cast<GlobalVariable *>(v)) {
+        auto load_addr = emit_load_global_addr(global);
+        mbb->insts.insert(iterator,load_addr);
+        // mbb->insts.emplace_back(load_addr);
+        ret = load_addr->dst;
+    }
+    else if (auto const_val = dynamic_cast<Constant *>(v)) {
+        int val = 0;
+        int is_float = 0;
+        if (auto const_int = dynamic_cast<ConstantInt *>(const_val)) {
+            val = const_int->value_;
+        } else if (auto const_float = dynamic_cast<ConstantFloat *>(const_val)) {
+            int *p = (int *)&(const_float->value_);
+            val = *p;
+            is_float = 1;
+        } else if (auto const_zero = dynamic_cast<ConstantZero *>(const_val)) {
+            is_float = const_zero->type_->typeId_ == Type::FloatTypeId;
+        }
+
+        if (can_be_iimm_ror(val)) {
+            auto imm = new IImm(val);
+            ret = imm;
+            if (no_imm) {
+                auto dst = make_vreg(MachineOperand::Int);
+                auto mv = new Mov(Mov::I2I, dst, imm);
+                mbb->insts.insert(iterator, mv);
+                // mbb->insts.emplace_back(mv);
+                ret = dst;
+            }
+        } else {
+            auto l_imm = new IImm(0xffff & val);
+            auto h_imm = new IImm((val >> 16) & 0xffff);
+            auto dst = make_vreg(MachineOperand::Int);
+
+            auto mvw = new Mov(Mov::L2I, dst, l_imm);
+            auto mvt = new Mov(Mov::H2I, dst, h_imm);
+
+            mbb->insts.insert(iterator, mvw);
+            mbb->insts.insert(iterator, mvt);
+            // mbb->insts.emplace_back(mvw);
+            // mbb->insts.emplace_back(mvt);
+
+            ret = dst;
+        }
+
+        if (is_float) {
+            auto src = ret;
+            auto dst = make_vreg(MachineOperand::Int);
+            auto mv = new Mov(Mov::I2I, dst, src);
+            mbb->insts.insert(iterator, mv);
+            // mbb->insts.emplace_back(mv);
+            auto vdst = make_vreg(MachineOperand::Float);
+            auto vmov = new Mov(Mov::F_I, vdst, dst);
+            mbb->insts.insert(iterator, vmov);
+            // mbb->insts.emplace_back(vmov);
+            ret = vdst;
+        }
+    } else {
+        throw Exception(std::string(__FILE__) + " " + std::to_string(__LINE__) + " don't know what operand you want\n" + v->print());
+    }
+    assert(ret && "src of mov is nullptr in function make_operand");
+    return ret;
+}
+
 
 void handle_alloca(AllocaInst *inst, MachineBasicBlock *mbb) {
     switch(inst->allocaType_->typeId_) {
@@ -883,7 +953,7 @@ void emit_unary(Instruction *inst, MachineBasicBlock* mbb){
         case Instruction::InstId::Not:
             if (unary_inst->getType()->isIntegerType()) {
                 auto clz = new IClz();
-                clz->src = make_operand(right_val, mbb);
+                clz->src = make_operand(right_val, mbb, true);
                 clz->dst = make_vreg(MachineOperand::OperandType::Int);
                 auto lsr = new Binary(Binary::Int, Binary::ILsr, 
                     make_vreg(MachineOperand::OperandType::Int, unary_inst), clz->dst, new IImm(5));
@@ -905,7 +975,7 @@ void emit_unary(Instruction *inst, MachineBasicBlock* mbb){
             if (unary_inst->getType()->isIntegerType()) {
                 auto rsb = new Binary(Binary::Int, Binary::Rsb, 
                     make_vreg(MachineOperand::OperandType::Int, unary_inst),
-                    make_operand(right_val, mbb),
+                    make_operand(right_val, mbb, true),
                     new IImm(0));
                 mbb->insts.emplace_back(rsb);     
             } else { 
@@ -1090,12 +1160,12 @@ void emit_phi(Instruction *inst, MachineBasicBlock* mbb) {
     if (phi->getType()->isIntegerType()) {
         auto vreg = make_vreg(MachineOperand::OperandType::Int);
         auto mv = new Mov(Mov::I2I, make_vreg(MachineOperand::OperandType::Int, inst), vreg);
-        phi2mb[std::make_pair(phi, vreg)] = mbb;
+        phi2vreg[phi] = vreg;
         mbb->insts.emplace_back(mv);
     } else if (phi->getType()->isFloatType()) {
         auto vreg = make_vreg(MachineOperand::OperandType::Float);
         auto mv = new Mov(Mov::F2F, make_vreg(MachineOperand::OperandType::Float, inst), vreg);
-        phi2mb[std::make_pair(phi, vreg)] = mbb;
+        phi2vreg[phi] = vreg;
         mbb->insts.emplace_back(mv);
     } else throw Exception("phi error: type\n");
 }
@@ -1117,10 +1187,17 @@ void emit_inst(Instruction *inst, MachineBasicBlock *mbb) {
     assert(false && "illegal instrustion");
 }
 
-void emit_bb(BasicBlock *bb, MachineBasicBlock *mbb) {
+void emit_bb(BasicBlock *bb, MachineBasicBlock *mbb, MachineFunction* mfunc) {
     mbb->block_name = bb->getLLVM_Name();
     for (auto inst: bb->instructionList_) {
-        emit_inst(inst, mbb);
+        emit_inst(inst, mbb);        
+    }
+    mfunc->basic_blocks.emplace_back(mbb);
+    for (auto succ : bb->successorBlocks_){
+        if (!bbok[succ]) {
+            bbok[succ] = true;
+            emit_bb(succ, bb2mb[succ], mfunc);
+        }
     }
 }
 
@@ -1129,35 +1206,38 @@ MachineFunction *emit_func(Function *func) {
     
     mfunc->name = func->name_;
 
-    auto first_bb = true;
     std::map<BasicBlock *, MachineBasicBlock *> bb_map;
     bb2mb.clear();
-    phi2mb.clear();
+    phi2vreg.clear();
     for (auto bb: func->basicBlocks_) {
         auto mbb = new MachineBasicBlock;
         mbb->parent = mfunc;
         bb_map[bb] = mbb;
         bb2mb[bb] = mbb;
+        bbok[bb] = false;
     }
-    for (auto bb: func->basicBlocks_) {
-        if (first_bb) {
-            first_bb = false;
-            emit_args(func->arguments_, bb_map[bb]);
-        }
-        emit_bb(bb, bb_map[bb]);
-        mfunc->basic_blocks.emplace_back(bb_map[bb]);
-    }
-    for (auto [phiAndVreg, mbb] : phi2mb) {
-        for (int i = 0; i < phiAndVreg.first->getOperandNum() / 2; i++) {
-            auto val = phiAndVreg.first->getOperand(2 * i);
-            auto bb = dynamic_cast<BasicBlock*>(phiAndVreg.first->getOperand(2 * i + 1));
+    emit_args(func->arguments_, bb_map[func->getEntryBlock()]);
+    emit_bb(func->getEntryBlock(), bb_map[func->getEntryBlock()], mfunc);
+    for (auto& [phi, vreg] : phi2vreg) {
+        for (int i = 0; i < phi->getOperandNum() / 2; i++) {
+            auto val = phi->getOperand(2 * i);
+            auto bb = dynamic_cast<BasicBlock*>(phi->getOperand(2 * i + 1));
             auto mbb_i = bb2mb[bb];
-            for (auto end = mbb_i->insts.rbegin(); end != mbb_i->insts.rend(); end++) {
-                if (!dynamic_cast<Branch*>(*end)) {
-                    if (phiAndVreg.first->getType()->isIntegerType()) {
-                        mbb_i->insts.insert(end.base(), new Mov(Mov::I2I, phiAndVreg.second, make_operand(val, mbb_i)));
-                    } else if (phiAndVreg.first->getType()->isFloatType()) {
-                        mbb_i->insts.insert(end.base(), new Mov(Mov::F2F, phiAndVreg.second, make_operand(val, mbb_i)));
+            for (auto begin = mbb_i->insts.begin(); begin != mbb_i->insts.end(); begin++) {
+                if (dynamic_cast<Branch*>(*begin)) {
+                    if (phi->getType()->isIntegerType()) {
+                        auto dst = make_vreg(MachineOperand::Int);
+                        auto mv = new Mov(Mov::I2I, dst, make_operand(val, mbb_i, begin));
+                        auto mv2 = new Mov(Mov::I2I, vreg, dst);
+                        mbb_i->insts.insert(begin, mv);
+                        mbb_i->insts.insert(begin, mv2);
+
+                    } else if (phi->getType()->isFloatType()) {
+                        auto dst = make_vreg(MachineOperand::Float);
+                        auto mv = new Mov(Mov::F2F, dst, make_operand(val, mbb_i, begin));
+                        auto mv2 = new Mov(Mov::F2F, vreg, dst);
+                        mbb_i->insts.insert(begin, mv);
+                        mbb_i->insts.insert(begin, mv2);
                     }
                     break;
                 }

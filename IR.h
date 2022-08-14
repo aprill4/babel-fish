@@ -189,6 +189,7 @@ public:
   std::string getLLVM_Name();
 
   void addUse(const Use &u);
+  void addUse(Value *val, unsigned no = 0);
   void removeUse(Value *val);
   virtual std::string print() = 0;
   size_t getNO();
@@ -202,14 +203,12 @@ public:
 
 class Use {
 public:
-  Use(User *user, Value* value, unsigned argNo);
-  Value *getValue();
-  User *getUser();
-  unsigned getArgNo() { return argNo_;}
+  Use(Value* user_, unsigned no);
+  Value *getUser();
+  unsigned getNo() { return no_;}
 private:
-  User *user_ = nullptr;
-  Value *value_ = nullptr;
-  unsigned argNo_;
+  Value *user_ = nullptr;
+  unsigned no_;
 };
 
 class User : public Value {

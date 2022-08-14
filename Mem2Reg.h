@@ -12,6 +12,7 @@ public:
   void generate_phi();
   void re_name(BasicBlock *bb);
   void remove_alloca();
+  void dead_code_delete();
 
 private:
   Function *func_;

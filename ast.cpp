@@ -1236,7 +1236,7 @@ void IfElseStatement::generate(IRBuilder *irBuilder) {
       BasicBlock::Create(c, "if_true_entry", irBuilder->getFunction());
   auto false_bb =
       BasicBlock::Create(c, "if_false_entry", irBuilder->getFunction());
-  auto next_bb = BasicBlock::Create(c, "next_entry", irBuilder->getFunction());
+  auto next_bb = BasicBlock::Create(c, "if_next_entry", irBuilder->getFunction());
   // true_bb->addSuccessor(next_bb);
   if (elseStmt_) {
     // false_bb->addSuccessor(next_bb);

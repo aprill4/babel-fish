@@ -216,6 +216,8 @@ size_t Value::getNO() { return no_; }
 
 void Value::addUse(const Use &u) { useList_.emplace_front(u); }
 
+void Value::addUse(Value *val, unsigned no) { useList_.emplace_front(val, no); }
+
 void Value::removeUse(Value *val) { 
   auto is_val = [val] (Use &use) { return use.getUser() == val; };
   useList_.remove_if(is_val);
@@ -225,16 +227,13 @@ void Value::replaceAllUseWith(Value *new_val) {
   for (auto use : useList_) {
     auto val = dynamic_cast<User *>(use.getUser());
     assert(val && "new_val is not a user");
-    val->setOperand(new_val, use.getArgNo());
+    val->setOperand(new_val, use.getNo());
   }
 }
 
+Use::Use(Value *user, unsigned no) : user_(user), no_(no) {}
 
-Use::Use(User *user,Value* value, unsigned argNo) : user_(user),value_(value), argNo_(argNo) {}
-
-Value *Use::getValue() { return value_; }
-
-User *Use::getUser() { return user_; }
+Value *Use::getUser() { return user_; }
 
 User::User(Type *type, const std::string &name, std::size_t operandNum)
     : Value(type, name), operandNum_(operandNum), operands_(operandNum) {}
@@ -257,13 +256,12 @@ std::string User::getOperandTypeName(std::size_t idx) {
 void User::setOperand(Value *value, std::size_t idx) {
   assert(idx < operandNum_ && "setOperand out of index");
   operands_[idx] = value;
-  value->addUse(Use(this, value, idx));
+  value->addUse(this, idx);
 }
 
 void User::addOperand(Value *value) {
   operands_.emplace_back(value);  
-  Use u(this, value, operandNum_);
-  value->addUse(u);
+  value->addUse(this, operandNum_);
   operandNum_++;
 }
 
@@ -573,6 +571,12 @@ bool BasicBlock::hasTerminator(){
 
 void BasicBlock::eraseFromParent(){
   parent_->remove(this);
+  for (auto pred : predecessorBlocks_){
+    pred->successorBlocks_.remove(this);
+  }
+  for (auto succ : successorBlocks_){
+    succ->predecessorBlocks_.remove(this);
+  }
 }
 
 void BasicBlock::deleteInst(Instruction *inst) {

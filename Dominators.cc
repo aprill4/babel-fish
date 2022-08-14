@@ -6,6 +6,19 @@ void Dominators::run() {
   for (auto f : m_->functionList_) {
     if (f->getBasicBlocks().size() == 0)
       continue;
+    std::vector<BasicBlock*> wait_delete_bb;  
+    for (auto bb : f->getBasicBlocks()) {
+      if (bb != f->getEntryBlock() && bb->predecessorBlocks_.size() == 0) {
+        wait_delete_bb.emplace_back(bb);
+      }
+    }
+    for (auto delete_bb : wait_delete_bb) {
+      delete_bb->eraseFromParent();
+    }
+  }
+  for (auto f : m_->functionList_) {
+    if (f->getBasicBlocks().size() == 0)
+      continue;
     for (auto bb : f->getBasicBlocks()) {
       doms_.insert({bb, {}});
       idom_.insert({bb, {}});

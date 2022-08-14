@@ -103,11 +103,11 @@ int main(int argc, char** argv) {
 
     auto mm = emit_asm(m);
 
-    //mm->print(stdout);
+    mm->print(stdout);
     printf("\n\n");
 
     stack_ra(mm);
-    //mm->print(stdout);
+    // mm->print(stdout);
     // remove_redundant_load(mm);
 
     //mm->print(stdout);
