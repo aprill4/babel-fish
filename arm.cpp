@@ -2,6 +2,7 @@
 #include "Exception.h"
 #include <assert.h>
 #include <utility>
+#include <limits.h>
 
 void print_globals(FILE *fp, const std::set<GlobalVariable *> &globals);
 
@@ -206,6 +207,9 @@ size_t stack_offset = 0;
 std::map<BasicBlock*, MachineBasicBlock*> bb2mb;
 std::map<PhiInst*, MachineOperand*> phi2vreg;
 std::map<BasicBlock* ,bool> bbok;
+std::vector<MachineBasicBlock*> mbscan_order;   //preparation of linear scan algorithm
+std::unordered_map<int, std::pair<unsigned, unsigned> > id2ranges;  //<id, (left_bound, right_bound)>: virtual registers' live ranges records
+std::set<int>visited; // hasn't been visited if element doesn't exists in  set
 
 //-----------------------------------------------------------------
 
@@ -343,6 +347,12 @@ void replace_uses(MachineInst *inst, MachineOperand *old_opr, int new_reg){
     for(auto opr: oprs) 
         if(*opr == old_opr) 
             *opr = new MReg(MReg::Reg(new_reg));
+}
+
+void scan_order(MachineBasicBlock *mb) {
+    for(auto&suc : mb->sucs)
+        scan_order(suc);
+    mbscan_order.emplace_back(mb);
 }
 
 MachineOperand::OperandType infer_type_from_value(Value *v) {
@@ -1528,6 +1538,212 @@ void stack_ra_on_function(MachineFunction *mf)  {
             it++;
         }
     }
+}
+
+void linear_scan(MachineFunction *mf) {
+    int callee_size      = 100, //calcation details: (r11 - r4 + 1 + lr + s31 - s16) * 4 = 100
+        local_var_size   = mf->stack_size,
+        spilled_size     = mf->vreg_count * 4;
+
+    scan_order(mf->basic_blocks[0]);
+    std::reverse(mbscan_order.begin(),mbscan_order.end());
+    
+    unsigned num = 0;
+    for(auto&block: mbscan_order)
+        for(auto&inst: block->insts) {
+            if(auto i = dynamic_cast<Binary*>(inst)) {
+                if(auto v = dynamic_cast<VReg*>(i->dst)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+                if(auto v = dynamic_cast<VReg*>(i->lhs)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+                if(auto v = dynamic_cast<VReg*>(i->rhs)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+            }
+            else if(auto i = dynamic_cast<Cmp*>(inst)) {
+                if(auto v = dynamic_cast<VReg*>(i->lhs)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+                if(auto v = dynamic_cast<VReg*>(i->rhs)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+            }
+            else if(auto i = dynamic_cast<Mov*>(inst)) {
+                if(auto v = dynamic_cast<VReg*>(i->dst)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+                if(auto v = dynamic_cast<VReg*>(i->src)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+            } 
+            else if(auto i = dynamic_cast<IClz*>(inst)) {
+                if(auto v = dynamic_cast<VReg*>(i->dst)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+                if(auto v = dynamic_cast<VReg*>(i->src)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+            }
+            else if(auto i = dynamic_cast<FNeg*>(inst)) {
+                if(auto v = dynamic_cast<VReg*>(i->dst)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+                if(auto v = dynamic_cast<VReg*>(i->src)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+            }
+            else if(auto i = dynamic_cast<Cvt*>(inst)) {
+                if(auto v = dynamic_cast<VReg*>(i->dst)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+                if(auto v = dynamic_cast<VReg*>(i->src)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+            }
+            else if(auto i = dynamic_cast<Load*>(inst)) {
+                if(auto v = dynamic_cast<VReg*>(i->dst)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+                if(auto v = dynamic_cast<VReg*>(i->base)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+                if(auto v = dynamic_cast<VReg*>(i->offset)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+            }
+            else if(auto i = dynamic_cast<Store*>(inst)) {
+                if(auto v = dynamic_cast<VReg*>(i->src)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+                if(auto v = dynamic_cast<VReg*>(i->base)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+                if(auto v = dynamic_cast<VReg*>(i->offset)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+            }
+            num++;
+        }
+    
+    std::set<unsigned>active_list;
+    unsigned short intReg = mf->call_func ? (USHRT_MAX - 15) : USHRT_MAX - mf->has_ret_val;   //the bitmap of available int regs(lowest bit represent r0)
+    unsigned floatReg = mf->call_func ? UINT_MAX - 63 : UINT_MAX - mf->has_ret_val;       //same for float regs(lowest bit represent s0), 1 for available, 0 otherwise
+
+    for(auto&mb: mbscan_order) 
+        for(auto&inst: mb->insts) {
+            if(auto i = dynamic_cast<Binary*>(inst)) {
+                if(auto v = dynamic_cast<VReg*>(i->dst)){
+                    
+                }
+                if(auto v = dynamic_cast<VReg*>(i->lhs)){
+                    if(visited.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+                if(auto v = dynamic_cast<VReg*>(i->rhs)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+            }
+            else if(auto i = dynamic_cast<Cmp*>(inst)) {
+                if(auto v = dynamic_cast<VReg*>(i->lhs)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+                if(auto v = dynamic_cast<VReg*>(i->rhs)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+            }
+            else if(auto i = dynamic_cast<Mov*>(inst)) {
+                if(auto v = dynamic_cast<VReg*>(i->dst)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+                if(auto v = dynamic_cast<VReg*>(i->src)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+            } 
+            else if(auto i = dynamic_cast<IClz*>(inst)) {
+                if(auto v = dynamic_cast<VReg*>(i->dst)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+                if(auto v = dynamic_cast<VReg*>(i->src)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+            }
+            else if(auto i = dynamic_cast<FNeg*>(inst)) {
+                if(auto v = dynamic_cast<VReg*>(i->dst)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+                if(auto v = dynamic_cast<VReg*>(i->src)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+            }
+            else if(auto i = dynamic_cast<Cvt*>(inst)) {
+                if(auto v = dynamic_cast<VReg*>(i->dst)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+                if(auto v = dynamic_cast<VReg*>(i->src)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+            }
+            else if(auto i = dynamic_cast<Load*>(inst)) {
+                if(auto v = dynamic_cast<VReg*>(i->dst)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+                if(auto v = dynamic_cast<VReg*>(i->base)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+                if(auto v = dynamic_cast<VReg*>(i->offset)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+            }
+            else if(auto i = dynamic_cast<Store*>(inst)) {
+                if(auto v = dynamic_cast<VReg*>(i->src)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+                if(auto v = dynamic_cast<VReg*>(i->base)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+                if(auto v = dynamic_cast<VReg*>(i->offset)){
+                    if(id2ranges.count(v->id)) id2ranges[v->id].second = num;
+                    else id2ranges[v->id] = std::make_pair(num, num);
+                }
+            }
+        }
 }
 
 void stack_ra(MachineModule *mod) {
