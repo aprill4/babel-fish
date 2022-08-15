@@ -368,6 +368,7 @@ void Root::generate(IRBuilder *irBuilder) {
   }
 
   for (auto &funcDef : this->functionDefinitions_) {
+    irBuilder->setScope(scope_);
     funcDef->generate(irBuilder);
   }
 }
