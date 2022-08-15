@@ -1235,7 +1235,7 @@ MachineModule *emit_asm(Module *IR) {
 
     return mm;
 }
-
+/*
 void stack_ra_on_function(MachineFunction *mf)  {
     int callee_size      = 100, //calcation details: (r11 - r4 + 1 + lr + s31 - s16) * 4 = 100
         local_var_size   = mf->stack_size,
@@ -1387,6 +1387,7 @@ void stack_ra_on_function(MachineFunction *mf)  {
         }
     }
 }
+*/
 void allocate_register(MachineFunction* ,MachineOperand::OperandType,std::vector<MReg*>);
 void stack_ra(MachineModule *mod) {
     for (auto func: mod->functions) {
@@ -1409,13 +1410,12 @@ void stack_ra(MachineModule *mod) {
 
 
 
-
 struct LiveInterval{
-    std::vector<MachineInst*> insts;
+    //std::vector<MachineInst*> insts;
     MReg* reg;
-    int location;
-    int startpoint;
-    int endpoint;
+    int location   =   -1;
+    int startpoint =   -1;
+    int endpoint   =   -1;
 };
 using Vreg_LiveIntervalMap = std::map<VReg*,LiveInterval*> ;
 using Vreg_LiveInterval    = std::pair<VReg*,LiveInterval*>;
@@ -1495,7 +1495,7 @@ Vreg_LiveIntervalMap create_live_interval(MachineFunction *F,MachineOperand::Ope
                             result[vr]->endpoint = inst->number;
                         }
                     }
-                    result[vr]->insts.emplace_back(inst);
+                    //result[vr]->insts.emplace_back(inst);
                 }
             }
         }
@@ -1521,6 +1521,7 @@ void LinearScanRegisterALLOCATION(Vreg_LiveIntervalMap& live_intervals,std::vect
             i->reg=spill->reg;
             spill->location = stack_size;
             stack_size+=4;
+            spill->reg = free_registers.back();
             active.remove(spill);
             active.emplace_back(i);
             //sort active by increasing end point
@@ -1530,6 +1531,7 @@ void LinearScanRegisterALLOCATION(Vreg_LiveIntervalMap& live_intervals,std::vect
         }else{
             i->location=stack_size;
             stack_size+=4;
+            i->reg = free_registers.back();
         }
     };
     auto ExpireOldIntervals = [&](LiveInterval* i){
@@ -1563,7 +1565,7 @@ void LinearScanRegisterALLOCATION(Vreg_LiveIntervalMap& live_intervals,std::vect
         //std::cout<<i.first->print()<<std::endl; 
         //printf("start :%d ,end %d \n",i.second->startpoint,i.second->endpoint);
         ExpireOldIntervals(i.second);
-        if(active.size() == R){
+        if(active.size() == R-1){
             SpillAtIntervals(i.second);
         }else{
             auto actual_reg = free_registers.back();
@@ -1577,7 +1579,11 @@ void LinearScanRegisterALLOCATION(Vreg_LiveIntervalMap& live_intervals,std::vect
         }
     }
 }
+std::vector<MachineOperand **> get_definition(MachineInst * inst);
+std::vector<MachineOperand **> get_all_uses(MachineInst * inst)  ;
+
 void allocate_register(MachineFunction * F,MachineOperand::OperandType ty,std::vector<MReg*>free_registers){
+    int spill_params_size = 0;
     numbering_instructions(F);
     printf("done numbering....\n");
     Vreg_LiveIntervalMap live_intervals = create_live_interval(F,ty);
@@ -1585,8 +1591,42 @@ void allocate_register(MachineFunction * F,MachineOperand::OperandType ty,std::v
     LinearScanRegisterALLOCATION(live_intervals,free_registers);
     printf("done Linearscan .....\n");
     
+    int tmp=1;
+    for(auto bb:F->basic_blocks){
+        for(auto inst = bb->insts.begin();inst !=bb->insts.end();inst++){
+            auto oprs = get_definition(*inst);
+            for(auto opr:oprs){
+                if(auto x =dynamic_cast<VReg*>(*opr)){
+                    if(x->operand_type !=ty) continue;
+                    auto info = live_intervals[x];
+                    (*opr) = info->reg;
+                    if(info->location != -1){
+                        auto str = new Store(new MReg(MReg::sp),new MReg(MReg::sp),new IImm(spill_params_size+ info->location));
+                        inst++;
+                        bb->insts.insert(inst,str);
+                        inst--;
+                        inst--;
+                    }
+                }
+            }
+            std::cout<<std::endl;
+            auto var_uses = get_all_uses(*inst);
+            for(auto var:var_uses){
+                if(auto x =dynamic_cast<VReg*>(*var)){
+                    if(x->operand_type != ty) continue;
+                    auto info = live_intervals[x];
+                    (*var) = info->reg;
+                    if(info->location != -1){
+                        auto ldr = new Load(info->reg,new MReg(MReg::sp),new IImm(spill_params_size+ info->location));
+                        bb->insts.insert(inst,ldr);
+                    }
+                }
+            }
+            
+        }
+    }
 
-    for(auto entry:live_intervals){
+    /*for(auto entry:live_intervals){
         
         //std::cout<<entry.first->print()<<std::endl;
         for(auto inst:live_intervals[entry.first]->insts){
@@ -1600,6 +1640,7 @@ void allocate_register(MachineFunction * F,MachineOperand::OperandType ty,std::v
                 if(auto x = dynamic_cast<VReg*>(*opr)){
                     if(x == entry.first){
                         (*opr)=entry.second->reg;
+                        
                     }
                 }
             }
@@ -1608,4 +1649,75 @@ void allocate_register(MachineFunction * F,MachineOperand::OperandType ty,std::v
             //printf("\n");
         }
     }
+    */
+}
+std::vector<MachineOperand **> get_definition(MachineInst * inst){
+    std::vector<MachineOperand**> oprs;
+    if(auto i = dynamic_cast<Mov*>(inst)) {
+        i->print(stdout);
+        oprs.emplace_back(&(i->dst));
+    }else if(auto i = dynamic_cast<Binary*>(inst)) {
+        i->print(stdout);
+        oprs.emplace_back(&(i->dst));
+    }
+    else if(auto i = dynamic_cast<Cmp*>(inst)) {
+        i->print(stdout);
+    }
+    else if(auto i = dynamic_cast<Store*>(inst)) {
+        i->print(stdout);
+        oprs.emplace_back(&(i->base));
+        oprs.emplace_back(&(i->offset));
+    }
+    else if(auto i = dynamic_cast<Load*>(inst)) {
+        i->print(stdout);
+        oprs.emplace_back(&(i->dst));
+    }
+    else if(auto i = dynamic_cast<IClz*>(inst)){
+        i->print(stdout);
+        oprs.emplace_back(&(i->dst));
+    }
+    else if(auto i = dynamic_cast<FNeg*>(inst)){
+        i->print(stdout);
+        oprs.emplace_back(&(i->dst));
+    } 
+    else if(auto i = dynamic_cast<Cvt*>(inst)) 
+    {
+        i->print(stdout);
+        oprs.emplace_back(&(i->dst));
+    }else{
+        std::cout<<"what is this one???";
+    }
+    std::cout<<std::endl;
+    return oprs;
+}
+std::vector<MachineOperand **> get_all_uses(MachineInst * inst){
+    std::vector<MachineOperand**> oprs;
+    if(auto i = dynamic_cast<Mov*>(inst)) {
+        oprs.emplace_back(&(i->src));
+    }else if(auto i = dynamic_cast<Binary*>(inst)) {
+        oprs.emplace_back(&(i->lhs));
+        oprs.emplace_back(&(i->rhs));
+    }
+    else if(auto i = dynamic_cast<Cmp*>(inst)) {
+        oprs.emplace_back(&(i->lhs));
+        oprs.emplace_back(&(i->rhs));
+    }
+    else if(auto i = dynamic_cast<Store*>(inst)) {
+        oprs.emplace_back(&(i->src));
+    }
+    else if(auto i = dynamic_cast<Load*>(inst)) {
+        oprs.emplace_back(&(i->base));
+        oprs.emplace_back(&(i->offset));
+    }
+    else if(auto i = dynamic_cast<IClz*>(inst)){
+        oprs.emplace_back(&(i->src));
+    }
+    else if(auto i = dynamic_cast<FNeg*>(inst)){
+        oprs.emplace_back(&(i->src));
+    } 
+    else if(auto i = dynamic_cast<Cvt*>(inst)) 
+    {
+        oprs.emplace_back(&(i->src));
+    }
+    return oprs;
 }
