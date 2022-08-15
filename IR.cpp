@@ -299,9 +299,9 @@ ConstantArray::ConstantArray(Context &c, ArrayType *type,
                              const std::vector<Value *> &value,
                              const std::vector<int> &dimension)
     : Constant(c, type, "", value.size()), value_(value), dimension_(dimension) {
-  for (int i = 0; i < value.size(); i++) {
-    setOperand(value_[i], i);
-  }
+  // for (int i = 0; i < value.size(); i++) {
+  //   setOperand(value[i], i);
+  // }
 }
 
 ConstantArray *ConstantArray::get(Context &c, ArrayType *type,
@@ -397,6 +397,44 @@ void Module::addFuntion(Function *func) { functionList_.emplace_back(func); }
 
 void Module::addGlobalVariable(GlobalVariable *globalVariable) {
   globalVariableList_.emplace(globalVariable);
+}
+
+void Module::delete_dead_block() {
+  for (auto f : functionList_) {
+    while (true) {
+      if (f->getBasicBlocks().size() == 0)
+        break;
+      std::vector<BasicBlock*> wait_delete_bb;  
+      for (auto bb : f->getBasicBlocks()) {
+        if (bb != f->getEntryBlock() && bb->predecessorBlocks_.size() == 0) {
+          wait_delete_bb.emplace_back(bb);
+        }
+      }
+      if (wait_delete_bb.empty()) {
+        break;
+      }
+      for (auto delete_bb : wait_delete_bb) {
+        delete_bb->eraseFromParent();
+        delete delete_bb;
+      }
+    }
+  }
+  // debug
+  // for (auto f : functionList_) {
+  //   if (f->getBasicBlocks().size() == 0)
+  //     continue;
+  //   for (auto bb : f->getBasicBlocks()) {
+  //     std::cout << bb->getLLVM_Name() << std::endl;
+  //     std::cout << " pred:" << std::endl;
+  //     for (auto pred : bb->predecessorBlocks_) {
+  //       std::cout << "\t" + pred->getLLVM_Name() << std::endl;      
+  //     }
+  //     std::cout << " succ:" << std::endl;
+  //     for (auto succ : bb->successorBlocks_) {
+  //       std::cout << "\t" + succ->getLLVM_Name() << std::endl;            
+  //     }
+  //   }
+  // }
 }
 
 std::string Module::print() {
@@ -554,6 +592,12 @@ BasicBlock::BasicBlock(Context &context, const std::string &name,
     : Value(context, Type::getLabelType(context), name), parent_(parent) {
   assert(parent_ != nullptr);
   parent_->addBasicBlock(this);
+}
+
+BasicBlock::~BasicBlock() {
+  for (auto inst : instructionList_) {
+    delete inst;
+  }
 }
 
 BasicBlock *BasicBlock::Create(Context &context, const std::string &name,

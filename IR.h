@@ -314,6 +314,7 @@ public:
   Module(Context &context, const std::string &moduleName);
   void addFuntion(Function *func);
   void addGlobalVariable(GlobalVariable *globalVariable);
+  void delete_dead_block();
   std::string print();
 
   Context &context_;
@@ -373,6 +374,7 @@ private:
 class BasicBlock : public Value {
 public:
   BasicBlock(Context &context, const std::string &name, Function *parent);
+  ~BasicBlock();
   Module *getModule();
   std::string print() override;
 
