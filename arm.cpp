@@ -1145,7 +1145,7 @@ void push_pop(MachineFunction * func){
     push->tag = Push_Pop::Push;
     pop->tag = Push_Pop::Pop;
 
-    func->basic_blocks[0].emplace_front(push);
+    func->basic_blocks[0]->insts.emplace_front(push);
 
     for (auto bb: func->exit_blocks) 
 	bb->insts.emplace_back(pop);
