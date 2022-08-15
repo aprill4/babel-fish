@@ -1232,6 +1232,14 @@ MachineFunction *emit_func(Function *func) {
         bb2mb[bb] = mbb;
         bbok[bb] = false;
     }
+
+    for (auto bb: func->basicBlocks_) {
+        for (auto pre: bb->predecessorBlocks_) {
+            bb2mb[bb]->pres.emplace_back(bb2mb[pre]);
+            bb2mb[pre]->sucs.emplace_back(bb2mb[bb]);
+        }
+    }
+
     emit_args(func->arguments_, bb_map[func->getEntryBlock()]);
     emit_bb(func->getEntryBlock(), bb_map[func->getEntryBlock()], mfunc);
     for (auto& [phi, vreg] : phi2vreg) {
