@@ -918,7 +918,22 @@ void emit_cmp(Instruction *inst, MachineBasicBlock* mbb) {
 void emit_cvt(Instruction *inst, MachineBasicBlock *mbb) {
     auto cvt = new Cvt();
     cvt->tag = inst->isFp2si() ? Cvt::F2S : Cvt::S2F;
-    cvt->src = make_operand(inst->getOperand(0), mbb, true);
+    auto lval = inst->getOperand(0);
+    if (dynamic_cast<IcmpInst*>(lval) || dynamic_cast<FcmpInst*>(lval)) {
+        auto vreg = make_vreg(MachineOperand::OperandType::Int);
+        auto mv0 = new Mov(Mov::I2I, vreg, new IImm(0));
+        auto mv1 = new Mov(Mov::I2I, vreg, new IImm(1));
+        if (dynamic_cast<IcmpInst*>(lval)) {
+            mv1->cond = trans_to_cond(static_cast<int>(dynamic_cast<IcmpInst*>(lval)->getIcmpOp()));
+        } else {
+            mv1->cond = trans_to_cond(static_cast<int>(dynamic_cast<FcmpInst*>(lval)->getFcmpOp()));        
+        }
+        mbb->insts.emplace_back(mv0);
+        mbb->insts.emplace_back(mv1);    
+        cvt->src = vreg;
+    } else {
+        cvt->src = make_operand(lval, mbb, true);
+    }
 
     // conversion must happen in fp registers.
     // so check if `src` is in `r` registers,
@@ -1209,6 +1224,7 @@ MachineFunction *emit_func(Function *func) {
     std::map<BasicBlock *, MachineBasicBlock *> bb_map;
     bb2mb.clear();
     phi2vreg.clear();
+    bbok.clear();
     for (auto bb: func->basicBlocks_) {
         auto mbb = new MachineBasicBlock;
         mbb->parent = mfunc;
@@ -1216,6 +1232,14 @@ MachineFunction *emit_func(Function *func) {
         bb2mb[bb] = mbb;
         bbok[bb] = false;
     }
+
+    for (auto bb: func->basicBlocks_) {
+        for (auto pre: bb->predecessorBlocks_) {
+            bb2mb[bb]->pres.emplace_back(bb2mb[pre]);
+            bb2mb[pre]->sucs.emplace_back(bb2mb[bb]);
+        }
+    }
+
     emit_args(func->arguments_, bb_map[func->getEntryBlock()]);
     emit_bb(func->getEntryBlock(), bb_map[func->getEntryBlock()], mfunc);
     for (auto& [phi, vreg] : phi2vreg) {

@@ -40,7 +40,7 @@ bool force_trans(IRBuilder *irBuilder, Value*& lhs, Value*& rhs) {
   return is_float;
 }
 
-void parse_nest_array(vector<Value *>&ans, ArrayValue *cur, int idx, vector<int>&nums, bool isInt, /*int& offset,*/ IRBuilder *irBuilder){
+void parse_nest_array(vector<Value *>&ans, ArrayValue *cur, int idx, vector<int>&nums, bool isInt, int& offset, IRBuilder *irBuilder){
   Context &context = irBuilder->getContext();
   int remain = (idx == nums.size() - 1) ? 1 : nums[idx+1], 
       expect = nums[idx], 
@@ -55,14 +55,14 @@ void parse_nest_array(vector<Value *>&ans, ArrayValue *cur, int idx, vector<int>
       }
       ans.emplace_back(irBuilder->getTmpVal());
       if(++cnt == remain) cnt=0;
-      // offset = ans.size();
+      offset = ans.size();
     }
     else {
       if(cnt) {
         ans.resize(ans.size() + remain - cnt, ConstantZero::get(context, isInt ? context.Int32Type : context.FloatType));
         cnt = 0;
       }
-      parse_nest_array(ans, val, idx + 1, nums, isInt, /*offset,*/ irBuilder);
+      parse_nest_array(ans, val, idx + 1, nums, isInt, offset, irBuilder);
     }
   }
 
@@ -495,9 +495,10 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
   }
   ArrayType *arrType = latter;
   vector<Value*> vals;
-  // int offset = 0;
-  if(value_)  
-    parse_nest_array(vals, value_, 0, nums, type_ == SysType::INT, irBuilder);
+  int offset = 0;
+  if(value_) {
+      parse_nest_array(vals, value_, 0, nums, type_ == SysType::INT, offset, irBuilder);
+  } 
   else 
     vals.resize(total, ConstantZero::get(context, type));
 
@@ -505,22 +506,31 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
     value = GlobalVariable::Create(context, arrType, identifier_->id_, isConst_,
                                    ConstantArray::get(context, arrType, vals, dimensions),
                                    irBuilder->getModule());
-  }
-  else {
+  } else {
     if (isConst_) {
       AllocaInst::Create(context, arrType, irBuilder->getBasicBlock());
       value = ConstantArray::get(context, arrType, vals, dimensions);
-    } else {      
+    } else {
       BasicBlock *bb = irBuilder->getBasicBlock();
       value = AllocaInst::Create(context, arrType, irBuilder->getBasicBlock());
       if (value_) {
+        if (offset != total && type->isIntegerType()) {
+          auto func = dynamic_cast<Function*>(irBuilder->getModule()->symbolTable_["memset"]);
+          vector<Value*> idxList;
+          for (int i = 0; i < len + 1; i++) {
+            idxList.emplace_back(ConstantInt::get(context, context.Int32Type,0));
+          }
+          auto gep_tmp = GetElementPtrInst::Create(context, value, idxList, bb);
+          auto tmp = CallInst::Create(context, func, 
+            { gep_tmp,  ConstantInt::get(context, context.Int32Type,0), ConstantInt::get(context, context.Int32Type, total * 4)}, irBuilder->getBasicBlock());
+        }
         vector<Value*> idxList;
         for (int i = 0; i < len; i++) {
           idxList.emplace_back(ConstantInt::get(context, context.Int32Type,0));
         }
         // TODO : call the memset function in C
         Value* tmp;
-        for(int u = 0; u < total; u++) {
+        for(int u = 0; u < offset; u++) {
           idxList.insert(idxList.begin(), ConstantInt::get(context, context.Int32Type, 0));
           tmp = GetElementPtrInst::Create(context, value, idxList, bb);
           idxList.erase(idxList.begin());
