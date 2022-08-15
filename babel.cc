@@ -103,8 +103,8 @@ int main(int argc, char** argv) {
 
     auto mm = emit_asm(m);
 
-    mm->print(stdout);
-    printf("\n\n");
+    // mm->print(stdout);
+    // printf("\n\n");
 
     stack_ra(mm);
     // mm->print(stdout);

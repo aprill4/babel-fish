@@ -38,7 +38,7 @@ void remove_redundant_load(MachineModule *m) {
                             if ((is_mreg && (str_off_mreg->reg == ldr_off_mreg->reg)) || 
                                 (is_imm && (str_off_imm->value == ldr_off_imm->value))) {
                                 
-                                printf("%d\n", str_base->reg);
+                                // printf("%d\n", str_base->reg);
                                 auto mv = new Mov(next_load->dst, cur_store->src);
                                 bool is_float = next_load->dst->operand_type == MachineOperand::Float;
                                 mv->tag = is_float ? Mov::F2F : Mov::I2I;

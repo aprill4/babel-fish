@@ -310,7 +310,7 @@ std::string ConstantZero::print() { return "zeroinitializer"; }
 ConstantArray::ConstantArray(Context &c, ArrayType *type,
                             std::vector<Value *> &value,
                             std::vector<int> &dimension)
-    : Constant(c, type, "", value.size()), value_(value), dimension_(dimension) {
+    : Constant(c, type, "", 0), value_(value), dimension_(dimension) {
   // for (int i = 0; i < value.size(); i++) {
   //   setOperand(value[i], i);
   // }
