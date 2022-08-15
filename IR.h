@@ -56,6 +56,8 @@ class UnaryInst;
 
 class Util;
 
+void init(Context&);
+
 class Context {
 public:
   Context();
@@ -68,6 +70,8 @@ public:
 
   std::map<std::pair<Type *, std::size_t>, ArrayType *> ArrayTypes;
   std::map<Type *, PointerType *> PointerTypes;
+  ConstantZero* zero_int;
+  ConstantZero* zero_float;
 
   void addModule(Module *module);
 
@@ -281,14 +285,14 @@ private:
 
 class ConstantArray : public Constant {
 public:
-  ConstantArray(Context &c, ArrayType *type, const std::vector<Value *> &value, const std::vector<int> &dimension);
+  ConstantArray(Context &c, ArrayType *type, std::vector<Value *> &value, std::vector<int> &dimension);
   Value *getElementValue(int idx);
   std::string print() override;
 
 public:
   static ConstantArray *get(Context &c, ArrayType *type,
-                            const std::vector<Value *> &value,
-                            const std::vector<int> &dimension);
+                            std::vector<Value *> &value,
+                            std::vector<int> &dimension);
 
 public:
   std::vector<Value *> value_;
@@ -314,6 +318,7 @@ public:
   Module(Context &context, const std::string &moduleName);
   void addFuntion(Function *func);
   void addGlobalVariable(GlobalVariable *globalVariable);
+  void remove_more_break_and_continue();
   void delete_dead_block();
   std::string print();
 

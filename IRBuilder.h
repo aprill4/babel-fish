@@ -12,7 +12,9 @@ class IRBuilder {
 public:
   IRBuilder()
       : context_(*new Context()), module_(new Module(context_, "main_module")),
-        scope_(nullptr), basicblock_(nullptr) {}
+        scope_(nullptr), basicblock_(nullptr) {
+          init(context_);
+        }
 
 public:
   Module *getModule() { return module_; }
@@ -24,6 +26,12 @@ public:
   }
   BasicBlock *getNextBlock() {
     return loop_.back().second;
+  }
+  BasicBlock *getContinueBlock() {
+    return while_loop_.back().first;
+  }
+  BasicBlock *getBreakBlock() {
+    return while_loop_.back().second;
   }
   Expression *getCond() {
     return cond_.back();
@@ -38,8 +46,12 @@ public:
   void setLoopBlock(BasicBlock *whileBlock, BasicBlock *nextBlock) {
     loop_.emplace_back(std::make_pair(whileBlock, nextBlock));
   }
+  void setBreakAndContinue(BasicBlock *whileBlock, BasicBlock *nextBlock) {
+    while_loop_.emplace_back(std::make_pair(whileBlock, nextBlock));
+  }
   void setCond(Expression *cond) { cond_.emplace_back(cond); }
   void popLoopBlock() { loop_.pop_back(); }
+  void popBreakAndContinueBlock() { while_loop_.pop_back(); }
   void popCond() { cond_.pop_back(); }
   std::size_t loopBlockSize() { return loop_.size(); }
 
@@ -50,6 +62,7 @@ private:
   Scope *scope_;
   BasicBlock *basicblock_;
   std::deque<std::pair<BasicBlock *, BasicBlock *>> loop_;
+  std::deque<std::pair<BasicBlock *, BasicBlock *>> while_loop_;
   std::deque<Expression*> cond_;
   Function *func_;
 };

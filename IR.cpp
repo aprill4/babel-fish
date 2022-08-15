@@ -6,6 +6,11 @@ Context::Context()
       LabelType(new Type(Type::TypeId::LabelTypeId)),
       Int1Type(new IntegerType(1)), Int32Type(new IntegerType(32)) {}
 
+void init(Context& c) {
+  c.zero_int = new ConstantZero(c,c.Int32Type);
+  c.zero_float = new ConstantZero(c,c.FloatType);
+}
+
 Context::~Context() {
   delete VoidType;
   delete LabelType;
@@ -291,13 +296,20 @@ std::string ConstantFloat::print() {
   return fp_ir;
 }
 
-ConstantZero *ConstantZero::get(Context &c, Type *type) { return new ConstantZero(c, type); }
+ConstantZero *ConstantZero::get(Context &c, Type *type) { 
+  if (type->isIntegerType()) {
+    return c.zero_int;
+  } else if (type->isFloatType()) {
+    return c.zero_float;
+  }
+  assert(false && "error type");
+}
 
 std::string ConstantZero::print() { return "zeroinitializer"; }
 
 ConstantArray::ConstantArray(Context &c, ArrayType *type,
-                             const std::vector<Value *> &value,
-                             const std::vector<int> &dimension)
+                            std::vector<Value *> &value,
+                            std::vector<int> &dimension)
     : Constant(c, type, "", value.size()), value_(value), dimension_(dimension) {
   // for (int i = 0; i < value.size(); i++) {
   //   setOperand(value[i], i);
@@ -305,7 +317,7 @@ ConstantArray::ConstantArray(Context &c, ArrayType *type,
 }
 
 ConstantArray *ConstantArray::get(Context &c, ArrayType *type,
-                                  const std::vector<Value *> &value, const std::vector<int> &dimension) {
+                                  std::vector<Value *> &value,  std::vector<int> &dimension) {
   return new ConstantArray(c, type, value, dimension);
 }
 
@@ -399,7 +411,64 @@ void Module::addGlobalVariable(GlobalVariable *globalVariable) {
   globalVariableList_.emplace(globalVariable);
 }
 
+void Module::remove_more_break_and_continue() {
+  for (auto f : functionList_) {
+    if (f->getBasicBlocks().size() == 0)
+      continue;
+    for (auto bb : f->getBasicBlocks()) {
+      std::vector<Instruction*> wait_delete_inst;  
+      std::vector<BasicBlock*> succ_bb;  
+      bool exist_break_continue = false;
+      for (auto inst : bb->instructionList_) {
+        if (!exist_break_continue && inst->isTerminator()){
+          exist_break_continue = true;
+          if (inst->isBr()) {
+            auto br = dynamic_cast<BranchInst*>(inst);
+            if (br->getOperandNum() == 1) {
+              auto br_bb = dynamic_cast<BasicBlock*>(br->getOperand(0));
+              succ_bb.emplace_back(br_bb);
+            } else if (br->getOperandNum() == 3) {
+              auto br_bb1 = dynamic_cast<BasicBlock*>(br->getOperand(1));
+              auto br_bb2 = dynamic_cast<BasicBlock*>(br->getOperand(2));
+              succ_bb.emplace_back(br_bb1);
+              succ_bb.emplace_back(br_bb2);
+            }      
+          }
+        } else if (exist_break_continue) {
+          wait_delete_inst.emplace_back(inst);         
+        }
+      }
+      for (auto delete_inst : wait_delete_inst) {
+        if (delete_inst->isBr()) {
+          auto br = dynamic_cast<BranchInst*>(delete_inst);
+          if (br->getOperandNum() == 1) {
+            auto br_bb = dynamic_cast<BasicBlock*>(br->getOperand(0));
+            if (std::find(succ_bb.begin(), succ_bb.end(), br_bb) == succ_bb.end()) {            
+              bb->successorBlocks_.remove(br_bb);
+              br_bb->predecessorBlocks_.remove(bb);
+            }
+          } else if (br->getOperandNum() == 3) {
+            auto br_bb1 = dynamic_cast<BasicBlock*>(br->getOperand(1));
+            if (std::find(succ_bb.begin(), succ_bb.end(), br_bb1) == succ_bb.end()) {            
+            bb->successorBlocks_.remove(br_bb1);
+            br_bb1->predecessorBlocks_.remove(bb);
+            }
+            auto br_bb2 = dynamic_cast<BasicBlock*>(br->getOperand(2));
+            if (std::find(succ_bb.begin(), succ_bb.end(), br_bb2) == succ_bb.end()) {            
+              bb->successorBlocks_.remove(br_bb2);
+              br_bb2->predecessorBlocks_.remove(bb);
+            }
+          }
+        }
+        bb->instructionList_.remove(delete_inst);
+        delete_inst->removeUseOfOps();
+      }
+    }
+  }
+}
+
 void Module::delete_dead_block() {
+  remove_more_break_and_continue();
   for (auto f : functionList_) {
     while (true) {
       if (f->getBasicBlocks().size() == 0)
