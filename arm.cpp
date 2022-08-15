@@ -1145,10 +1145,14 @@ void push_pop(MachineFunction * func){
     push->tag = Push_Pop::Push;
     pop->tag = Push_Pop::Pop;
 
-    func->basic_blocks[0]->insts.emplace_front(push);
+    auto start = *func->basic_blocks.begin();   // add push to MachineFunction's first MachineBlock
+    start->insts.insert(start->insts.begin(), push);
 
-    for (auto bb: func->exit_blocks) 
-	bb->insts.emplace_back(pop);
+    for (auto bb: func->exit_blocks) {
+        auto it = bb->insts.end();
+        it--;
+        bb->insts.insert(it, pop);
+    }
 }
 
 void emit_phi(Instruction *inst, MachineBasicBlock* mbb) {
