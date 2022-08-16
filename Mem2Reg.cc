@@ -168,16 +168,21 @@ void Mem2Reg::remove_alloca() {
 
 void Mem2Reg::dead_code_delete() {
   for (auto bb : func_->basicBlocks_) {
-    std::vector<Instruction *> wait_delete;
-    for (auto inst : bb->instructionList_) {
-      if (inst->useList_.size() == 0) {
-        if (!inst->isTerminator() && !inst->isStore() && !inst->isCall()) {
-          wait_delete.emplace_back(inst);
+    while (true) {
+      std::vector<Instruction *> wait_delete;
+      for (auto inst : bb->instructionList_) {
+        if (inst->useList_.size() == 0) {
+          if (!inst->isTerminator() && !inst->isStore() && !inst->isCall()) {
+            wait_delete.emplace_back(inst);
+          }
         }
       }
-    }
-    for (auto instr : wait_delete) {
-      bb->deleteInst(instr);
+      if (wait_delete.empty()) {
+        break;
+      }
+      for (auto instr : wait_delete) {
+        bb->deleteInst(instr);
+      }
     }
   }
 }

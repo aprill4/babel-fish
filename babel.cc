@@ -95,7 +95,8 @@ int main(int argc, char** argv) {
     auto m = irBuilder->getModule();
     PassManager pm(m);
     // cout << m->print() << endl;
-    pm.add_pass<Mem2Reg>();
+    pm.add_pass<Mem2Reg>(true);
+    pm.add_pass<GVN_GCM>(true);
     // pm.add_pass<LoopSearch>();
     // pm.add_pass<LoopInvHoist>(true);
     pm.run();

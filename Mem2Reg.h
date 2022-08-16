@@ -1,4 +1,4 @@
-
+#pragma once
 #include "Dominators.h"
 #include "IR.h"
 #include "PassManager.h"

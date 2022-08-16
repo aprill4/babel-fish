@@ -490,6 +490,7 @@ public:
 
   bool isVoid();
   bool isBinary();
+  bool isUnary();
   bool isNot();
   bool isNegative();
   bool isTerminator();

@@ -803,6 +803,8 @@ bool Instruction::isZext() { return instId_ == InstId::Zext; }
 bool Instruction::isNot() { return instId_ == InstId::Not; }
 bool Instruction::isNegative(){ return instId_ == InstId::Negative; }
 
+bool Instruction::isUnary(){ return (isNot() || isNegative()) && (getOperandNum() == 1);}
+
 
 bool Instruction::isBinary() {
   return (isAdd() || isSub() || isMul() || isDiv() || isMod() || isFadd() || isFsub() ||

@@ -4,6 +4,7 @@
 #include "LoopInvHoist.hpp"
 #include "Dominators.h"
 #include "Mem2Reg.h"
+#include "Gvn_Gcm.h"
 #include <deque>
 
 class Scope;
