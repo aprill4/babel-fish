@@ -46,6 +46,13 @@ std::string GVN_GCM::get_vn(Value *val) {
 }
 
 void GVN_GCM::number_value(Function *func, Value *val) {
+  if (visited_.find(val) != visited_.end()) {
+    return ;
+  }
+  if (!isGVN(val) && !dynamic_cast<PhiInst *>(val)) {
+    return;
+  }
+  visited_[val] = true;
   if (auto inst = dynamic_cast<Instruction *>(val)) {
     for (auto op : inst->operands_) {
       number_value(func, op);

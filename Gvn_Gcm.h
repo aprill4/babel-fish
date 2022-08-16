@@ -15,4 +15,5 @@ private:
   bool isGVN(Value *val);
 //   std::vector<Instruction*> wait_delete_inst;
   std::unordered_map<std::string, Value *> vn_map_;
+  std::unordered_map<Value *, bool> visited_;
 };
