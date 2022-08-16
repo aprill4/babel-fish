@@ -2,7 +2,7 @@
 #include "IR.h"
 
 #include <cstdio>
-
+#include <algorithm>
 struct MachineBasicBlock;
 struct MachineModule;
 struct MachineFunction;
@@ -97,6 +97,8 @@ struct MachineBasicBlock {
     std::vector<MachineBasicBlock *> pres, sucs;
     std::list<MachineInst *> insts;
     MachineFunction* parent = nullptr;
+    //visited used for directives numbering
+    bool visited =false;
     void print(FILE *fp);
 };
 

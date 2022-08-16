@@ -1,6 +1,8 @@
+int kkk(int a,int b,int c,int d,int e,int f){
+	return 0;
+}
 float main(){
-	int x[3];
-	x[1]=23;
-	float c=1.3;
-	return c;
+	
+	kkk(1,2,3,4,5,6);
+	return 0;
 }
