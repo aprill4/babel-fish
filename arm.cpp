@@ -211,7 +211,11 @@ std::map<BasicBlock* ,bool> bbok;
 std::vector<MachineBasicBlock*> mbscan_order;   //preparation of linear scan algorithm
 std::unordered_map<int, unsigned> id2ranges;  //<id, right_bound>: virtual registers' lastest alive inst num
 std::set<int>visited; // hasn't been visited if element doesn't exists in the set
-
+std::priority_queue<std::pair<unsigned, unsigned> >int_evict_candidates; //for int regs' uses <right bound, vreg->id>
+std::priority_queue<std::pair<unsigned, unsigned> >float_evict_candidates; //for float regs' uses <right bound, vreg->id>
+auto cmp = [](std::pair<unsigned, unsigned>a, std::pair<unsigned, unsigned>b) {return a.first < b.first;};
+std::priority_queue<std::pair<unsigned, unsigned> , std::vector<std::pair<unsigned, unsigned>>, decltype(cmp)>int_outdated_candidates(cmp); //for int regs' uses <right bound, vreg->id>
+std::priority_queue<std::pair<unsigned, unsigned> , std::vector<std::pair<unsigned, unsigned>>, decltype(cmp)>float_outdated_candidates(cmp); //for float regs' uses <right bound, vreg->id>
 //-----------------------------------------------------------------
 
 size_t allocate(size_t size) {
@@ -1600,9 +1604,12 @@ void linear_scan(MachineFunction *mf) {
             num++;
         }
     
+    num = 0;
     std::unordered_map<unsigned, MReg*>active_list;
-    std::priority_queue<std::pair<unsigned, unsigned> >int_evict_candidates; //for int regs' uses <right bound, vreg->id>
-    std::priority_queue<std::pair<unsigned, unsigned> >float_evict_candidates; //for float regs' uses <right bound, vreg->id>
+    std::priority_queue<std::pair<unsigned, unsigned> >().swap(int_evict_candidates); //for int regs' uses <right bound, vreg->id>
+    std::priority_queue<std::pair<unsigned, unsigned> >().swap(float_evict_candidates); //for float regs' uses <right bound, vreg->id>
+    std::priority_queue<std::pair<unsigned, unsigned> , std::vector<std::pair<unsigned, unsigned>>, decltype(cmp)>(cmp).swap(int_outdated_candidates); //for int regs' uses <right bound, vreg->id>
+    std::priority_queue<std::pair<unsigned, unsigned> , std::vector<std::pair<unsigned, unsigned>>, decltype(cmp)>(cmp).swap(float_outdated_candidates); //for float regs' uses <right bound, vreg->id>
     unsigned short intReg = 0;   //the bitmap of available int regs(lowest bit represent r0), 1 for available, 0 otherwise
     for(int u = mf->call_func ? 4 : mf -> has_ret_val; u < 11; u++) intReg |= 1<<u;
     unsigned floatReg = mf->call_func ? UINT_MAX - 65535 : UINT_MAX - mf->has_ret_val;       //same for float regs(lowest bit represent s0)
@@ -1653,6 +1660,33 @@ void linear_scan(MachineFunction *mf) {
             int s = MReg::Reg::s16;
             for(auto operand:to_alloc){
                 auto vreg = dynamic_cast<VReg*>(*operand);
+                while(int_outdated_candidates.top().first < num) {
+                        auto p = int_outdated_candidates.top();
+                        int_outdated_candidates.pop();
+                        if(active_list.count(p.second)) {
+                            auto str = new Store(Store::Tag::Int,
+                                                    active_list[p.second],
+                                                    new MReg(MReg::Reg::fp),
+                                                    new IImm(- (local_var_size + p.second * 4 + 4)));
+                            mb->insts.insert(it, str);
+                            intReg |= 1 << (active_list[p.second]->reg - MReg::Reg::r0);
+                            active_list.erase(p.second);
+                        }
+                    }
+                while(float_outdated_candidates.top().first < num) {
+                    auto p = float_outdated_candidates.top();
+                    float_outdated_candidates.pop();
+                    if(active_list.count(p.second)){
+                        auto str = new Store(Store::Tag::Float,
+                                                    active_list[p.second],
+                                                    new MReg(MReg::Reg::fp),
+                                                    new IImm(- (local_var_size + p.second * 4 + 4)));
+                        mb->insts.insert(it, str);
+                        floatReg |= 1 << (active_list[p.second]->reg - MReg::Reg::s0);
+                        active_list.erase(p.second);
+                    }
+                }
+
                 if(visited.count(vreg->id)) {
                     if(active_list.count(vreg->id)) *operand = active_list[vreg->id];
                     else { //spilled variable's scenario
@@ -1737,7 +1771,9 @@ void linear_scan(MachineFunction *mf) {
                     visited.insert(vreg->id);
                 }
             }
+            
             it++;
+            num++;
         }
         
     }
