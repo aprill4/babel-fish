@@ -2,7 +2,7 @@
 #include "Exception.h"
 #include <assert.h>
 #include <utility>
-
+#include "Live_analysis.h"
 void print_globals(FILE *fp, const std::set<GlobalVariable *> &globals);
 
 void MachineModule::print(FILE *fp) {
@@ -1482,8 +1482,8 @@ struct LiveInterval{
 };
 using Vreg_LiveIntervalMap = std::map<VReg*,LiveInterval*> ;
 using Vreg_LiveInterval    = std::pair<VReg*,LiveInterval*>;
-
-void Traveral(MachineBasicBlock * bb,int num){
+int num=0;
+void Traveral(MachineBasicBlock * bb){
     if(bb->visited){
         return ;
     }
@@ -1492,13 +1492,12 @@ void Traveral(MachineBasicBlock * bb,int num){
         inst->number = num++;
     }
     for(auto b:bb->sucs){
-        Traveral(b,num);
+        Traveral(b);
     }
 }
 void numbering_instructions(MachineFunction * F){
     auto b0 = F->basic_blocks[0];
-    int num=0;
-    Traveral(b0,num);
+    Traveral(b0);
 }
 std::vector<MachineOperand**> get_all_oprands(MachineInst* inst){
     std::vector<MachineOperand**> oprs;
@@ -1669,7 +1668,7 @@ int allocate_register(MachineFunction * F,MachineOperand::OperandType ty,std::ve
                     auto info = live_intervals[x];
                     (*opr) = info->reg;
                     if(info->location != -1){
-                        auto str = new Store(info->reg,new MReg(MReg::fp),new IImm(-(shuzu_size+ info->location)));
+                        auto str = new Store(ty == MachineOperand::Int?Store::Int:Store::Float,info->reg,new MReg(MReg::fp),new IImm(-(shuzu_size+ info->location)-100));
                         inst++;
                         bb->insts.insert(inst,str);
                         inst--;
@@ -1684,7 +1683,7 @@ int allocate_register(MachineFunction * F,MachineOperand::OperandType ty,std::ve
                     auto info = live_intervals[x];
                     (*var) = info->reg;
                     if(info->location != -1){
-                        auto ldr = new Load(info->reg,new MReg(MReg::fp),new IImm(-(shuzu_size + info->location)));
+                        auto ldr = new Load(ty == MachineOperand::Int?Load::Int:Load::Float,info->reg,new MReg(MReg::fp),new IImm(-(shuzu_size + info->location)-100));
                         bb->insts.insert(inst,ldr);
                     }
                 }
@@ -1747,6 +1746,7 @@ std::vector<MachineOperand **> get_all_uses(MachineInst * inst){
     }
     else if(auto i = dynamic_cast<Store*>(inst)) {
         oprs.emplace_back(&(i->src));
+        oprs.emplace_back(&(i->base));
     }
     else if(auto i = dynamic_cast<Load*>(inst)) {
         oprs.emplace_back(&(i->base));
@@ -1764,3 +1764,4 @@ std::vector<MachineOperand **> get_all_uses(MachineInst * inst){
     }
     return oprs;
 }
+
