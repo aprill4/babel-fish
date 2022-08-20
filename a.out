@@ -1,0 +1,124 @@
+.arch armv8-a
+.text
+.align 2
+.syntax unified
+.arm
+.global main
+
+get_one:
+get_one30:
+  vpush	{ d8, d9, d10, d11, d12, d13, d14, d15 }
+  push	{ r4, r5, r6, r7, r8, r9, r10, r11, lr }
+  mov	fp, sp
+  sub	sp, sp, #4
+  mov	r10, r0
+  sub	r9, fp, #4
+  str	r10, [r9]
+  mov	r0, #1
+  add	sp, sp, #4
+  pop	{ r4, r5, r6, r7, r8, r9, r10, r11, lr }
+  vpop	{ d8, d9, d10, d11, d12, d13, d14, d15 }
+  bx	lr
+
+deepWhileBr:
+deepWhileBr35:
+  vpush	{ d8, d9, d10, d11, d12, d13, d14, d15 }
+  push	{ r4, r5, r6, r7, r8, r9, r10, r11, lr }
+  mov	fp, sp
+  sub	sp, sp, #20
+  mov	r10, r0
+  mov	r9, r1
+  sub	r8, fp, #4
+  str	r10, [r8]
+  sub	r10, fp, #8
+  str	r9, [r10]
+  sub	r9, fp, #12
+  ldr	r7, [r8]
+  ldr	r8, [r10]
+  add	r10, r7, r8
+  str	r10, [r9]
+  ldr	r10, [r9]
+  cmp	r10, #75
+  blt	while_entry42
+  b	next_entry43
+while_entry42:
+  sub	r10, fp, #16
+  mov	r8, #42
+  str	r8, [r10]
+  ldr	r8, [r9]
+  cmp	r8, #100
+  blt	if_true_entry49
+  b	next_entry51
+next_entry43:
+  ldr	r7, [r9]
+  mov	r0, r7
+  add	sp, sp, #20
+  pop	{ r4, r5, r6, r7, r8, r9, r10, r11, lr }
+  vpop	{ d8, d9, d10, d11, d12, d13, d14, d15 }
+  bx	lr
+if_true_entry49:
+  ldr	r8, [r9]
+  ldr	r6, [r10]
+  add	r7, r8, r6
+  str	r7, [r9]
+  ldr	r7, [r9]
+  cmp	r7, #99
+  bgt	if_true_entry58
+  b	next_entry60
+next_entry51:
+  ldr	r7, [r9]
+  cmp	r7, #75
+  blt	while_entry42
+  b	next_entry43
+if_true_entry58:
+  sub	r6, fp, #20
+  ldr	r8, [r10]
+  mov	r7, #2
+  mul	r10, r8, r7
+  str	r10, [r6]
+  mov	r0, #0
+  bl	get_one
+  mov	r10, r0
+  cmp	r10, #1
+  beq	if_true_entry68
+  b	next_entry70
+next_entry60:
+  b	next_entry51
+if_true_entry68:
+  ldr	r10, [r6]
+  mov	r6, #2
+  mul	r7, r10, r6
+  str	r7, [r9]
+  b	next_entry70
+next_entry70:
+  b	next_entry60
+
+main:
+main82:
+  vpush	{ d8, d9, d10, d11, d12, d13, d14, d15 }
+  push	{ r4, r5, r6, r7, r8, r9, r10, r11, lr }
+  mov	fp, sp
+  sub	sp, sp, #4
+  sub	r10, fp, #4
+  mov	r9, #2
+  str	r9, [r10]
+  ldr	r9, [r10]
+  ldr	r8, [r10]
+  mov	r1, r8
+  mov	r0, r9
+  bl	deepWhileBr
+  mov	r9, r0
+  str	r9, [r10]
+  ldr	r9, [r10]
+  mov	r0, r9
+  bl	putint
+  mov	r0, #0
+  add	sp, sp, #4
+  pop	{ r4, r5, r6, r7, r8, r9, r10, r11, lr }
+  vpop	{ d8, d9, d10, d11, d12, d13, d14, d15 }
+  bx	lr
+
+
+@ here are the globals +-+^_^+-=
+.data
+.align 2

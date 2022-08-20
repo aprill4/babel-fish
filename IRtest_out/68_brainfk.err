@@ -1,4 +1,0 @@
-irs/68_brainfk.ll:169:9: error: '%v173' defined with type 'i32' but expected 'i1'
-  br i1 %v173, label %if_true_entry161, label %r165
-        ^
-1 error generated.

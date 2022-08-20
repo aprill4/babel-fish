@@ -1,8 +1,0 @@
-differences between test_out and correct_out:
-1c1,4
-< 139
----
-> 19
-> 9
-> 10
-> 0

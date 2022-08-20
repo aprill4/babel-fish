@@ -1,4 +1,0 @@
-irs/48_assign_complex_expr.ll:38:10: error: expected instruction opcode
-  %v51 = negative i32 %v50
-         ^
-1 error generated.

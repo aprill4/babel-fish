@@ -6,6 +6,11 @@ Context::Context()
       LabelType(new Type(Type::TypeId::LabelTypeId)),
       Int1Type(new IntegerType(1)), Int32Type(new IntegerType(32)) {}
 
+void init(Context& c) {
+  c.zero_int = new ConstantZero(c,c.Int32Type);
+  c.zero_float = new ConstantZero(c,c.FloatType);
+}
+
 Context::~Context() {
   delete VoidType;
   delete LabelType;
@@ -216,11 +221,24 @@ size_t Value::getNO() { return no_; }
 
 void Value::addUse(const Use &u) { useList_.emplace_front(u); }
 
-Use::Use(User *user,Value* value) : user_(user),value_(value) {}
+void Value::addUse(Value *val, unsigned no) { useList_.emplace_front(val, no); }
 
-Value *Use::getValue() { return value_; }
+void Value::removeUse(Value *val) { 
+  auto is_val = [val] (Use &use) { return use.getUser() == val; };
+  useList_.remove_if(is_val);
+}
 
-User *Use::getUser() { return user_; }
+void Value::replaceAllUseWith(Value *new_val) {
+  for (auto use : useList_) {
+    auto val = dynamic_cast<User *>(use.getUser());
+    assert(val && "new_val is not a user");
+    val->setOperand(new_val, use.getNo());
+  }
+}
+
+Use::Use(Value *user, unsigned no) : user_(user), no_(no) {}
+
+Value *Use::getUser() { return user_; }
 
 User::User(Type *type, const std::string &name, std::size_t operandNum)
     : Value(type, name), operandNum_(operandNum), operands_(operandNum) {}
@@ -243,7 +261,13 @@ std::string User::getOperandTypeName(std::size_t idx) {
 void User::setOperand(Value *value, std::size_t idx) {
   assert(idx < operandNum_ && "setOperand out of index");
   operands_[idx] = value;
-  value->addUse(Use(this, value));
+  value->addUse(this, idx);
+}
+
+void User::addOperand(Value *value) {
+  operands_.emplace_back(value);  
+  value->addUse(this, operandNum_);
+  operandNum_++;
 }
 
 std::string ConstantInt::print() {
@@ -272,21 +296,28 @@ std::string ConstantFloat::print() {
   return fp_ir;
 }
 
-ConstantZero *ConstantZero::get(Context &c, Type *type) { return new ConstantZero(c, type); }
+ConstantZero *ConstantZero::get(Context &c, Type *type) { 
+  if (type->isIntegerType()) {
+    return c.zero_int;
+  } else if (type->isFloatType()) {
+    return c.zero_float;
+  }
+  assert(false && "error type");
+}
 
 std::string ConstantZero::print() { return "zeroinitializer"; }
 
 ConstantArray::ConstantArray(Context &c, ArrayType *type,
-                             const std::vector<Value *> &value,
-                             const std::vector<int> &dimension)
-    : Constant(c, type, "", value.size()), value_(value), dimension_(dimension) {
-  for (int i = 0; i < value.size(); i++) {
-    setOperand(value_[i], i);
-  }
+                            std::vector<Value *> &value,
+                            std::vector<int> &dimension)
+    : Constant(c, type, "", 0), value_(value), dimension_(dimension) {
+  // for (int i = 0; i < value.size(); i++) {
+  //   setOperand(value[i], i);
+  // }
 }
 
 ConstantArray *ConstantArray::get(Context &c, ArrayType *type,
-                                  const std::vector<Value *> &value, const std::vector<int> &dimension) {
+                                  std::vector<Value *> &value,  std::vector<int> &dimension) {
   return new ConstantArray(c, type, value, dimension);
 }
 
@@ -378,6 +409,101 @@ void Module::addFuntion(Function *func) { functionList_.emplace_back(func); }
 
 void Module::addGlobalVariable(GlobalVariable *globalVariable) {
   globalVariableList_.emplace(globalVariable);
+}
+
+void Module::remove_more_break_and_continue() {
+  for (auto f : functionList_) {
+    if (f->getBasicBlocks().size() == 0)
+      continue;
+    for (auto bb : f->getBasicBlocks()) {
+      std::vector<Instruction*> wait_delete_inst;  
+      std::vector<BasicBlock*> succ_bb;  
+      bool exist_break_continue = false;
+      for (auto inst : bb->instructionList_) {
+        if (!exist_break_continue && inst->isTerminator()){
+          exist_break_continue = true;
+          if (inst->isBr()) {
+            auto br = dynamic_cast<BranchInst*>(inst);
+            if (br->getOperandNum() == 1) {
+              auto br_bb = dynamic_cast<BasicBlock*>(br->getOperand(0));
+              succ_bb.emplace_back(br_bb);
+            } else if (br->getOperandNum() == 3) {
+              auto br_bb1 = dynamic_cast<BasicBlock*>(br->getOperand(1));
+              auto br_bb2 = dynamic_cast<BasicBlock*>(br->getOperand(2));
+              succ_bb.emplace_back(br_bb1);
+              succ_bb.emplace_back(br_bb2);
+            }      
+          }
+        } else if (exist_break_continue) {
+          wait_delete_inst.emplace_back(inst);         
+        }
+      }
+      for (auto delete_inst : wait_delete_inst) {
+        if (delete_inst->isBr()) {
+          auto br = dynamic_cast<BranchInst*>(delete_inst);
+          if (br->getOperandNum() == 1) {
+            auto br_bb = dynamic_cast<BasicBlock*>(br->getOperand(0));
+            if (std::find(succ_bb.begin(), succ_bb.end(), br_bb) == succ_bb.end()) {            
+              bb->successorBlocks_.remove(br_bb);
+              br_bb->predecessorBlocks_.remove(bb);
+            }
+          } else if (br->getOperandNum() == 3) {
+            auto br_bb1 = dynamic_cast<BasicBlock*>(br->getOperand(1));
+            if (std::find(succ_bb.begin(), succ_bb.end(), br_bb1) == succ_bb.end()) {            
+            bb->successorBlocks_.remove(br_bb1);
+            br_bb1->predecessorBlocks_.remove(bb);
+            }
+            auto br_bb2 = dynamic_cast<BasicBlock*>(br->getOperand(2));
+            if (std::find(succ_bb.begin(), succ_bb.end(), br_bb2) == succ_bb.end()) {            
+              bb->successorBlocks_.remove(br_bb2);
+              br_bb2->predecessorBlocks_.remove(bb);
+            }
+          }
+        }
+        bb->instructionList_.remove(delete_inst);
+        delete_inst->removeUseOfOps();
+      }
+    }
+  }
+}
+
+void Module::delete_dead_block() {
+  remove_more_break_and_continue();
+  for (auto f : functionList_) {
+    while (true) {
+      if (f->getBasicBlocks().size() == 0)
+        break;
+      std::vector<BasicBlock*> wait_delete_bb;  
+      for (auto bb : f->getBasicBlocks()) {
+        if (bb != f->getEntryBlock() && bb->predecessorBlocks_.size() == 0) {
+          wait_delete_bb.emplace_back(bb);
+        }
+      }
+      if (wait_delete_bb.empty()) {
+        break;
+      }
+      for (auto delete_bb : wait_delete_bb) {
+        delete_bb->eraseFromParent();
+        delete delete_bb;
+      }
+    }
+  }
+  // debug
+  // for (auto f : functionList_) {
+  //   if (f->getBasicBlocks().size() == 0)
+  //     continue;
+  //   for (auto bb : f->getBasicBlocks()) {
+  //     std::cout << bb->getLLVM_Name() << std::endl;
+  //     std::cout << " pred:" << std::endl;
+  //     for (auto pred : bb->predecessorBlocks_) {
+  //       std::cout << "\t" + pred->getLLVM_Name() << std::endl;      
+  //     }
+  //     std::cout << " succ:" << std::endl;
+  //     for (auto succ : bb->successorBlocks_) {
+  //       std::cout << "\t" + succ->getLLVM_Name() << std::endl;            
+  //     }
+  //   }
+  // }
 }
 
 std::string Module::print() {
@@ -537,6 +663,12 @@ BasicBlock::BasicBlock(Context &context, const std::string &name,
   parent_->addBasicBlock(this);
 }
 
+BasicBlock::~BasicBlock() {
+  for (auto inst : instructionList_) {
+    delete inst;
+  }
+}
+
 BasicBlock *BasicBlock::Create(Context &context, const std::string &name,
                                Function *parent) {
   assert(parent != nullptr);
@@ -552,6 +684,17 @@ bool BasicBlock::hasTerminator(){
 
 void BasicBlock::eraseFromParent(){
   parent_->remove(this);
+  for (auto pred : predecessorBlocks_){
+    pred->successorBlocks_.remove(this);
+  }
+  for (auto succ : successorBlocks_){
+    succ->predecessorBlocks_.remove(this);
+  }
+}
+
+void BasicBlock::deleteInst(Instruction *inst) {
+  instructionList_.remove(inst);
+  inst->removeUseOfOps();
 }
 
 
@@ -562,12 +705,16 @@ void BasicBlock::addInstruction(Instruction *instruction) {
 }
 
 void BasicBlock::addPredecessor(BasicBlock* pre) {
- predecessorBlocks_.emplace_back(pre);
+  if (std::find(predecessorBlocks_.begin(), predecessorBlocks_.end(), pre) == predecessorBlocks_.end()) {  
+    predecessorBlocks_.emplace_back(pre);
+  }
 }
 
 void BasicBlock::addSuccessor(BasicBlock* suc) {
- successorBlocks_.emplace_back(suc);
- suc->addPredecessor(this);
+  if (std::find(successorBlocks_.begin(), successorBlocks_.end(), suc) == successorBlocks_.end()) {  
+    successorBlocks_.emplace_back(suc);
+  }
+  suc->addPredecessor(this);
 }
 
 void BasicBlock::addDominator(BasicBlock *dom) {
@@ -581,6 +728,10 @@ void BasicBlock::setDominators(std::set<BasicBlock *> &doms) {
 
 std::set<BasicBlock *>& BasicBlock::getDominators() {
   return dominators_;
+}
+
+std::list<BasicBlock *>& BasicBlock::getSuccessor() {
+  return successorBlocks_;
 }
 
 std::list<BasicBlock *>& BasicBlock::getPredecessors() {
@@ -1265,14 +1416,35 @@ PhiInst::PhiInst(Context &c, Type *type,
     setOperand(valAndLabels[i].first, 2 * i);
     setOperand(valAndLabels[i].second, 2 * i + 1);
   }
-  insertedBlock->addInstruction(this);
+  // insertedBlock->addInstruction(this);
 }
 
-PhiInst *
-PhiInst::Create(Context &c, Type *type,
+PhiInst* PhiInst::Create(Context &c, Type *type,
                 std::vector<std::pair<Value *, BasicBlock *>> valAndLabels,
                 BasicBlock *insertedBlock, std::string name) {
   return new PhiInst(c, type, valAndLabels, insertedBlock, name);
+}
+
+PhiInst* PhiInst::Create(Context &c, Type *type, BasicBlock *insertedBlock, std::string name) {
+  std::vector<std::pair<Value *, BasicBlock *>> valAndLabels;
+  return new PhiInst(c, type, valAndLabels, insertedBlock, name);
+}
+
+std::vector<Value*> PhiInst::getInComingVal(){
+  std::vector<Value*> val;
+  for (int i = 0; i < getOperandNum() / 2; i++) {
+    val.emplace_back(getOperand(2 * i));
+  }
+  return val;
+}
+
+std::vector<BasicBlock*> PhiInst::getInComingBlock() {
+  std::vector<BasicBlock*> bb;
+  for (int i = 0; i < getOperandNum() / 2; i++) {
+    auto block = dynamic_cast<BasicBlock*>(getOperand(2 * i + 1));
+    bb.emplace_back(block);
+  }
+  return bb;
 }
 
 std::string PhiInst::print() {
@@ -1281,7 +1453,7 @@ std::string PhiInst::print() {
   // <result> = phi <ty> [ <val0>, <label0>], ...
   std::string fmt("%%%s = phi %s ");
   std::snprintf(IRtemp, sizeof IRtemp, fmt.c_str(), getLLVM_Name().c_str(),
-                getOperandType(0)->getTypeName().c_str());
+                type_->getTypeName().c_str());
   IR.assign(IRtemp);
   for (int i = 0; i < getOperandNum() / 2; i++) {
     if (i > 0)
@@ -1448,4 +1620,5 @@ std::string ZextInst::print() {
                 destType_->getTypeName().c_str());
   IR.assign(IRtemp);
   return IR;
+
 }

@@ -1,4 +1,0 @@
-irs/76_n_queens.ll:99:11: error: expected instruction opcode
-  %v120 = not i32 %v119
-          ^
-1 error generated.

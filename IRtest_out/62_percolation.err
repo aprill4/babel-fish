@@ -1,4 +1,0 @@
-irs/62_percolation.ll:144:11: error: expected instruction opcode
-  %v154 = not i32 %v153
-          ^
-1 error generated.

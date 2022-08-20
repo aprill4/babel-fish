@@ -1,4 +1,0 @@
-irs/41_unary_op2.ll:27:10: error: expected instruction opcode
-  %v41 = not i32 %v39
-         ^
-1 error generated.

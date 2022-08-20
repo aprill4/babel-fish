@@ -40,7 +40,7 @@ bool force_trans(IRBuilder *irBuilder, Value*& lhs, Value*& rhs) {
   return is_float;
 }
 
-void parse_nest_array(vector<Value *>&ans, ArrayValue *cur, int idx, vector<int>&nums, bool isInt, /*int&offset,*/ IRBuilder *irBuilder){
+void parse_nest_array(vector<Value *>&ans, ArrayValue *cur, int idx, vector<int>&nums, bool isInt, int& offset, IRBuilder *irBuilder){
   Context &context = irBuilder->getContext();
   int remain = (idx == nums.size() - 1) ? 1 : nums[idx+1], 
       expect = nums[idx], 
@@ -55,14 +55,14 @@ void parse_nest_array(vector<Value *>&ans, ArrayValue *cur, int idx, vector<int>
       }
       ans.emplace_back(irBuilder->getTmpVal());
       if(++cnt == remain) cnt=0;
-      //offset = ans.size();
+      offset = ans.size();
     }
     else {
       if(cnt) {
         ans.resize(ans.size() + remain - cnt, ConstantZero::get(context, isInt ? context.Int32Type : context.FloatType));
         cnt = 0;
       }
-      parse_nest_array(ans, val, idx + 1, nums, isInt, /*offset,*/ irBuilder);
+      parse_nest_array(ans, val, idx + 1, nums, isInt, offset, irBuilder);
     }
   }
 
@@ -333,7 +333,6 @@ void Number::generate(IRBuilder *irBuilder) {
 
 void addLibFn(IRBuilder *irBuilder, string name,Scope* scope_,Type * returnType,std::vector<Type *>argsType){
   Context& c = irBuilder->getContext();
-
   auto funty = FunctionType::get(returnType, argsType);
   string parms[10]; 
   for (int i = 0; i < argsType.size(); i++) {
@@ -346,14 +345,8 @@ void addLibFn(IRBuilder *irBuilder, string name,Scope* scope_,Type * returnType,
   string *s2 = new string(name);
   auto id2 = new Identifier(s);
   FunctionDefinition* fde = new FunctionDefinition(SysType::VOID,id2,fl, nullptr);
-  auto x =   Function::Create(c, funty, parms, name, irBuilder->getModule(), true, true);
+  auto x = Function::Create(c, funty, parms, name, irBuilder->getModule(), true, true);
   scope_->funcIR[fde] = x;
-  BasicBlock* bb = BasicBlock::Create(c, name, x);
-  if (returnType->isVoidType()) {
-    ReturnInst::Create(c,bb);  
-  }else{
-    ReturnInst::Create(c,ConstantInt::get(c, returnType, 0),bb);  
-  }
 }
 
 void Root::generate(IRBuilder *irBuilder) {
@@ -375,6 +368,7 @@ void Root::generate(IRBuilder *irBuilder) {
   }
 
   for (auto &funcDef : this->functionDefinitions_) {
+    irBuilder->setScope(scope_);
     funcDef->generate(irBuilder);
   }
 }
@@ -501,8 +495,10 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
   }
   ArrayType *arrType = latter;
   vector<Value*> vals;
-  if(value_)  
-    parse_nest_array(vals, value_, 0, nums, type_ == SysType::INT, irBuilder);
+  int offset = 0;
+  if(value_) {
+      parse_nest_array(vals, value_, 0, nums, type_ == SysType::INT, offset, irBuilder);
+  } 
   else 
     vals.resize(total, ConstantZero::get(context, type));
 
@@ -510,47 +506,58 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
     value = GlobalVariable::Create(context, arrType, identifier_->id_, isConst_,
                                    ConstantArray::get(context, arrType, vals, dimensions),
                                    irBuilder->getModule());
-  }
-  else {
+  } else {
     if (isConst_) {
       AllocaInst::Create(context, arrType, irBuilder->getBasicBlock());
       value = ConstantArray::get(context, arrType, vals, dimensions);
-    } else {      
+    } else {
       BasicBlock *bb = irBuilder->getBasicBlock();
       value = AllocaInst::Create(context, arrType, irBuilder->getBasicBlock());
-      vector<Value*> idxList;
-      for (int i = 0; i < len; i++) {
-        idxList.emplace_back(ConstantInt::get(context, context.Int32Type,0));
-      }
-      // TODO : call the memset function in C
-      Value* tmp;
-      for(int u = 0; u < total; u++) {
-        idxList.insert(idxList.begin(), ConstantInt::get(context, context.Int32Type, 0));
-        tmp = GetElementPtrInst::Create(context, value, idxList, bb);
-        idxList.erase(idxList.begin());
-        auto temp_val = vals[u];
-        if (temp_val->getType()->isPointerType()) {
-          temp_val = LoadInst::Create(context, temp_val, bb);
-        }
-        if (temp_val->getType() != type) {
-          if (type->isIntegerType()) {
-            temp_val = FpToSiInst::Create(context, context.Int32Type, temp_val, irBuilder->getBasicBlock());
-          } else {
-            temp_val = SiToFpInst::Create(context, context.FloatType, temp_val, irBuilder->getBasicBlock());
+      if (value_) {
+        if (offset != total && type->isIntegerType()) {
+          auto func = dynamic_cast<Function*>(irBuilder->getModule()->symbolTable_["memset"]);
+          vector<Value*> idxList;
+          for (int i = 0; i < len + 1; i++) {
+            idxList.emplace_back(ConstantInt::get(context, context.Int32Type,0));
           }
+          auto gep_tmp = GetElementPtrInst::Create(context, value, idxList, bb);
+          auto tmp = CallInst::Create(context, func, 
+            { gep_tmp,  ConstantInt::get(context, context.Int32Type,0), ConstantInt::get(context, context.Int32Type, total * 4)}, irBuilder->getBasicBlock());
         }
-        StoreInst::Create(context, temp_val, tmp, bb);
-        bool incr = true;
-        // whether need to adjust the order e.g. the idxList a[1][2][3] = {3,2,1} to avoid minus operation
-        for(int u = len - 1; u >= 0 && incr ; u--) {
-          int curr = dynamic_cast<ConstantInt*>(idxList[u])->getValue();
-          if(curr + 1 == dimensions[u]) 
-            curr = 0;
-          else {
-            curr++;
-            incr = false;
+        vector<Value*> idxList;
+        for (int i = 0; i < len; i++) {
+          idxList.emplace_back(ConstantInt::get(context, context.Int32Type,0));
+        }
+        // TODO : call the memset function in C
+        Value* tmp;
+        for(int u = 0; u < offset; u++) {
+          idxList.insert(idxList.begin(), ConstantInt::get(context, context.Int32Type, 0));
+          tmp = GetElementPtrInst::Create(context, value, idxList, bb);
+          idxList.erase(idxList.begin());
+          auto temp_val = vals[u];
+          if (temp_val->getType()->isPointerType()) {
+            temp_val = LoadInst::Create(context, temp_val, bb);
           }
-          dynamic_cast<ConstantInt*>(idxList[u])->setValue(curr);
+          if (temp_val->getType() != type) {
+            if (type->isIntegerType()) {
+              temp_val = FpToSiInst::Create(context, context.Int32Type, temp_val, irBuilder->getBasicBlock());
+            } else {
+              temp_val = SiToFpInst::Create(context, context.FloatType, temp_val, irBuilder->getBasicBlock());
+            }
+          }
+          StoreInst::Create(context, temp_val, tmp, bb);
+          bool incr = true;
+          // whether need to adjust the order e.g. the idxList a[1][2][3] = {3,2,1} to avoid minus operation
+          for(int u = len - 1; u >= 0 && incr ; u--) {
+            int curr = dynamic_cast<ConstantInt*>(idxList[u])->getValue();
+            if(curr + 1 == dimensions[u]) 
+              curr = 0;
+            else {
+              curr++;
+              incr = false;
+            }
+            dynamic_cast<ConstantInt*>(idxList[u])->setValue(curr);
+          }
         }
       }
     }
@@ -571,8 +578,16 @@ void FunctionDefinition::generate(IRBuilder *irBuilder) {
       for (auto i : arg->identifier_->dimension_) {
         if (i) {
           i->generate(irBuilder);
-          dimension.emplace_back(
-              dynamic_cast<ConstantInt *>(irBuilder->getTmpVal())->getValue());
+          auto tmp = irBuilder->getTmpVal();
+          if (dynamic_cast<GlobalVariable*>(tmp)) {
+            if (!dynamic_cast<GlobalVariable*>(tmp)->isConst()) {
+              throw Exception("array dimension is not const");    
+            }
+            tmp = dynamic_cast<GlobalVariable*>(tmp)->getInitValue();
+          } else if (!dynamic_cast<ConstantInt*>(tmp)) {
+              throw Exception("array dimension is not const");    
+          }
+          dimension.emplace_back(dynamic_cast<ConstantInt *>(tmp)->getValue());
         }
       }
       if (dimension.size() != 0) {
@@ -986,9 +1001,7 @@ void UnaryExpression::generate(IRBuilder *irBuilder) {
               res = dynamic_cast<Instruction*>(rhs)->getOperand(0);
             } else {
               if (dynamic_cast<ConstantFloat*>(rhs)) {
-                dynamic_cast<ConstantFloat*>(rhs)->setValue(
-                  -dynamic_cast<ConstantFloat*>(rhs)->getValue());
-                res = rhs;
+                res = ConstantFloat::get(context, -dynamic_cast<ConstantFloat*>(rhs)->getValue());
               } else {
                 res = UnaryInst::CreateNegative(context, rhs, irBuilder->getBasicBlock());
               }
@@ -1004,9 +1017,7 @@ void UnaryExpression::generate(IRBuilder *irBuilder) {
               res = dynamic_cast<Instruction*>(rhs)->getOperand(0);            
             } else {
               if (dynamic_cast<ConstantInt*>(rhs)) {
-                dynamic_cast<ConstantInt*>(rhs)->setValue(
-                    -dynamic_cast<ConstantInt*>(rhs)->getValue());
-                res = rhs;
+                res = ConstantInt::get(context, rhs->getType(), -dynamic_cast<ConstantInt*>(rhs)->getValue());
               } else {
                 res = UnaryInst::CreateNegative(context, rhs, irBuilder->getBasicBlock());
               }
@@ -1240,10 +1251,10 @@ void IfElseStatement::generate(IRBuilder *irBuilder) {
       BasicBlock::Create(c, "if_true_entry", irBuilder->getFunction());
   auto false_bb =
       BasicBlock::Create(c, "if_false_entry", irBuilder->getFunction());
-  auto next_bb = BasicBlock::Create(c, "next_entry", irBuilder->getFunction());
-  true_bb->addSuccessor(next_bb);
-  false_bb->addSuccessor(next_bb);
+  auto next_bb = BasicBlock::Create(c, "if_next_entry", irBuilder->getFunction());
+  // true_bb->addSuccessor(next_bb);
   if (elseStmt_) {
+    // false_bb->addSuccessor(next_bb);
     irBuilder->setLoopBlock(true_bb, false_bb);  
   } else {
     irBuilder->setLoopBlock(true_bb, next_bb);
@@ -1308,7 +1319,7 @@ void WhileStatement::generate(IRBuilder *irBuilder) {
   irBuilder->setScope(scope_);
   auto while_bb = BasicBlock::Create(c, "while_entry", irBuilder->getFunction());
   auto next_bb = BasicBlock::Create(c, "next_entry", irBuilder->getFunction());
-  while_bb->addSuccessor(next_bb);
+  // while_bb->addSuccessor(next_bb);
   irBuilder->setLoopBlock(while_bb, next_bb);
   cond_->generate(irBuilder);
   irBuilder->popLoopBlock();
@@ -1338,17 +1349,21 @@ void WhileStatement::generate(IRBuilder *irBuilder) {
   }
   irBuilder->setBasicBlock(while_bb);
   irBuilder->setLoopBlock(while_bb, next_bb);
+  irBuilder->setBreakAndContinue(while_bb, next_bb);
   if (doStmt_) {
     irBuilder->setCond(cond_);
     doStmt_->generate(irBuilder);
     irBuilder->popCond(); 
   }
   irBuilder->popLoopBlock();
+  irBuilder->popBreakAndContinueBlock();
   if (!irBuilder->getBasicBlock()->hasTerminator()) {
     irBuilder->getBasicBlock()->addSuccessor(while_bb);
     irBuilder->getBasicBlock()->addSuccessor(next_bb);
     irBuilder->setLoopBlock(while_bb, next_bb);
+    irBuilder->setBreakAndContinue(while_bb, next_bb);
     cond_->generate(irBuilder);
+    irBuilder->popBreakAndContinueBlock();
     irBuilder->popLoopBlock();
     auto tmpVal = irBuilder->getTmpVal();
     if (tmpVal) {    
@@ -1370,6 +1385,8 @@ void WhileStatement::generate(IRBuilder *irBuilder) {
       } else {
         condVal = tmpVal;
       }
+      irBuilder->getBasicBlock()->addSuccessor(while_bb);
+      irBuilder->getBasicBlock()->addSuccessor(next_bb);
       BranchInst::Create(c, condVal, while_bb, next_bb, irBuilder->getBasicBlock());    
     }
   }
@@ -1403,14 +1420,16 @@ void ReturnStatement::generate(IRBuilder *irBuilder) {
 }
 
 void BreakStatement::generate(IRBuilder *irBuilder) {
-  irBuilder->getBasicBlock()->addSuccessor(irBuilder->getNextBlock());
-  BranchInst::Create(irBuilder->getContext(),irBuilder->getNextBlock(),irBuilder->getBasicBlock());
+  irBuilder->getBasicBlock()->addSuccessor(irBuilder->getBreakBlock());
+  BranchInst::Create(irBuilder->getContext(),irBuilder->getBreakBlock(),irBuilder->getBasicBlock());
+  // irBuilder->getBasicBlock()->addSuccessor(irBuilder->getNextBlock());
+  // BranchInst::Create(irBuilder->getContext(),irBuilder->getNextBlock(),irBuilder->getBasicBlock());
 }
 
 void ContinueStatement::generate(IRBuilder *irBuilder) {
   Context& c = irBuilder->getContext();
-  irBuilder->getBasicBlock()->addSuccessor(irBuilder->getWhileBlock());
-  irBuilder->setLoopBlock(irBuilder->getWhileBlock(), irBuilder->getNextBlock());
+  irBuilder->setLoopBlock(irBuilder->getContinueBlock(), irBuilder->getBreakBlock());
+  // irBuilder->setLoopBlock(irBuilder->getWhileBlock(), irBuilder->getNextBlock());
   irBuilder->getCond()->generate(irBuilder);
   irBuilder->popLoopBlock();
   auto tmpVal = irBuilder->getTmpVal();
@@ -1433,7 +1452,12 @@ void ContinueStatement::generate(IRBuilder *irBuilder) {
     } else {
       condVal = tmpVal;
     }
-    BranchInst::Create(c, condVal, irBuilder->getWhileBlock(), irBuilder->getNextBlock(), irBuilder->getBasicBlock());    
+    irBuilder->getBasicBlock()->addSuccessor(irBuilder->getContinueBlock());
+    irBuilder->getBasicBlock()->addSuccessor(irBuilder->getBreakBlock());
+    BranchInst::Create(c, condVal, irBuilder->getContinueBlock(), irBuilder->getBreakBlock(), irBuilder->getBasicBlock());    
+    // irBuilder->getBasicBlock()->addSuccessor(irBuilder->getWhileBlock());
+    // irBuilder->getBasicBlock()->addSuccessor(irBuilder->getNextBlock());
+    // BranchInst::Create(c, condVal, irBuilder->getWhileBlock(), irBuilder->getNextBlock(), irBuilder->getBasicBlock());    
   }
 }
 

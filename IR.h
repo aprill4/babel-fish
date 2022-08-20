@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <algorithm>
 #include "Exception.h"
 #include <iterator>
 #include <vector>
@@ -55,6 +56,8 @@ class UnaryInst;
 
 class Util;
 
+void init(Context&);
+
 class Context {
 public:
   Context();
@@ -67,6 +70,8 @@ public:
 
   std::map<std::pair<Type *, std::size_t>, ArrayType *> ArrayTypes;
   std::map<Type *, PointerType *> PointerTypes;
+  ConstantZero* zero_int;
+  ConstantZero* zero_float;
 
   void addModule(Module *module);
 
@@ -188,9 +193,11 @@ public:
   std::string getLLVM_Name();
 
   void addUse(const Use &u);
+  void addUse(Value *val, unsigned no = 0);
+  void removeUse(Value *val);
   virtual std::string print() = 0;
-
   size_t getNO();
+  void replaceAllUseWith(Value *new_val);
 
   Type *type_;
   std::string name_;
@@ -200,13 +207,12 @@ public:
 
 class Use {
 public:
-  Use(User *user,Value*);
-  Value *getValue();
-  User *getUser();
-
+  Use(Value* user_, unsigned no);
+  Value *getUser();
+  unsigned getNo() { return no_;}
 private:
-  User *user_ = nullptr;
-  Value *value_ = nullptr;
+  Value *user_ = nullptr;
+  unsigned no_;
 };
 
 class User : public Value {
@@ -218,9 +224,14 @@ public:
   Value *getOperand(std::size_t idx);
   Type *getOperandType(std::size_t idx);
   std::string getOperandTypeName(std::size_t idx);
-
+  void addOperand(Value *v);
   void setOperand(Value* value, std::size_t idx);
-
+  void removeUseOfOps(){
+    for (auto op : operands_) {
+      op->removeUse(this);
+    }
+  }
+public:
   std::vector<Value *> operands_;
   std::size_t operandNum_;
 };
@@ -274,14 +285,14 @@ private:
 
 class ConstantArray : public Constant {
 public:
-  ConstantArray(Context &c, ArrayType *type, const std::vector<Value *> &value, const std::vector<int> &dimension);
+  ConstantArray(Context &c, ArrayType *type, std::vector<Value *> &value, std::vector<int> &dimension);
   Value *getElementValue(int idx);
   std::string print() override;
 
 public:
   static ConstantArray *get(Context &c, ArrayType *type,
-                            const std::vector<Value *> &value,
-                            const std::vector<int> &dimension);
+                            std::vector<Value *> &value,
+                            std::vector<int> &dimension);
 
 public:
   std::vector<Value *> value_;
@@ -307,6 +318,8 @@ public:
   Module(Context &context, const std::string &moduleName);
   void addFuntion(Function *func);
   void addGlobalVariable(GlobalVariable *globalVariable);
+  void remove_more_break_and_continue();
+  void delete_dead_block();
   std::string print();
 
   Context &context_;
@@ -328,7 +341,7 @@ public:
 
   void addBasicBlock(BasicBlock *bb);
   std::list<BasicBlock *>& getBasicBlocks();
-
+  BasicBlock *getEntryBlock() { return *basicBlocks_.begin(); }
   void remove(BasicBlock* bb);
   Argument *getArgument(size_t idx);
 
@@ -366,6 +379,7 @@ private:
 class BasicBlock : public Value {
 public:
   BasicBlock(Context &context, const std::string &name, Function *parent);
+  ~BasicBlock();
   Module *getModule();
   std::string print() override;
 
@@ -377,17 +391,23 @@ public:
   void setDominators(std::set<BasicBlock *> &doms);
   std::set<BasicBlock *>& getDominators();
 
+  std::list<BasicBlock *>& getSuccessor();
   std::list<BasicBlock *>& getPredecessors();
 
   bool hasTerminator();
   void eraseFromParent();
 
+  void addInstInBegin(Instruction *inst) {
+    instructionList_.push_front(inst);
+  }
+
+  void deleteInst(Instruction *inst);
+
 public:
   static BasicBlock *Create(Context &context, const std::string &name,
                             Function *parent);
 
-std::list<Instruction *> instructionList_;
-
+  std::list<Instruction *> instructionList_;
   Function *parent_;
   std::list<BasicBlock *> predecessorBlocks_;
   std::list<BasicBlock *> successorBlocks_;
@@ -625,6 +645,7 @@ class LoadInst : public Instruction {
 public:
   LoadInst(Context &c, Type *type, Value *ptr, BasicBlock *insertedBlock, std::string name);
   std::string print() override;
+  Value *getLval() { return this->getOperand(0); }
 
 public:
   static LoadInst *Create(Context &c, Value *ptr, BasicBlock *insertedBlock, std::string name = "v");
@@ -639,13 +660,24 @@ public:
           std::vector<std::pair<Value *, BasicBlock *>> valAndLabels,
           BasicBlock *insertedBlock, std::string name);
   std::string print() override;
-
+  void setLval(Value *lval) { lval_ = lval; }
+  Value *getLval() { return lval_; }
+  void add_phi_pair_operand(Value *val, Value *pre_bb) {
+    this->addOperand(val);
+    this->addOperand(pre_bb);
+  }
+  std::vector<Value*> getInComingVal();
+  std::vector<BasicBlock*> getInComingBlock();
 public:
   static PhiInst *
   Create(Context &c, Type *type, std::vector<std::pair<Value *, BasicBlock *>> valAndLabels,
          BasicBlock *insertedBlock, std::string name = "v");
+  static PhiInst *
+  Create(Context &c, Type *type, BasicBlock *insertedBlock, std::string name = "v");
 
 private:
+  Value *lval_;
+
 };
 
 class ReturnInst : public Instruction {
@@ -682,6 +714,8 @@ public:
   StoreInst(Context &context, Value *value, Value *ptr,
             BasicBlock *insertedBlock);
   std::string print() override;
+  Value *getRval() { return this->getOperand(0); }
+  Value *getLval() { return this->getOperand(1); }
 
 public:
   static StoreInst *Create(Context &context, Value *value, Value *ptr,

@@ -93,19 +93,24 @@ int main(int argc, char** argv) {
     //cout << R"(target triple = "x86_64-pc-linux-gnu")" << endl << endl;
 
     auto m = irBuilder->getModule();
-
-    //cout << m->print() << endl;
+    PassManager pm(m);
+    // cout << m->print() << endl;
+    pm.add_pass<Mem2Reg>();
+    // pm.add_pass<LoopSearch>();
+    // pm.add_pass<LoopInvHoist>(true);
+    pm.run();
+    // cout << m->print() << endl;
 
     auto mm = emit_asm(m);
 
-    mm->print(stdout);
-    printf("\n\n");
+    // mm->print(stdout);
+    // printf("\n\n");
 
     stack_ra(mm);
+    // mm->print(stdout);
+    
+    remove_redundant_load(mm);
     //mm->print(stdout);
-    // remove_redundant_load(mm);
-
-    mm->print(stdout);
 
     FILE *out = fopen(output_file, "w");
     mm->print(out);

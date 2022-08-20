@@ -1,4 +1,0 @@
-irs/51_short_circuit3.ll:48:9: error: '%v54' defined with type 'i32' but expected 'i1'
-  br i1 %v54, label %l51, label %r52
-        ^
-1 error generated.
