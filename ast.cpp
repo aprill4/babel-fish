@@ -514,7 +514,7 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
       BasicBlock *bb = irBuilder->getBasicBlock();
       value = AllocaInst::Create(context, arrType, irBuilder->getBasicBlock());
       if (value_) {
-        if (offset != total && type->isIntegerType()) {
+        if (offset != total && (type->isIntegerType() || type->isFloatType())) {
           auto func = dynamic_cast<Function*>(irBuilder->getModule()->symbolTable_["memset"]);
           vector<Value*> idxList;
           for (int i = 0; i < len + 1; i++) {

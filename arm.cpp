@@ -716,7 +716,6 @@ void emit_args(std::vector<Argument *> &args, MachineBasicBlock *entry) {
                     MachineOperand::Float), arg);
 
         if ((num_of_ints >= 4 && is_int) || (num_of_floats >= 16 && !is_int)) {
-            printf("%d is on the stack, and is_int: %d\n", i, is_int);
             auto base = FP;
             auto offset = new IImm(num_of_stack_args * 4 + 100);
             auto ld = new Load((is_int ? Load::Int : Load::Float),
