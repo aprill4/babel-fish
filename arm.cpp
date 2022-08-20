@@ -1672,6 +1672,7 @@ int allocate_register(MachineFunction * F,MachineOperand::OperandType ty,std::ve
                     }
                     auto info = live_intervals[x];
                     (*opr) = info->reg;
+                    std::cout<<x->print()<<" is begin at "<<info->startpoint<<" end at "<<info->endpoint<<std::endl;
                     if(info->location != -1){
                         auto str = new Store(ty == MachineOperand::Int?Store::Int:Store::Float,info->reg,new MReg(MReg::fp),new IImm(-(shuzu_size+ info->location)-avoid_overlap));
                         inst++;
@@ -1688,6 +1689,9 @@ int allocate_register(MachineFunction * F,MachineOperand::OperandType ty,std::ve
                     assert(live_intervals.count(x) != 0);
                     auto info = live_intervals[x];
                     (*var) = info->reg;
+                    if(info->reg->reg ==MReg::r4){
+                        assert(info->location!= -1);
+                    }
                     if(info->location != -1){
                         auto ldr = new Load(ty == MachineOperand::Int?Load::Int:Load::Float,info->reg,new MReg(MReg::fp),new IImm(-(shuzu_size + info->location)-avoid_overlap));
                         bb->insts.insert(inst,ldr);
@@ -1713,8 +1717,8 @@ std::vector<MachineOperand **> get_definition(MachineInst * inst){
     }
     else if(auto i = dynamic_cast<Store*>(inst)) {
         i->print(stdout);
-        oprs.emplace_back(&(i->base));
-        oprs.emplace_back(&(i->offset));
+        //oprs.emplace_back(&(i->base));
+       // oprs.emplace_back(&(i->offset));
     }
     else if(auto i = dynamic_cast<Load*>(inst)) {
         i->print(stdout);

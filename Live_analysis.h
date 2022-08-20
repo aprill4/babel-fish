@@ -27,6 +27,9 @@ VReg* get_inst_defs(MachineInst * inst){
         if(auto x =dynamic_cast<VReg*>(i->base)){
             result = x;
         }
+        if(auto x=dynamic_cast<VReg*>(i->offset)){
+            assert("store offset is vreg\n");   
+        }
     }
     else if(auto i = dynamic_cast<Load*>(inst)) {
         if(auto x =dynamic_cast<VReg*>(i->dst)){
@@ -146,17 +149,16 @@ Vreg_LiveIntervalMap live_variable_analysis(MachineFunction * F,MachineOperand::
 
                         }
                      }
-                     goto deal_with_out;
-                }
+                }else{
                 //计算out的内容
-                for(auto var:*In[*p]){
-                    if(var->operand_type !=ty) continue;
-                    if(Out[*inst]->count(var) == 0){
-                        changing = true;
+                 for(auto var:*In[*p]){
+                        if(var->operand_type !=ty) continue;
+                        if(Out[*inst]->count(var) == 0){
+                            changing = true;
+                        }
+                     Out[*inst]->insert(var);
                     }
-                    Out[*inst]->insert(var);
                 }
-                deal_with_out:
                 //计算每条指令的In,In[s] = use[s] U (Out[s] -def[s])
                 for(auto use:get_inst_uses(*inst)){
                     if(use->operand_type !=ty) continue;

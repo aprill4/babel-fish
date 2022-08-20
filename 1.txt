@@ -1,0 +1,10 @@
+int main(){
+int x=1;
+while(1){
+    while(2){int z =2;}
+}
+int y=x;
+return y;
+}
+    
+

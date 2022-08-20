@@ -1,0 +1,123 @@
+13c13
+<   sub	sp, sp, #124
+---
+>   sub	sp, sp, #120
+17,18c17
+<   sub	r4, fp, #8
+<   str	r4, [fp, #-124]
+---
+>   sub	r10, fp, #8
+22,25c21,22
+<   str	r7, [r4]
+<   str	r4, [fp, #-124]
+<   ldr	r4, [fp, #-124]
+<   ldr	r7, [r4]
+---
+>   str	r7, [r10]
+>   ldr	r7, [r10]
+42,43c39
+<   ldr	r4, [fp, #-124]
+<   ldr	r5, [r4]
+---
+>   ldr	r5, [r10]
+51c47
+<   add	sp, sp, #124
+---
+>   add	sp, sp, #120
+77,78c73
+<   ldr	r4, [fp, #-124]
+<   ldr	r5, [r4]
+---
+>   ldr	r5, [r10]
+80,83c75,76
+<   str	r5, [r4]
+<   str	r4, [fp, #-124]
+<   ldr	r4, [fp, #-124]
+<   ldr	r5, [r4]
+---
+>   str	r5, [r10]
+>   ldr	r5, [r10]
+106,110c99,103
+<   ldr	r7, [r9]
+<   mov	r7, r7
+<   mov	r5, #4
+<   mul	r5, r8, r5
+<   add	r7, r7, r5
+---
+>   ldr	r6, [r9]
+>   mov	r6, r6
+>   mov	r7, #4
+>   mul	r7, r8, r7
+>   add	r6, r6, r7
+112c105
+<   ldr	r5, [r4]
+---
+>   ldr	r7, [r4]
+115,117c108,110
+<   mov	r10, #4
+<   mul	r10, r5, r10
+<   add	r8, r8, r10
+---
+>   mov	r5, #4
+>   mul	r5, r7, r5
+>   add	r8, r8, r5
+119,128c112
+<   str	r8, [r7]
+<   ldr	r4, [fp, #-120]
+<   ldr	r8, [r4]
+<   ldr	r7, [r9]
+<   mov	r7, r7
+<   mov	r10, #4
+<   mul	r10, r8, r10
+<   add	r7, r7, r10
+<   ldr	r6, [r6]
+<   str	r6, [r7]
+---
+>   str	r8, [r6]
+132,134c116,118
+<   ldr	r6, [r4]
+<   add	r6, r6, #1
+<   str	r6, [r4]
+---
+>   ldr	r8, [r4]
+>   add	r8, r8, #1
+>   str	r8, [r4]
+137,145c121,128
+<   ldr	r6, [r4]
+<   movw	r7, #:lower16:n
+<   movt	r7, #:upper16:n
+<   ldr	r7, [r7]
+<   ldr	r4, [fp, #-124]
+<   ldr	r10, [r4]
+<   sub	r10, r7, r10
+<   sub	r10, r10, #1
+<   cmp	r6, r10
+---
+>   ldr	r8, [r4]
+>   movw	r6, #:lower16:n
+>   movt	r6, #:upper16:n
+>   ldr	r6, [r6]
+>   ldr	r5, [r10]
+>   sub	r5, r6, r5
+>   sub	r5, r5, #1
+>   cmp	r8, r5
+150c133
+< main107:
+---
+> main103:
+267,269c250,252
+<   blt	while_entry220
+<   b	next_entry221
+< while_entry220:
+---
+>   blt	while_entry216
+>   b	next_entry217
+> while_entry216:
+294,296c277,279
+<   blt	while_entry220
+<   b	next_entry221
+< next_entry221:
+---
+>   blt	while_entry216
+>   b	next_entry217
+> next_entry217:
