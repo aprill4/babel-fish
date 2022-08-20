@@ -1473,7 +1473,7 @@ void stack_ra(MachineModule *mod) {
 
 
 
-
+/*
 struct LiveInterval{
     MReg* reg;
     int location   =   -1;
@@ -1482,6 +1482,7 @@ struct LiveInterval{
 };
 using Vreg_LiveIntervalMap = std::map<VReg*,LiveInterval*> ;
 using Vreg_LiveInterval    = std::pair<VReg*,LiveInterval*>;
+*/
 int num=0;
 void Traveral(MachineBasicBlock * bb){
     if(bb->visited){
@@ -1499,7 +1500,7 @@ void numbering_instructions(MachineFunction * F){
     auto b0 = F->basic_blocks[0];
     Traveral(b0);
 }
-std::vector<MachineOperand**> get_all_oprands(MachineInst* inst){
+std::vector<MachineOperand**> getall_oprands(MachineInst* inst){
     std::vector<MachineOperand**> oprs;
     if(auto i = dynamic_cast<Mov*>(inst)) {
         oprs.emplace_back(&(i->src));
@@ -1538,7 +1539,7 @@ std::vector<MachineOperand**> get_all_oprands(MachineInst* inst){
     }
     return oprs;
 }
-Vreg_LiveIntervalMap create_live_interval(MachineFunction *F,MachineOperand::OperandType ty= MachineOperand::Int){
+/*Vreg_LiveIntervalMap create_live_interval(MachineFunction *F,MachineOperand::OperandType ty= MachineOperand::Int){
     Vreg_LiveIntervalMap result;
     for(auto bb:F->basic_blocks){
         for(auto inst:bb->insts){
@@ -1564,7 +1565,7 @@ Vreg_LiveIntervalMap create_live_interval(MachineFunction *F,MachineOperand::Ope
     }
     return result;
 }
-
+*/
 
 
 /*
@@ -1653,7 +1654,7 @@ int allocate_register(MachineFunction * F,MachineOperand::OperandType ty,std::ve
 
     numbering_instructions(F);
     printf("done numbering....\n");
-    Vreg_LiveIntervalMap live_intervals = create_live_interval(F,ty);
+    Vreg_LiveIntervalMap live_intervals = live_variable_analysis(F,ty);//create_live_interval(F,ty);
     printf("done vreg liveinterval map....\n");
     int stack_add_size = LinearScanRegisterALLOCATION(live_intervals,free_registers,stack_size);
     printf("done Linearscan .....\n");
