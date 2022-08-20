@@ -712,13 +712,14 @@ void emit_args(std::vector<Argument *> &args, MachineBasicBlock *entry) {
         auto ty = arg->getType();
         auto is_int = (ty->isPointerType() || ty->isIntegerType());
 
-        auto dst = make_vreg(is_int ? MachineOperand::Int :
-                    MachineOperand::Float, arg);
+        auto dst = make_vreg((is_int ? MachineOperand::Int :
+                    MachineOperand::Float), arg);
 
-        if (num_of_ints >= 4 || num_of_floats >= 16) {
+        if ((num_of_ints >= 4 && is_int) || (num_of_floats >= 16 && !is_int)) {
+            printf("%d is on the stack, and is_int: %d\n", i, is_int);
             auto base = FP;
             auto offset = new IImm(num_of_stack_args * 4 + 100);
-            auto ld = new Load(is_int ? Load::Int : Load::Float,
+            auto ld = new Load((is_int ? Load::Int : Load::Float),
                         dst, base, offset);
             entry->insts.emplace_back(ld);
             num_of_stack_args++;
@@ -1105,13 +1106,12 @@ void emit_call(Instruction *inst, MachineBasicBlock* mbb) {
     int32_t args_offset = ((int_args_num > 4 ?  int_args_num - 4 : 0) 
                 + (float_args_num > 16 ?  float_args_num - 16 : 0)) * 4;
 
-/*
-    bool sp_aligned = ((stack_offset + args_offset + 100 ) % 8) == 0;
+    bool sp_aligned = (args_offset % 8) == 0;
     if (!sp_aligned) {
-        auto align_sp = new Binary(Binary::Int, Binary::And, SP, SP, new IImm(8));
-        mbb->insts.emplace_back(align_ap);
+        auto align_sp = new Binary(Binary::Int, Binary::ISub, SP, SP, new IImm(4));
+        mbb->insts.emplace_back(align_sp);
     }
-*/
+
     bool sp_subbed = args_offset > 0;
     if (sp_subbed) {
         auto sp_sub = new Binary(Binary::Int, Binary::ISub, 
@@ -1160,11 +1160,11 @@ void emit_call(Instruction *inst, MachineBasicBlock* mbb) {
         mbb->insts.emplace_back(sp_add);
     }
 
-/*
     if (!sp_aligned) {
         auto add = new Binary(Binary::Int, Binary::IAdd, SP, SP, new IImm(4));
         mbb->insts.emplace_back(add);
     }
+/*
 */
 
     if (func_call->getFunctionType()->getReturnType()->isIntegerType()) {
@@ -1449,6 +1449,9 @@ void stack_ra_on_function(MachineFunction *mf)  {
     // insert add/sub sp & push/pops
 
     auto total_size = local_var_size + spilled_size;
+    if (((100 + total_size) % 8) != 0) {
+        total_size += 4;
+    }
     mf->stack_sub->rhs = new IImm(total_size);
     for (auto stack_add : mf->stack_adds) {
         stack_add->rhs = new IImm(total_size);
