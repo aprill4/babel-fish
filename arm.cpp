@@ -1406,7 +1406,7 @@ void stack_ra(MachineModule *mod) {
         stack_add_size = allocate_register(func,MachineOperand::Float,free_registers_float,stack_add_size);
         
         //@problems
-        auto total_size = func->stack_size + stack_add_size;
+        auto total_size = func->stack_size + stack_add_size + avoid_overlap;
         func->stack_sub->rhs = new IImm(total_size);
         for (auto stack_add : func->stack_adds) {
             stack_add->rhs = new IImm(total_size);
@@ -1650,7 +1650,7 @@ std::vector<MachineOperand **> get_definition(MachineInst * inst);
 std::vector<MachineOperand **> get_all_uses(MachineInst * inst)  ;
 
 int allocate_register(MachineFunction * F,MachineOperand::OperandType ty,std::vector<MReg*>free_registers,int stack_size ){
-    int shuzu_size = 0;
+    int shuzu_size = F->stack_size ;
 
     numbering_instructions(F);
     printf("done numbering....\n");
@@ -1666,10 +1666,14 @@ int allocate_register(MachineFunction * F,MachineOperand::OperandType ty,std::ve
             for(auto opr:oprs){
                 if(auto x =dynamic_cast<VReg*>(*opr)){
                     if(x->operand_type !=ty) continue;
+                    if(live_intervals.count(x) == 0){
+                        (*opr) = new MReg(MReg::r4);
+                        continue;
+                    }
                     auto info = live_intervals[x];
                     (*opr) = info->reg;
                     if(info->location != -1){
-                        auto str = new Store(ty == MachineOperand::Int?Store::Int:Store::Float,info->reg,new MReg(MReg::fp),new IImm(-(shuzu_size+ info->location)-100));
+                        auto str = new Store(ty == MachineOperand::Int?Store::Int:Store::Float,info->reg,new MReg(MReg::fp),new IImm(-(shuzu_size+ info->location)-avoid_overlap));
                         inst++;
                         bb->insts.insert(inst,str);
                         inst--;
@@ -1681,10 +1685,11 @@ int allocate_register(MachineFunction * F,MachineOperand::OperandType ty,std::ve
             for(auto var:var_uses){
                 if(auto x =dynamic_cast<VReg*>(*var)){
                     if(x->operand_type != ty) continue;
+                    assert(live_intervals.count(x) != 0);
                     auto info = live_intervals[x];
                     (*var) = info->reg;
                     if(info->location != -1){
-                        auto ldr = new Load(ty == MachineOperand::Int?Load::Int:Load::Float,info->reg,new MReg(MReg::fp),new IImm(-(shuzu_size + info->location)-100));
+                        auto ldr = new Load(ty == MachineOperand::Int?Load::Int:Load::Float,info->reg,new MReg(MReg::fp),new IImm(-(shuzu_size + info->location)-avoid_overlap));
                         bb->insts.insert(inst,ldr);
                     }
                 }

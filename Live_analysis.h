@@ -1,5 +1,6 @@
 #pragma once
 #include "arm.h"
+const int avoid_overlap = 100;
 struct LiveInterval{
     //std::vector<MachineInst*> insts;
     MReg* reg;
@@ -130,8 +131,23 @@ Vreg_LiveIntervalMap live_variable_analysis(MachineFunction * F,MachineOperand::
         for(auto bb:F->basic_blocks){
             auto inst = bb->insts.begin();
             while(inst != bb->insts.end()){
-                auto p = ++inst;
-                inst--;
+                
+                auto p = inst;
+                p++;
+                if(p  == bb->insts.end()){
+                    for(auto next_bb:bb->sucs){
+                         p = next_bb->insts.begin();
+                        for(auto var:*In[*p]){
+                            if(var->operand_type !=ty) continue;
+                            if(Out[*inst]->count(var) == 0){
+                                changing = true;
+                            }
+                            Out[*inst]->insert(var);
+
+                        }
+                     }
+                     goto deal_with_out;
+                }
                 //计算out的内容
                 for(auto var:*In[*p]){
                     if(var->operand_type !=ty) continue;
@@ -140,6 +156,7 @@ Vreg_LiveIntervalMap live_variable_analysis(MachineFunction * F,MachineOperand::
                     }
                     Out[*inst]->insert(var);
                 }
+                deal_with_out:
                 //计算每条指令的In,In[s] = use[s] U (Out[s] -def[s])
                 for(auto use:get_inst_uses(*inst)){
                     if(use->operand_type !=ty) continue;
@@ -157,7 +174,9 @@ Vreg_LiveIntervalMap live_variable_analysis(MachineFunction * F,MachineOperand::
                         In[*inst]->insert(i);
                     }
                 }
+                inst++;
             }
+
         }
     }
     Vreg_LiveIntervalMap result;
@@ -176,6 +195,9 @@ Vreg_LiveIntervalMap live_variable_analysis(MachineFunction * F,MachineOperand::
                 else{
                     if(result[vr]->endpoint < inst->number){
                         result[vr]->endpoint = inst->number;
+                    }
+                    if(result[vr]->startpoint > inst->number){
+                        result[vr]->startpoint = inst->number;
                     }
                 }
            }
