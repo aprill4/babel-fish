@@ -4,6 +4,7 @@
 #include <utility>
 #include <limits.h>
 #include <queue>
+#include <unordered_map>
 
 void print_globals(FILE *fp, const std::set<GlobalVariable *> &globals);
 

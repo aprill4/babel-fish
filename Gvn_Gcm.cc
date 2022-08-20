@@ -4,10 +4,10 @@
 bool GVN_GCM::isGVN(Value *val) {
   bool is = false;
   if (auto inst = dynamic_cast<Instruction *>(val)) {
-    if (inst->isBinary() || inst->isUnary() || inst->isLoad()) {
+    if (inst->isBinary() || inst->isUnary()) {
       is = true;
     }
-  } else if (dynamic_cast<GlobalVariable *>(val)) {
+  } else if (auto global = dynamic_cast<GlobalVariable *>(val)) {
     is = true;
   } else if (dynamic_cast<Constant *>(val)) {
     is = true;
@@ -26,9 +26,6 @@ std::string GVN_GCM::get_vn(Value *val) {
     } else if (inst->isUnary()) {
       ss << "U" << inst->getInstrcutionType() << "v"
          << inst->getOperand(0)->getLLVM_Name();
-    } else if (inst->isLoad()) {
-      ss << "L "
-         << "v" << inst->getOperand(0)->getLLVM_Name();
     }
   } else if (auto global = dynamic_cast<GlobalVariable *>(val)) {
     ss << "G" << global->getLLVM_Name();
@@ -49,11 +46,16 @@ void GVN_GCM::number_value(Function *func, Value *val) {
   if (visited_.find(val) != visited_.end()) {
     return ;
   }
-  if (!isGVN(val) && !dynamic_cast<PhiInst *>(val)) {
+  if (!isGVN(val)) {
     return;
   }
   visited_[val] = true;
-  if (auto inst = dynamic_cast<Instruction *>(val)) {
+  if (auto inst = dynamic_cast<User *>(val)) {
+    for (auto op : inst->operands_) {
+      if (!isGVN(op)) {
+        return ;
+      }
+    }
     for (auto op : inst->operands_) {
       number_value(func, op);
     }
@@ -84,6 +86,7 @@ void GVN_GCM::run() {
 
     for (auto bb : f->basicBlocks_) {
       vn_map_.clear();
+      visited_.clear();
       for (auto inst : bb->instructionList_) {
         number_value(f, inst);
       }

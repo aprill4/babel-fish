@@ -1,5 +1,6 @@
 #pragma once
 #include "IR.h"
+#include <unordered_map>
 #include "PassManager.h"
 
 class GVN_GCM : public Pass {
