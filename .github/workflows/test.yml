@@ -23,7 +23,7 @@ jobs:
       - name: Unlimited Stack
         run: ulimit -s unlimited
       - name: Test
-        run: bash test.sh -c || bash test.sh -c -d hidden_functional
+        run: bash test.sh -c; bash test.sh -c -d hidden_functional
       #- uses: actions/upload-artifact@v3
         #with:
           #name: ignore-${{ matrix.target }}
