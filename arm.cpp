@@ -1787,7 +1787,7 @@ int LinearScanRegisterALLOCATION(Vreg_LiveIntervalMap& live_intervals,std::vecto
         //std::cout<<i.first->print()<<std::endl; 
         //printf("start :%d ,end %d \n",i.second->startpoint,i.second->endpoint);
         ExpireOldIntervals(i.second);
-        if(active.size() == R-1){
+        if(active.size() == R-2){
             SpillAtIntervals(i.second);
         }else{
             auto actual_reg = free_registers.back();
@@ -1839,6 +1839,7 @@ int allocate_register(MachineFunction * F,MachineOperand::OperandType ty,std::ve
                 }
             }
             auto var_uses = get_all_uses(*inst);
+            bool overlap = false;
             for(auto var:var_uses){
                 if(auto x =dynamic_cast<VReg*>(*var)){
                     if(x->operand_type != ty) continue;
@@ -1848,7 +1849,11 @@ int allocate_register(MachineFunction * F,MachineOperand::OperandType ty,std::ve
                     if(info->reg->reg ==MReg::r4){
                         assert(info->location!= -1);
                     }
+
                     if(info->location != -1){
+                        if(overlap)
+                        info->reg = new MReg(MReg::r4);
+                        overlap =true;
                         auto ldr = new Load(ty == MachineOperand::Int?Load::Int:Load::Float,info->reg,new MReg(MReg::fp),new IImm(-(shuzu_size + info->location)-avoid_overlap));
                         bb->insts.insert(inst,ldr);
                     }

@@ -143,6 +143,8 @@ Vreg_LiveIntervalMap live_variable_analysis(MachineFunction * F,MachineOperand::
                         for(auto var:*In[*p]){
                             if(var->operand_type !=ty) continue;
                             if(Out[*inst]->count(var) == 0){
+                                for(auto pp:*Out[*inst])
+                                assert(pp->id !=var->id);
                                 changing = true;
                             }
                             Out[*inst]->insert(var);
@@ -154,6 +156,8 @@ Vreg_LiveIntervalMap live_variable_analysis(MachineFunction * F,MachineOperand::
                  for(auto var:*In[*p]){
                         if(var->operand_type !=ty) continue;
                         if(Out[*inst]->count(var) == 0){
+                                for(auto pp:*Out[*inst])
+                                assert(pp->id !=var->id);
                             changing = true;
                         }
                      Out[*inst]->insert(var);
@@ -163,6 +167,8 @@ Vreg_LiveIntervalMap live_variable_analysis(MachineFunction * F,MachineOperand::
                 for(auto use:get_inst_uses(*inst)){
                     if(use->operand_type !=ty) continue;
                     if(In[*inst]->count(use) == 0){
+                                for(auto pp:*In[*inst])
+                                assert(pp->id !=use->id);
                         changing = true;
                     }
                     In[*inst]->insert(use);
@@ -171,6 +177,8 @@ Vreg_LiveIntervalMap live_variable_analysis(MachineFunction * F,MachineOperand::
                     if(i->operand_type !=ty) continue;
                     if(get_inst_defs(*inst) != i){
                         if(In[*inst]->count(i) == 0){
+                                for(auto pp:*In[*inst])
+                                assert(pp->id !=i->id);
                             changing = true;
                         }
                         In[*inst]->insert(i);

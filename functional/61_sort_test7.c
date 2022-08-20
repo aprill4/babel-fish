@@ -1,3 +1,4 @@
+#include "../sylib.h"
 int buf[2][100];
 
 // sort [l, r)
