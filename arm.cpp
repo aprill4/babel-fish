@@ -207,6 +207,9 @@ size_t stack_offset = 0;
 std::map<BasicBlock*, MachineBasicBlock*> bb2mb;
 std::map<PhiInst*, MachineOperand*> phi2vreg;
 std::map<BasicBlock* ,bool> bbok;
+// fp and sp
+auto FP = new MReg(MReg::fp);
+auto SP = new MReg(MReg::sp);
 //-----------------------------------------------------------------
 
 size_t allocate(size_t size) {
@@ -508,14 +511,14 @@ void handle_alloca(AllocaInst *inst, MachineBasicBlock *mbb) {
         case Type::IntegerTypeId: 
         case Type::PointerTypeId: 
         case Type::FloatTypeId: {
-            auto sub = new Binary(Binary::Int, Binary::ISub, make_vreg(MachineOperand::Int), new MReg(MReg::fp), new IImm(allocate(4)));
+            auto sub = new Binary(Binary::Int, Binary::ISub, make_vreg(MachineOperand::Int), FP, new IImm(allocate(4)));
             v_m[inst] = sub->dst;
             mbb->insts.emplace_back(sub);
         } break;
         case Type::ArrayTypeId: {
             auto array_type = static_cast<ArrayType *>(inst->allocaType_);
             auto array_size = array_type->getAllElementNum();
-            auto sub = new Binary(Binary::Int, Binary::ISub, make_vreg(MachineOperand::Int), new MReg(MReg::fp), new IImm(allocate(4 * array_size)));
+            auto sub = new Binary(Binary::Int, Binary::ISub, make_vreg(MachineOperand::Int), FP, new IImm(allocate(4 * array_size)));
             v_m[inst] = sub->dst;
             mbb->insts.emplace_back(sub);
         } break;
@@ -708,13 +711,13 @@ void emit_args(std::vector<Argument *> &args, MachineBasicBlock *entry) {
         auto ty = arg->getType();
         auto is_int = (ty->isPointerType() || ty->isIntegerType());
 
-        auto dst = make_vreg(is_int ? MachineOperand::Int :
-                    MachineOperand::Float, arg);
+        auto dst = make_vreg((is_int ? MachineOperand::Int :
+                    MachineOperand::Float), arg);
 
-        if (num_of_ints >= 4 || num_of_floats >= 16) {
-            auto base = new MReg(MReg::fp);
+        if ((num_of_ints >= 4 && is_int) || (num_of_floats >= 16 && !is_int)) {
+            auto base = FP;
             auto offset = new IImm(num_of_stack_args * 4 + 100);
-            auto ld = new Load(is_int ? Load::Int : Load::Float,
+            auto ld = new Load((is_int ? Load::Int : Load::Float),
                         dst, base, offset);
             entry->insts.emplace_back(ld);
             num_of_stack_args++;
@@ -1085,6 +1088,7 @@ void emit_call(Instruction *inst, MachineBasicBlock* mbb) {
     call->callee = func->getName();
     call->arg_count = func_call->getOperandNum() - 1;
     call->args_type.resize(call->arg_count);
+
     int32_t int_args_num = 0, float_args_num = 0;
     for (int i = 1; i < func_call->getOperandNum(); i++) {
         auto args = func_call->getOperand(i);
@@ -1096,17 +1100,26 @@ void emit_call(Instruction *inst, MachineBasicBlock* mbb) {
             call->args_type[i - 1] = Call::Float;
         }
     }
+
     int32_t args_offset = ((int_args_num > 4 ?  int_args_num - 4 : 0) 
                 + (float_args_num > 16 ?  float_args_num - 16 : 0)) * 4;
+
+    bool sp_aligned = (args_offset % 8) == 0;
+    if (!sp_aligned) {
+        auto align_sp = new Binary(Binary::Int, Binary::ISub, SP, SP, new IImm(4));
+        mbb->insts.emplace_back(align_sp);
+    }
 
     bool sp_subbed = args_offset > 0;
     if (sp_subbed) {
         auto sp_sub = new Binary(Binary::Int, Binary::ISub, 
-                new MReg(MReg::sp), new MReg(MReg::sp), new IImm(args_offset));
+                SP, SP, new IImm(args_offset));
         mbb->insts.emplace_back(sp_sub);
     }
+
     int32_t old_args_offset = args_offset;
     args_offset -= 4;
+
     for (int i = func_call->getOperandNum() - 1; i >= 1 ; i--) {
         auto args = func_call->getOperand(i);
         if (!args->getType()->isFloatType()) {
@@ -1117,7 +1130,7 @@ void emit_call(Instruction *inst, MachineBasicBlock* mbb) {
             } else {
                 auto mreg = new MReg(MReg::r3);
                 auto mv = new Mov(Mov::I2I, mreg, make_operand(args, mbb));
-                auto store = new Store(Store::Int, mreg, new MReg(MReg::sp), new IImm(args_offset));
+                auto store = new Store(Store::Int, mreg, SP, new IImm(args_offset));
                 mbb->insts.emplace_back(mv);
                 mbb->insts.emplace_back(store);              
                 args_offset -= 4; 
@@ -1131,7 +1144,7 @@ void emit_call(Instruction *inst, MachineBasicBlock* mbb) {
             } else {
                 auto mreg = new MReg(MReg::s15);
                 auto mv = new Mov(Mov::F2F, mreg, make_operand(args, mbb));
-                auto store = new Store(Store::Float, mreg, new MReg(MReg::sp), new IImm(args_offset));
+                auto store = new Store(Store::Float, mreg, SP, new IImm(args_offset));
                 mbb->insts.emplace_back(mv);
                 mbb->insts.emplace_back(store);              
                 args_offset -= 4;  
@@ -1141,9 +1154,17 @@ void emit_call(Instruction *inst, MachineBasicBlock* mbb) {
     }
     mbb->insts.emplace_back(call);
     if (sp_subbed) {
-        auto sp_add = new Binary(Binary::Int, Binary::IAdd, new MReg(MReg::sp), new MReg(MReg::sp), new IImm(old_args_offset));
+        auto sp_add = new Binary(Binary::Int, Binary::IAdd, SP, SP, new IImm(old_args_offset));
         mbb->insts.emplace_back(sp_add);
     }
+
+    if (!sp_aligned) {
+        auto add = new Binary(Binary::Int, Binary::IAdd, SP, SP, new IImm(4));
+        mbb->insts.emplace_back(add);
+    }
+/*
+*/
+
     if (func_call->getFunctionType()->getReturnType()->isIntegerType()) {
         auto reg_r0 = new MReg(MReg::r0);
         auto ret = make_vreg(MachineOperand::OperandType::Int, inst);
@@ -1217,6 +1238,7 @@ void emit_bb(BasicBlock *bb, MachineBasicBlock *mbb, MachineFunction* mfunc) {
 }
 
 MachineFunction *emit_func(Function *func) {
+
     auto mfunc = new MachineFunction;
     
     mfunc->name = func->name_;
@@ -1232,7 +1254,8 @@ MachineFunction *emit_func(Function *func) {
         bb2mb[bb] = mbb;
         bbok[bb] = false;
     }
-
+    
+    //CFG
     for (auto bb: func->basicBlocks_) {
         for (auto pre: bb->predecessorBlocks_) {
             bb2mb[bb]->pres.emplace_back(bb2mb[pre]);
@@ -1268,35 +1291,24 @@ MachineFunction *emit_func(Function *func) {
             }
         }
     }
+
     mfunc->stack_size = stack_offset;
     mfunc->vreg_count = vreg_id;
 
-    // CFG is not used?
-    for (auto bb: func->basicBlocks_) {
-        for (auto suc: bb->successorBlocks_) {
-            bb_map[bb]->sucs.emplace_back(bb_map[suc]);
-            bb_map[suc]->pres.emplace_back(bb_map[bb]);
-        }
-    }
-
-    //if (stack_offset) { 
     auto entry_bb = mfunc->basic_blocks[0];
     // insert `sub sp, sp, stack_offset` to the beginning of the entry block
-    auto dst = new MReg(MReg::sp);
     auto offset = new IImm(stack_offset);
-    auto sub = new Binary(Binary::Int, Binary::ISub, dst, dst, offset);
+    auto sub = new Binary(Binary::Int, Binary::ISub, SP, SP, offset);
     mfunc->stack_sub = sub;
     entry_bb->insts.emplace_front(sub);
     // mv sp to fp
-    auto fp = new MReg(MReg::fp);
-    auto sp = new MReg(MReg::sp);
-    auto mv = new Mov(Mov::I2I, fp, sp);
+    auto mv = new Mov(Mov::I2I, FP, SP);
     entry_bb->insts.emplace_front(mv);
     // add sp, sp, stack_offset
     for (auto bb: mfunc->exit_blocks) {
         auto it = bb->insts.end();
         it--;
-        auto add = new Binary(Binary::Int, Binary::IAdd, dst, dst, offset);
+        auto add = new Binary(Binary::Int, Binary::IAdd, SP, SP, offset);
         mfunc->stack_adds.push_back(add);
         bb->insts.insert(it, add);
     }
@@ -1304,7 +1316,6 @@ MachineFunction *emit_func(Function *func) {
     stack_offset = 0;
     vreg_id = 0;
     v_m.clear();
-    //}
 
     return mfunc;
 }
@@ -1395,7 +1406,7 @@ void stack_ra_on_function(MachineFunction *mf)  {
                 bool isInt = actual_reg->operand_type == MachineOperand::OperandType::Int;
                 auto str = new Store(isInt ? Store::Tag::Int : Store::Tag::Float,
                                                new MReg(isInt?MReg::Reg::r4 : MReg::Reg::s16),
-                                               new MReg(MReg::Reg::fp),
+                                               FP,
                                                new IImm(-(local_var_size + actual_reg->id * 4) - 4));
 
                 auto it0 = it;
@@ -1422,7 +1433,7 @@ void stack_ra_on_function(MachineFunction *mf)  {
 
                 auto ldr = new Load(isInt ? Load::Tag::Int : Load::Tag::Float,
                                                new MReg(MReg::Reg(new_reg)),
-                                               new MReg(MReg::Reg::fp),
+                                               FP,
                                                new IImm(-(local_var_size + actual_reg->id * 4) - 4));
 
                 mb->insts.insert(it, ldr);
@@ -1436,6 +1447,9 @@ void stack_ra_on_function(MachineFunction *mf)  {
     // insert add/sub sp & push/pops
 
     auto total_size = local_var_size + spilled_size;
+    if (((100 + total_size) % 8) != 0) {
+        total_size += 4;
+    }
     mf->stack_sub->rhs = new IImm(total_size);
     for (auto stack_add : mf->stack_adds) {
         stack_add->rhs = new IImm(total_size);
