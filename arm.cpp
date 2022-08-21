@@ -1851,8 +1851,10 @@ int allocate_register(MachineFunction * F,MachineOperand::OperandType ty,std::ve
                     }
 
                     if(info->location != -1){
-                        if(overlap)
-                        info->reg = new MReg(MReg::r4);
+                        if(overlap){
+                            info->reg = new MReg(MReg::r4);
+                            (*var) = info->reg;
+                        }
                         overlap =true;
                         auto ldr = new Load(ty == MachineOperand::Int?Load::Int:Load::Float,info->reg,new MReg(MReg::fp),new IImm(-(shuzu_size + info->location)-avoid_overlap));
                         bb->insts.insert(inst,ldr);
