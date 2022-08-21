@@ -85,8 +85,10 @@ function run_test {
     local err_out=$TMPDIR/${src%.*}.err
     local std_out=$TMPDIR/${src%.*}.out
 
-    ${CC} $SRCDIR/$src -o $asm_out >/dev/null 2> $err_out
-    [[ $? -ne 0 ]] && report_result $Red "compile error" && return 1
+    timeout 30 ${CC} $SRCDIR/$src -o $asm_out >/dev/null 2> $err_out
+    ec=$?
+    [[ $ec -eq 124 ]] && report_result $Blue "compile timeout after 30s" && return 1
+    [[ $ec -ne 0 ]] && report_result $Red "compile error" && return 1
 
     ${ASSEMBLER} $asm_out libsysy_${ARCH}.a -o $bin_out 2>> $err_out
     [[ $? -ne 0 ]] && report_result $Red "assembler error" && return 1
@@ -99,7 +101,7 @@ function run_test {
     fi
     ec=$?
     echo $ec >> $std_out
-    [[ $ec -eq 124 ]] && report_result $Blue "timeout after 5 seconds" && return 1
+    [[ $ec -eq 124 ]] && report_result $Blue "runtime timeout after 5s" && return 1
     [[ $ec -eq 139 ]] && \
         report_result $Yellow "segfault" && return 1
 
