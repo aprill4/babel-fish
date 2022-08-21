@@ -1828,7 +1828,8 @@ int allocate_register(MachineFunction * F,MachineOperand::OperandType ty,std::ve
                     }
                     auto info = live_intervals[x];
                     (*opr) = info->reg;
-                    std::cout<<x->print()<<" is begin at "<<info->startpoint<<" end at "<<info->endpoint<<std::endl;
+                    std::cout<<x->print()<<" is begin at "<<info->startpoint<<" end at "<<info->endpoint;
+                    std::cout<<" ,and was allocated with "<<info->reg->print()<<std::endl;
                     if(info->location != -1){
                         auto str = new Store(ty == MachineOperand::Int?Store::Int:Store::Float,info->reg,new MReg(MReg::fp),new IImm(-(shuzu_size+ info->location)-avoid_overlap));
                         inst++;
@@ -1840,28 +1841,37 @@ int allocate_register(MachineFunction * F,MachineOperand::OperandType ty,std::ve
             }
             auto var_uses = get_all_uses(*inst);
             bool overlap = false;
+            MReg* last_use_register = nullptr; 
             for(auto var:var_uses){
                 if(auto x =dynamic_cast<VReg*>(*var)){
                     if(x->operand_type != ty) continue;
                     assert(live_intervals.count(x) != 0);
                     auto info = live_intervals[x];
                     (*var) = info->reg;
-                    if(info->reg->reg ==MReg::r4){
+
+                    std::cout<<info->reg->print()<<std::endl;
+                    //if(!overlap)
+                    //last_use_register = info->reg;
+                    if(info->reg->reg ==MReg::r4 || info->reg->reg == MReg::r5){
                         assert(info->location!= -1);
                     }
 
                     if(info->location != -1){
-                        if(overlap){
-                            info->reg = new MReg(MReg::r4);
+                        if(overlap)
+                        {
+                            info->reg = (last_use_register->reg == MReg::r5) ? (new MReg(MReg::r4)):(new MReg(MReg::r5));
                             (*var) = info->reg;
+                            
                         }
-                        overlap =true;
+                        overlap=true;
                         auto ldr = new Load(ty == MachineOperand::Int?Load::Int:Load::Float,info->reg,new MReg(MReg::fp),new IImm(-(shuzu_size + info->location)-avoid_overlap));
                         bb->insts.insert(inst,ldr);
                     }
+                    last_use_register = info->reg;
                 }
             }
-            
+            //check
+           
         }
     }
     return stack_add_size;
