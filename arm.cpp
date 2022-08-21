@@ -1244,14 +1244,12 @@ MachineFunction *emit_func(Function *func) {
     
     mfunc->name = func->name_;
 
-    std::map<BasicBlock *, MachineBasicBlock *> bb_map;
     bb2mb.clear();
     phi2vreg.clear();
     bbok.clear();
     for (auto bb: func->basicBlocks_) {
         auto mbb = new MachineBasicBlock;
         mbb->parent = mfunc;
-        bb_map[bb] = mbb;
         bb2mb[bb] = mbb;
         bbok[bb] = false;
     }
@@ -1264,8 +1262,8 @@ MachineFunction *emit_func(Function *func) {
         }
     }
 
-    emit_args(func->arguments_, bb_map[func->getEntryBlock()]);
-    emit_bb(func->getEntryBlock(), bb_map[func->getEntryBlock()], mfunc);
+    emit_args(func->arguments_, bb2mb[func->getEntryBlock()]);
+    emit_bb(func->getEntryBlock(), bb2mb[func->getEntryBlock()], mfunc);
     for (auto& [phi, vreg] : phi2vreg) {
         for (int i = 0; i < phi->getOperandNum() / 2; i++) {
             auto val = phi->getOperand(2 * i);
