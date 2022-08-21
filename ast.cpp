@@ -363,6 +363,8 @@ void Root::generate(IRBuilder *irBuilder) {
   addLibFn(irBuilder, "getarray" , scope_, Type::getInt32Type(c),{PointerType::get(c, c.Int32Type)});
   addLibFn(irBuilder, "getfarray" , scope_, Type::getInt32Type(c),{PointerType::get(c, c.FloatType)});
   addLibFn(irBuilder, "memset" , scope_, Type::getPtrType(c, c.VoidType),{PointerType::get(c, c.VoidType), Type::getInt32Type(c), Type::getInt32Type(c)});
+  addLibFn(irBuilder, "_sysy_starttime" , scope_, Type::getInt32Type(c),{});
+  addLibFn(irBuilder, "_sysy_stoptime" , scope_, Type::getInt32Type(c),{});
   for (auto &decl : this->declareStatement_) {
     decl->generate(irBuilder);
   }
@@ -514,7 +516,7 @@ void ArrayDeclare::generate(IRBuilder *irBuilder) {
       BasicBlock *bb = irBuilder->getBasicBlock();
       value = AllocaInst::Create(context, arrType, irBuilder->getBasicBlock());
       if (value_) {
-        if (offset != total && type->isIntegerType()) {
+        if (offset != total && (type->isIntegerType() || type->isFloatType())) {
           auto func = dynamic_cast<Function*>(irBuilder->getModule()->symbolTable_["memset"]);
           vector<Value*> idxList;
           for (int i = 0; i < len + 1; i++) {
@@ -1467,7 +1469,11 @@ void EvalStatement::generate(IRBuilder *irBuilder) {
 
 void FuncCallExpression::generate(IRBuilder *irBuilder) {
   Context &context = irBuilder->getContext();
-  auto func = dynamic_cast<Function*>(irBuilder->getModule()->symbolTable_[identifier_->id_]);
+  auto func_name = identifier_->id_;
+  if (func_name == "starttime" || func_name == "stoptime") {
+    func_name = "_sysy_" + func_name;
+  }
+  auto func = dynamic_cast<Function*>(irBuilder->getModule()->symbolTable_[func_name]);
   auto funcType = static_cast<FunctionType*>(func->getFunctionType());
   vector<Value*>funcArgs;
   for(int u = 0, len = funcType->getArgumentsNum(); u < len; u++) {
@@ -1502,7 +1508,7 @@ void FuncCallExpression::generate(IRBuilder *irBuilder) {
                                              static_cast<int>(dynamic_cast<ConstantFloat*>(val)->getValue())));
     else funcArgs.emplace_back(val);
   }
-  auto tmp = CallInst::Create(context, dynamic_cast<Function*>(irBuilder->getModule()->symbolTable_[identifier_->id_]),
+  auto tmp = CallInst::Create(context, dynamic_cast<Function*>(irBuilder->getModule()->symbolTable_[func_name]),
                    funcArgs, 
                    irBuilder->getBasicBlock());
   irBuilder->setTmpVal(tmp);

@@ -110,8 +110,9 @@ int main(int argc, char** argv) {
     stack_ra(mm);
     // mm->print(stdout);
     
-    remove_redundant_load(mm);
+    remove_redundant_loads(mm);
     //mm->print(stdout);
+    remove_identical_mvs(mm);
 
     FILE *out = fopen(output_file, "w");
     mm->print(out);
