@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
 
     auto m = irBuilder->getModule();
     PassManager pm(m);
-    // cout << m->print() << endl;
+    //cout << m->print() << endl;
     pm.add_pass<Mem2Reg>();
     // pm.add_pass<LoopSearch>();
     // pm.add_pass<LoopInvHoist>(true);
@@ -103,8 +103,8 @@ int main(int argc, char** argv) {
 
     auto mm = emit_asm(m);
 
-    // mm->print(stdout);
-    // printf("\n\n");
+     mm->print(stdout);
+     printf("\n\n");
 
     stack_ra(mm);
     // mm->print(stdout);
