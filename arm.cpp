@@ -1746,9 +1746,9 @@ int LinearScanRegisterALLOCATION(Vreg_LiveIntervalMap& live_intervals,std::vecto
             active.remove(spill);
             active.emplace_back(i);
             //sort active by increasing end point
-            active.sort([](LiveInterval *  a,LiveInterval *  b)->bool{
-                return a->endpoint < b->endpoint;}
-            );
+            //@active.sort([](LiveInterval *  a,LiveInterval *  b)->bool{
+            //    return a->endpoint < b->endpoint;}
+            //);
         }else{
             stack_size+=4;
             i->location=stack_size;
@@ -1795,9 +1795,9 @@ int LinearScanRegisterALLOCATION(Vreg_LiveIntervalMap& live_intervals,std::vecto
             i.second->reg = actual_reg;
             //printf("%s was allocate with %s\n",i.first->print(),actual_reg->print());
             active.emplace_back(i.second);//@TODO increasing store
-            active.sort([](const LiveInterval* a,const LiveInterval * b)->bool{
-            return a->endpoint < b->endpoint;}
-            );
+            //@ active.sort([](const LiveInterval* a,const LiveInterval * b)->bool{
+            //return a->endpoint < b->endpoint;}
+           // );
         }
     }
     return stack_size;
