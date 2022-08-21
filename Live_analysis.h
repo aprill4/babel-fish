@@ -1,6 +1,6 @@
 #pragma once
 #include "arm.h"
-const int avoid_overlap = 100;
+const int avoid_overlap = 80;
 struct LiveInterval{
     //std::vector<MachineInst*> insts;
     MReg* reg;
@@ -130,7 +130,7 @@ Vreg_LiveIntervalMap live_variable_analysis(MachineFunction * F,MachineOperand::
     Init_live_variable(F);
     bool changing = true;
     while(changing){
-        changing = false;
+        changing =false;
         for(auto bb:F->basic_blocks){
             auto inst = bb->insts.begin();
             while(inst != bb->insts.end()){
@@ -140,48 +140,47 @@ Vreg_LiveIntervalMap live_variable_analysis(MachineFunction * F,MachineOperand::
                 if(p  == bb->insts.end()){
                     for(auto next_bb:bb->sucs){
                          p = next_bb->insts.begin();
-                        for(auto var:*In[*p]){
+                         auto in_array = *In[*p];
+                         auto out_array = Out[*inst];
+                        for(auto var:in_array){
                             if(var->operand_type !=ty) continue;
-                            if(Out[*inst]->count(var) == 0){
-                                for(auto pp:*Out[*inst])
-                                assert(pp->id !=var->id);
-                                changing = true;
-                            }
-                            Out[*inst]->insert(var);
+                            //if(out_array->count(var) == 0){
+                            //    changing = true;
+                            //}
+                            out_array->insert(var);
 
                         }
                      }
                 }else{
                 //计算out的内容
-                 for(auto var:*In[*p]){
+                 auto in_array = *In[*p];
+                 auto out_array =Out[*inst];
+                 for(auto var:in_array){
                         if(var->operand_type !=ty) continue;
-                        if(Out[*inst]->count(var) == 0){
-                                for(auto pp:*Out[*inst])
-                                assert(pp->id !=var->id);
-                            changing = true;
-                        }
-                     Out[*inst]->insert(var);
+                        //if(out_array->count(var) == 0){
+                        //    changing = true;
+                        //}
+                     out_array->insert(var);
                     }
                 }
                 //计算每条指令的In,In[s] = use[s] U (Out[s] -def[s])
+                auto in_array = In[*inst];
                 for(auto use:get_inst_uses(*inst)){
                     if(use->operand_type !=ty) continue;
-                    if(In[*inst]->count(use) == 0){
-                                for(auto pp:*In[*inst])
-                                assert(pp->id !=use->id);
+                    if(in_array->count(use) == 0){
                         changing = true;
                     }
-                    In[*inst]->insert(use);
+                    in_array->insert(use);
                 }
-                for(auto i:*Out[*inst]){
+                auto out_array = *Out[*inst];
+                auto in_array_ = In[*inst]; 
+                for(auto i:out_array){
                     if(i->operand_type !=ty) continue;
                     if(get_inst_defs(*inst) != i){
-                        if(In[*inst]->count(i) == 0){
-                                for(auto pp:*In[*inst])
-                                assert(pp->id !=i->id);
+                        if(in_array_->count(i) == 0){
                             changing = true;
                         }
-                        In[*inst]->insert(i);
+                        in_array_->insert(i);
                     }
                 }
                 inst++;
@@ -203,11 +202,12 @@ Vreg_LiveIntervalMap live_variable_analysis(MachineFunction * F,MachineOperand::
                     result[vr]->endpoint = result[vr]->startpoint = inst->number;
                 }
                 else{
-                    if(result[vr]->endpoint < inst->number){
-                        result[vr]->endpoint = inst->number;
+                    auto tmp =result[vr];
+                    if(tmp->endpoint < inst->number){
+                        tmp->endpoint = inst->number;
                     }
-                    if(result[vr]->startpoint > inst->number){
-                        result[vr]->startpoint = inst->number;
+                    if(tmp->startpoint > inst->number){
+                        tmp->startpoint = inst->number;
                     }
                 }
            }
