@@ -1,6 +1,6 @@
 #include "pass.h"
 
-void remove_redundant_load(MachineModule *m) {
+void remove_redundant_loads(MachineModule *m) {
     for (auto mf: m->functions) {
         for (auto mbb: mf->basic_blocks) {
             for (auto it = mbb->insts.begin(); it != mbb->insts.end(); it++) {
