@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    cout << source_file << endl;
+    //cout << source_file << endl;
     auto file_content = read_entire_file(source_file);
     scan_string(file_content);
     yyparse();
@@ -95,8 +95,8 @@ int main(int argc, char** argv) {
     auto m = irBuilder->getModule();
     PassManager pm(m);
     // cout << m->print() << endl;
-    pm.add_pass<Mem2Reg>(true);
-    pm.add_pass<GVN_GCM>(true);
+    pm.add_pass<Mem2Reg>(false);
+    pm.add_pass<GVN_GCM>(false);
     // pm.add_pass<LoopSearch>();
     // pm.add_pass<LoopInvHoist>(true);
     pm.run();
